@@ -33,7 +33,7 @@ class Request:
             try:
                 response = urllib2.urlopen(req, timeout=self.timeout)
                 if response.code != 200:
-                    raise RequestError('HTTP code is not 200. Error sending request to url: ' + url)
+                    raise RequestError('HTTP code is not 200. Error downloading file from url: ' + url)
                 file = open(path, 'w')
                 file.write(response.read())
                 file.close()
