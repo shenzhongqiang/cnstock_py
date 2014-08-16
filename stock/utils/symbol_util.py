@@ -1,28 +1,12 @@
 import os.path
 import re
 from stock.utils.request import *
+from stock.globalvar import *
 
 class InvalidType(Exception):
     pass
 
-SYMDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-    '../../data/symbol')
-SYM = {
-    'all': os.path.join(SYMDIR, 'symbols.all'),
-    'sh':  os.path.join(SYMDIR, 'symbols.sh'),
-    'sz':  os.path.join(SYMDIR, 'symbols.sz'),
-    'cy':  os.path.join(SYMDIR, 'symbols.cy'),
-    'id':  os.path.join(SYMDIR, 'symbols.id'),
-}
-
-INDEX = {
-    'sh': 'sh000001',
-    'sz': 'sz399001',
-    'cy': 'sz399006',
-}
-
 def get_stock_symbol(type='all'):
-    global SYM
     if type not in SYM:
         raise InvalidType('Please specify the type: all|sh|sz|cy|id')
     filename = SYM[type]
@@ -33,7 +17,6 @@ def get_stock_symbol(type='all'):
     return symbols
 
 def get_index_symbol(type):
-    global INDEX
     return INDEX[type]
 
 def download_symbols():
@@ -53,7 +36,6 @@ def download_symbols():
 
         i = i + 1
 
-    global SYM, INDEX
     sh_symbols = []
     sz_symbols = []
     cy_symbols = []
