@@ -2,7 +2,7 @@ from stock.utils.symbol_util import *
 import unittest
 import os.path
 
-class TestRequest(unittest.TestCase):
+class TestSymbolUtil(unittest.TestCase):
     def setUp(self):
         pass
 

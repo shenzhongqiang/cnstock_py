@@ -1,7 +1,9 @@
 import os.path
 
-SYMDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-    '../data/symbol')
+ROOTDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../')
+
+SYMDIR = os.path.join(ROOTDIR, 'data/symbol')
+
 SYM = {
     'all': os.path.join(SYMDIR, 'symbols.all'),
     'sh':  os.path.join(SYMDIR, 'symbols.sh'),
