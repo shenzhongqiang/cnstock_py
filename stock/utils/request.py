@@ -19,10 +19,10 @@ class Request:
                 if response.code != 200:
                     raise RequestError('HTTP code is not 200. Error sending request to url: ' + url)
                 return response.read()
-            except URLError, e:
-                print e.reason
+            except urllib2.URLError, e:
+                print "Request failed for %s with reason: %s" % (url, e.reason)
             except RequestError, e:
-                print e.reason
+                print "Request failed for %s with reason: %s" % (url, e.reason)
             i = i + 1
 
     def download_file(self, url, path):
@@ -38,9 +38,9 @@ class Request:
                 file.write(response.read())
                 file.close()
                 return
-            except URLError, e:
-                print e.reason
+            except urllib2.URLError, e:
+                print "Request failed for %s with reason: %s" % (url, e.reason)
             except RequestError, e:
-                print e.reason
+                print "Request failed for %s with reason: %s" % (url, e.reason)
             i = i + 1
 

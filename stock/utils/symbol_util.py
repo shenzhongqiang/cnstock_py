@@ -6,15 +6,18 @@ from stock.globalvar import *
 class InvalidType(Exception):
     pass
 
-def get_stock_symbol(type='all'):
+def get_stock_symbols(type='all'):
     if type not in SYM:
-        raise InvalidType('Please specify the type: all|sh|sz|cy|id')
+        raise InvalidType('Please specify the type: all|sh|sz|cy')
     filename = SYM[type]
     f = open(filename, "r")
     content = f.read()
     f.close()
     symbols = content.split('\n')
     return symbols
+
+def get_index_symbols():
+    return INDEX.values()
 
 def get_index_symbol(type):
     return INDEX[type]

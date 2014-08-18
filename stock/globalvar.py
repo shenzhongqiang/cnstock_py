@@ -1,8 +1,12 @@
 import os.path
 
 ROOTDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../')
-
 SYMDIR = os.path.join(ROOTDIR, 'data/symbol')
+HIST_DIR = {
+    'index': os.path.join(ROOTDIR, 'data/history/index'),
+    'stock': os.path.join(ROOTDIR, 'data/history/stock'),
+    'fenhong': os.path.join(ROOTDIR, 'data/history/fenhong'),
+}
 
 SYM = {
     'all': os.path.join(SYMDIR, 'symbols.all'),
