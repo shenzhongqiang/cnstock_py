@@ -7,10 +7,14 @@ class TestSymbolUtil(unittest.TestCase):
         pass
 
     def test_get_stock_symbol(self):
-        symbols = get_stock_symbol()
+        symbols = get_stock_symbols()
         self.assertTrue(len(symbols) > 0)
-        symbols = get_stock_symbol('sh')
+        symbols = get_stock_symbols('sh')
         self.assertTrue(len(symbols) > 0)
+
+    def test_get_index_symbols(self):
+        indice = get_index_symbols()
+        self.assertListEqual(indice, ['sz399001', 'sz399006', 'sh000001'])
 
     def test_get_index_symbol(self):
         index = get_index_symbol('sh')
