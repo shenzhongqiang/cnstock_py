@@ -44,8 +44,17 @@ def parse_fenhong_output(file):
     f.close()
     soup = BeautifulSoup(str)
     tables = soup.select('table[width="744"]')
-    size = len(tables[1].contents)
-    print tables[1].tbody.find_all("tr")
-#    print tables[1].contents
-#    tr = children[2]
-#    print tr.children[2].string
+    table_rows = tables[1].tbody.find_all("tr")
+    for i in xrange(4, len(table_rows)):
+        cols = table_rows[i].find_all("td")
+        song = cols[2].string
+        zhuan = cols[3].string
+        fenhong = cols[4].string
+        reg_date = cols[5].string
+        exe_date = cols[6].string
+
+        if exe_date == '--':
+            continue
+
+        print "%s, %s, %s, %s, %s" % (song, zhuan ,fenhong, reg_date, exe_date)
+        print "========================"
