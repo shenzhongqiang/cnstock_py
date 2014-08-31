@@ -36,25 +36,42 @@ class Uniform:
         bar['low'] = (bar['low'] - fenhong / 10) / numerator
         bar['volume'] = bar['volume'] * numerator
 
+    # return plan as list
+    @staticmethod
+    def parse_fenhong_output(file):
+        f = open(file, "r")
+        str = f.read()
+        f.close()
+        soup = BeautifulSoup(str)
+        tables = soup.select('table[width="744"]')
+        table_rows = tables[1].tbody.find_all("tr")
+        history = {}
+        for i in xrange(4, len(table_rows)):
+            cols = table_rows[i].find_all("td")
+            song = cols[2].string
+            zhuan = cols[3].string
+            fenhong = cols[4].string
+            exe_date = cols[6].string
 
-# return plan array
-def parse_fenhong_output(file):
-    f = open(file, "r")
-    str = f.read()
-    f.close()
-    soup = BeautifulSoup(str)
-    tables = soup.select('table[width="744"]')
-    table_rows = tables[1].tbody.find_all("tr")
-    for i in xrange(4, len(table_rows)):
-        cols = table_rows[i].find_all("td")
-        song = cols[2].string
-        zhuan = cols[3].string
-        fenhong = cols[4].string
-        reg_date = cols[5].string
-        exe_date = cols[6].string
+            if exe_date == '--':
+                continue
 
-        if exe_date == '--':
-            continue
+            song = 0 if song == '--' else float(song)
+            zhuan = 0 if zhuan == '--' else float(zhuan)
+            fenhong = 0 if fenhong == '--' else float(fenhong)
 
-        print "%s, %s, %s, %s, %s" % (song, zhuan ,fenhong, reg_date, exe_date)
-        print "========================"
+            exe_dt = datetime.datetime.strptime(exe_date, "%Y-%m-%d")
+            if not exe_date in history:
+                history[exe_date] = {
+                    'song'  : song,
+                    'zhuan' : zhuan,
+                    'fenhong' : fenhong,
+                    'exe_dt'  : exe_dt,
+                }
+            else:
+                hr = history[exe_date]
+                hr['song'] = hr['song'] if hr['song'] != 0 else song
+                hr['zhuan'] = hr['zhuan'] if hr['zhuan'] != 0 else zhuan
+                hr['fenhong'] = hr['fenhong'] if hr['fenhong'] != 0 else fenhong
+        sorted_plan = sorted(history.values(), key=lambda a: a['exe_dt'])
+        return sorted_plan

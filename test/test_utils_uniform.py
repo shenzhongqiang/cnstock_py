@@ -12,4 +12,8 @@ class TestUtilsUniform(unittest.TestCase):
 
     def test_parse_fenhong_output(self):
         file = os.path.join(HIST_DIR['fenhong'], 'sz300059')
-        parse_fenhong_output(file)
+        sorted_plan = Uniform.parse_fenhong_output(file)
+        self.assertTrue(len(sorted_plan) > 0)
+        file = os.path.join(HIST_DIR['fenhong'], 'sh600005')
+        sorted_plan = Uniform.parse_fenhong_output(file)
+        self.assertTrue(len(sorted_plan) > 0)
