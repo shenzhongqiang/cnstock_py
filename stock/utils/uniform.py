@@ -73,5 +73,5 @@ class Uniform:
                 hr['song'] = hr['song'] if hr['song'] != 0 else song
                 hr['zhuan'] = hr['zhuan'] if hr['zhuan'] != 0 else zhuan
                 hr['fenhong'] = hr['fenhong'] if hr['fenhong'] != 0 else fenhong
-        sorted_plan = sorted(history.values(), key=lambda a: a['exe_dt'])
+        sorted_plan = sorted(history.values(), key=lambda a: a['exe_dt'], reverse=True)
         return sorted_plan
