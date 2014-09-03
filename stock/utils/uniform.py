@@ -16,7 +16,7 @@ class Uniform:
         exe_found = 0 # if fuquan execution date is found
         for bar in ts:
             bar_date = ts['date']
-            bar_dt = datetime.strptime(bar_date, "%y%m%d")
+            bar_dt = datetime.datetime.strptime(bar_date, "%y%m%d")
             exe_dt = p['exe_dt']
             if exe_found == 0 and bar_dt < exe_dt:
                 exe_found = 1
