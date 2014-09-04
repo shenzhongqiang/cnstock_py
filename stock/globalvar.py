@@ -8,6 +8,11 @@ HIST_DIR = {
     'fenhong': os.path.join(ROOTDIR, 'data/history/fenhong'),
 }
 
+REAL_DIR = {
+    'index': os.path.join(ROOTDIR, 'data/realtime/index'),
+    'stock': os.path.join(ROOTDIR, 'data/realtime/stock'),
+}
+
 SYM = {
     'all': os.path.join(SYMDIR, 'symbols.all'),
     'sh':  os.path.join(SYMDIR, 'symbols.sh'),

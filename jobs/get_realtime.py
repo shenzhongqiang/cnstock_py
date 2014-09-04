@@ -7,7 +7,7 @@ import stock.utils.symbol_util
 from stock.globalvar import *
 
 # check if directory exists, if not create directory
-for k,v in HIST_DIR.items():
+for k,v in REAL_DIR.items():
     if not os.path.isdir(v):
         os.makedirs(v)
 
@@ -20,22 +20,18 @@ class Downloader(threading.Thread):
         while True:
             symbol = self.queue.get()
             print symbol
-            self.download_history(symbol)
+            self.download_realtime(symbol)
             self.queue.task_done()
 
-    def download_history(self, symbol):
+    def download_realtime(self, exsymbol):
         request = stock.utils.request.Request()
-        url = "http://data.gtimg.cn/flashdata/hushen/latest/daily/%s.js?maxage=43201" % (symbol)
+        url = "http://qt.gtimg.cn/q=" + exsymbol
         if symbol in INDEX.values():
-            filepath = os.path.join(HIST_DIR['index'], symbol)
+            filepath = os.path.join(REAL_DIR['index'], exsymbol)
             request.download_file(url, filepath)
         else:
-            filepath = os.path.join(HIST_DIR['stock'], symbol)
+            filepath = os.path.join(REAL_DIR['stock'], exsymbol)
             request.download_file(url, filepath)
-            symbol_digit = symbol[2:]
-            fenhong_url = "http://stock.finance.qq.com/corp1/distri.php?zqdm=%s" % (symbol_digit)
-            fenhong_path = os.path.join(HIST_DIR['fenhong'], symbol)
-            request.download_file(fenhong_url, fenhong_path)
 
 
 if __name__ == "__main__":
