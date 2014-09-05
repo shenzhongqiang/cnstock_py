@@ -16,17 +16,24 @@ class RealTimeData(MarketData):
         self.date = self.dt.strftime("%y%m%d")
 
     def get_data(self, exsymbol):
-        url = "http://qt.gtimg.cn/q=" + exsymbol
-        request = Request()
-        resp = request.send_request(url)
+        file = ''
+        if exsymbol in INDEX.values():
+            file = os.path.join(REAL_DIR['index'], exsymbol)
+        else:
+            file = os.path.join(REAL_DIR['stock'], exsymbol)
+
+        f = open(file, "r")
+        contents = f.read()
+        f.close()
+
         # get exsymbol
-        m = re.match(r"v_(.*?)=", resp)
+        m = re.match(r"v_(.*?)=", contents)
         if m == None:
             raise CannotExtractExsymbol("cannot extract exsymbol from %s" \
-                % (resp))
+                % (contents))
         exsymbol = m.group(1)
 
-        result = re.sub("^v_.*?=\"|\";$", "", resp)
+        result = re.sub("^v_.*?=\"|\";$", "", contents)
         data = result.split("~")
         bar = Bar(exsymbol, date=self.date, dt=self.dt, \
             cnname=data[1], close=data[3], lclose=data[4], open=data[5], \
