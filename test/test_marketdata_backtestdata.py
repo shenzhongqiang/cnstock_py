@@ -22,3 +22,4 @@ class TestBackTestData(unittest.TestCase):
         bar_today = self.backtestdata.get_data('sz300059')
         self.assertEqual(bar_today.symbol, '300059')
         self.assertEqual(bar_today.exsymbol, 'sz300059')
+        self.assertTrue(isinstance(bar_today.close, float))

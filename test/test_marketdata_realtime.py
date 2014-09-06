@@ -22,4 +22,4 @@ class TestRealTimeData(unittest.TestCase):
         bar_now = self.realtimedata.get_data('sz300059')
         self.assertEqual(bar_now.symbol, '300059')
         self.assertEqual(bar_now.exsymbol, 'sz300059')
-
+        self.assertTrue(isinstance(bar_now.close, float))

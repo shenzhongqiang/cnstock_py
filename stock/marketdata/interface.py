@@ -14,10 +14,6 @@ class MarketData:
     def get_data(self, exsymbol):
         pass
 
-    @abstractmethod
-    def get_history_by_date(self, exsymbol):
-        pass
-
     def get_history_by_date(self, exsymbol):
         bars = self.get_history_in_file(exsymbol)
         history = []
@@ -58,8 +54,9 @@ class MarketData:
             if dt <= self.dt:
                 start = 1
             if start == 1:
-                bar = Bar(exsymbol, date=date, dt=dt, open=o, \
-                    close=close, high=high, low=low, volume=volume)
+                bar = Bar(exsymbol, date=date, dt=dt, open=float(o), \
+                    close=float(close), high=float(high), low=float(low), \
+                    volume=float(volume))
                 history.append(bar)
             i = i - 1
 

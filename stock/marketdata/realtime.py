@@ -36,9 +36,9 @@ class RealTimeData(MarketData):
         result = re.sub("^v_.*?=\"|\";$", "", contents)
         data = result.split("~")
         bar = Bar(exsymbol, date=self.date, dt=self.dt, \
-            cnname=data[1], close=data[3], lclose=data[4], open=data[5], \
-            volume=data[6], chg=data[31], chgperc=data[32], \
-            high=data[33], low=data[34], amount=data[37], \
-            pe=data[39], ampl=data[43], cvalue=data[44], \
-            value=data[45])
+            cnname=data[1], close=float(data[3]), lclose=float(data[4]), \
+            open=float(data[5]), volume=float(data[6]), chg=float(data[31]), \
+            chgperc=float(data[32]), high=float(data[33]), low=float(data[34]), \
+            amount=float(data[37]), pe=float(data[39]), ampl=float(data[43]), \
+            cvalue=float(data[44]), value=float(data[45]))
         return bar
