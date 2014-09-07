@@ -1,4 +1,4 @@
-from stock.filter.interface import Filter
+from stock.filter.interface import Filter, CheckResult
 from stock.marketdata import *
 
 class ZhangTing(Filter):
@@ -16,14 +16,11 @@ class ZhangTing(Filter):
 
             vol = bar_today.volume
             if vol == 0:
-                return False
+                self.output.append(CheckResult(exsymbol, False))
 
             zt_price = round(bar_yest.close * 1.1 * 100) / 100
-            return zt_price == bar_today.close
-        except AttributeError, e:
-            print "%s, %s" % (type(e), e.message)
-            print e.args
-            return False
+            result = zt_price == bar_today.close
+            self.output.append(CheckResult(exsymbol, result))
         except Exception, e:
-            print "%s, %s" % (type(e), e.message)
-            return False
+            print e.message
+            self.output.append(CheckResult(exsymbol, False))
