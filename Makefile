@@ -15,3 +15,5 @@ get_history:
 get_realtime:
 	PYTHONPATH=$(PYTHONPATH) python jobs/get_realtime.py
 
+filter:
+	PYTHONPATH=$(PYTHONPATH) python jobs/filter.py

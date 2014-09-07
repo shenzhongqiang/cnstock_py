@@ -1,11 +1,13 @@
-from stock.marketdata.backtestdata import *
+from stock.marketdata import *
+import threading
 import unittest
 import pprint
 from stock.globalvar import *
 
 class TestBackTestData(unittest.TestCase):
     def setUp(self):
-        self.backtestdata = BackTestData('140801')
+        lock = threading.RLock()
+        self.backtestdata = backtestdata.BackTestData(lock=lock, date='140801')
 
     def tearDown(self):
         pass
