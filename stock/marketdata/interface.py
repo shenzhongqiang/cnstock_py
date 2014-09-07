@@ -54,8 +54,7 @@ class MarketData:
         while i >= 2:
             line = lines[i]
             (date, o, close, high, low, volume) = line.split(' ')
-            with self.lock:
-                dt = datetime.datetime.strptime(date, "%y%m%d")
+            dt = datetime.datetime.strptime(date, "%y%m%d")
             if dt <= self.dt:
                 start = 1
             if start == 1:

@@ -10,8 +10,7 @@ class Bar:
         self.symbol = exsymbol[2:]
         self.date = date
         if dt == None:
-            with lock:
-                self.dt = datetime.datetime.strptime(date, "%y%m%d")
+            self.dt = datetime.datetime.strptime(date, "%y%m%d")
         else:
             self.dt =dt
         self.cnname = cnname

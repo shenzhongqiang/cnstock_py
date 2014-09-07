@@ -16,8 +16,7 @@ class BackTestData(MarketData):
     def __init__(self, lock, date):
         MarketData.__init__(self, lock)
         self.date = date
-        with lock:
-            self.dt = datetime.datetime.strptime(date, "%y%m%d")
+        self.dt = datetime.datetime.strptime(date, "%y%m%d")
 
     def get_data(self, exsymbol):
         history_by_today = self.get_history_by_date(exsymbol)
