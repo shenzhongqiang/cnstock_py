@@ -19,8 +19,10 @@ class ZhangTing(Filter):
                 self.output.append(CheckResult(exsymbol, False))
 
             zt_price = round(bar_yest.close * 1.1 * 100) / 100
+            chgperc = (bar_today.close / bar_yest.close - 1) * 100
             result = zt_price == bar_today.close
-            self.output.append(CheckResult(exsymbol, result))
+            self.output.append(CheckResult(exsymbol, result, chgperc=chgperc, \
+                pe=bar_today.pe, cvalue=bar_today.cvalue, value=bar_today.value))
         except Exception, e:
             print e.message
             self.output.append(CheckResult(exsymbol, False))

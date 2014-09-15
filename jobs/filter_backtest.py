@@ -31,9 +31,6 @@ for symbol in symbols:
 queue.join()
 
 filtered = filter(lambda x: x.result, output)
-for cr in filtered:
-    print "%s %s" % (cr.symbol, cr.result)
-
 
 env = Environment(loader=FileSystemLoader(TMPLDIR))
 template = env.get_template('stock_list.tmpl')
