@@ -25,6 +25,7 @@ class Filter(threading.Thread):
 class CheckResult:
     def __init__(self, exsymbol, result):
         self.exsymbol = exsymbol
+        self.symbol = exsymbol[2:]
         self.result = result
 
 

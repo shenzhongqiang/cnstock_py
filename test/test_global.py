@@ -9,3 +9,5 @@ class TestGlobal(unittest.TestCase):
     def test_global(self):
         self.assertTrue(ROOTDIR != '')
         self.assertTrue(SYMDIR != '')
+        self.assertTrue(TMPLDIR != '')
+        self.assertTrue(OUTDIR != '')

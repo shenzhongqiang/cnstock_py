@@ -1,6 +1,11 @@
 import os.path
 
-ROOTDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '../')
+ROOTDIR = os.path.join(os.path.dirname( \
+    os.path.realpath(__file__)), '..')
+TMPLDIR = os.path.join(os.path.dirname( \
+    os.path.realpath(__file__)), '..', 'template')
+OUTDIR = os.path.join(os.path.dirname( \
+    os.path.realpath(__file__)), '..', 'html')
 SYMDIR = os.path.join(ROOTDIR, 'data/symbol')
 HIST_DIR = {
     'index': os.path.join(ROOTDIR, 'data/history/index'),

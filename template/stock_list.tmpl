@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Stock</title>
+    <meta charset="gbk" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Language" content="zh-cn" />
+    <meta http-equiv="Content-Type" content="text/html; charset=gbk" />
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <h1>Total: {{ stocks|length }}</h1>
+    <table class="table">
+        <thead>
+            <th>symbol</th><th>cnname</th><th>chgperc</th><th>pe</th><th>cvalue</th><th>value</th>
+        <thead>
+        <tbody>
+        {% for s in stocks %}
+        <tr><td><a href="http://stockhtm.finance.qq.com/sstock/ggcx/{{ s.symbol }}.shtml?pgv_ref=fi_smartbox&_ver=2.0">{{ s.symbol }}</a></td><td>{{ s.cnname }}</td><td>{{ s.chgperc }}</td><td>{{ s.pe }}</td><td>{{ s.cvalue }}</td><td>{{ s.value }}</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="static/js/bootstrap.min.js"></script>
+</body>
+</html>
+
