@@ -13,28 +13,39 @@ if len(sys.argv) < 2:
     sys.stderr.write('Usage: %s <date>\n' % sys.argv[0])
     sys.exit(1)
 
-queue = Queue.Queue()
-lock = threading.RLock()
-output = []
-date = sys.argv[1]
-marketdata = backtestdata.BackTestData(lock=lock, date=date)
-for i in range(1):
-    t = zhangting.ZhangTing(queue, marketdata, output)
-    t.setDaemon(True)
-    t.start()
+class FilterMT:
+    def __init__(self, f, date):
+        self.f = f
+        self.date = date
 
-# download stock symbols
-symbols = stock.utils.symbol_util.get_stock_symbols('all')
-for symbol in symbols:
-    queue.put(symbol)
+    def run(self):
+        queue = Queue.Queue()
+        lock = threading.RLock()
+        output = []
+        marketdata = backtestdata.BackTestData(lock=lock, date=self.date)
 
-queue.join()
+        for i in range(1):
+            t = self.f(queue, marketdata, output)
+            t.setDaemon(True)
+            t.start()
 
-filtered = filter(lambda x: x.result, output)
+        # download stock symbols
+        symbols = stock.utils.symbol_util.get_stock_symbols('all')
+        for symbol in symbols:
+            queue.put(symbol)
 
-env = Environment(loader=FileSystemLoader(TMPLDIR))
-template = env.get_template('stock_list.tmpl')
-html = template.render(stocks=filtered)
-outfile = os.path.join(OUTDIR, date + '.html')
-with open(outfile, 'w') as f:
-    f.write(html)
+        queue.join()
+
+        output.sort(key=lambda x: x.chgperc, reverse=True)
+
+        env = Environment(loader=FileSystemLoader(TMPLDIR))
+        template = env.get_template('stock_list.tmpl')
+        html = template.render(stocks=output)
+        outfile = os.path.join(OUTDIR, self.date + '.html')
+        with open(outfile, 'w') as f:
+            f.write(html)
+
+f = zhangting.ZhangTing
+#f = crossstar.CrossStar
+FilterMT(f, sys.argv[1]).run()
+

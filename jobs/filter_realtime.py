@@ -9,30 +9,38 @@ import stock.utils.symbol_util
 import os.path
 import datetime
 
-queue = Queue.Queue()
-lock = threading.RLock()
-output = []
-marketdata = realtimedata.RealTimeData(lock=lock)
-for i in range(1):
-    t = zhangting.ZhangTing(queue, marketdata, output)
-    t.setDaemon(True)
-    t.start()
+class FilterMT:
+    def __init__(self, f):
+        self.f = f
 
-# download stock symbols
-symbols = stock.utils.symbol_util.get_stock_symbols('all')
-for symbol in symbols:
-    queue.put(symbol)
+    def run(self):
+        queue = Queue.Queue()
+        lock = threading.RLock()
+        output = []
+        marketdata = realtimedata.RealTimeData(lock=lock)
 
-queue.join()
+        for i in range(1):
+            t = self.f(queue, marketdata, output)
+            t.setDaemon(True)
+            t.start()
 
-filtered = filter(lambda x: x.result, output)
-filtered.sort(key=lambda x: x.chgperc, reverse=True)
+        # download stock symbols
+        symbols = stock.utils.symbol_util.get_stock_symbols('all')
+        for symbol in symbols:
+            queue.put(symbol)
 
-env = Environment(loader=FileSystemLoader(TMPLDIR))
-template = env.get_template('stock_list.tmpl')
-html = template.render(stocks=filtered)
-dt = datetime.datetime.today()
-date = dt.strftime("%y%m%d")
-outfile = os.path.join(OUTDIR, date + '.html')
-with open(outfile, 'w') as f:
-    f.write(html)
+        queue.join()
+
+        output.sort(key=lambda x: x.chgperc, reverse=True)
+
+        env = Environment(loader=FileSystemLoader(TMPLDIR))
+        template = env.get_template('stock_list.tmpl')
+        html = template.render(stocks=output)
+        dt = datetime.datetime.today()
+        date = dt.strftime("%y%m%d")
+        outfile = os.path.join(OUTDIR, date + '.html')
+        with open(outfile, 'w') as f:
+            f.write(html)
+
+f = crossstar.CrossStar
+FilterMT(f).run()

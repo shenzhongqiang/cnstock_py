@@ -19,11 +19,13 @@ class CrossStar(Filter):
             vol = bar_today.volume
             if vol == 0:
                 self.output.append(CheckResult(exsymbol, False))
+                return
 
             if bar_today.high == bar_today.low:
                 self.output.append(CheckResult(exsymbol, False))
+                return
 
-            chgperc = bar_today.close / bar_yest.close - 1
+            chgperc = bar_today.close / bar1.close - 1
             crossed = abs(bar_today.close - bar_today.open) / bar_today.close < 0.05
             if crossed and chgperc > 0.08:
                 self.output.append(CheckResult(exsymbol, result, chgperc=chgperc, \

@@ -23,12 +23,11 @@ class Filter(threading.Thread):
         pass
 
 class CheckResult:
-    def __init__(self, exsymbol, result, chgperc=None, cnname=None, \
+    def __init__(self, exsymbol, chgperc=None, cnname=None, \
         pe=None, cvalue=None, value=None):
         self.exsymbol = exsymbol
         self.chgperc = chgperc
         self.symbol = exsymbol[2:]
-        self.result = result
         self.cnname = cnname
         self.pe = pe
         self.cvalue = cvalue
