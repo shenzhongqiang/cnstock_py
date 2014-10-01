@@ -22,11 +22,11 @@ class LongLowerShadow(Filter):
                 return
 
             chgperc = (bar_today.close / bar_yest.close - 1) * 100
-            is_deep = bar_today.low < bar_today.close * 0.94
+            is_deep = bar_today.low < bar_today.close * 0.95
             small_body = abs(bar_today.close - bar_today.open) < \
                 bar_today.open * 0.02
 
-            if is_deep and small_body and chgperc > -0.02:
+            if is_deep and small_body and chgperc > -2:
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
                     pe=bar_today.pe, cvalue=bar_today.cvalue, value=bar_today.value))
         except Exception, e:
