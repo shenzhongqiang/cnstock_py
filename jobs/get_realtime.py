@@ -26,7 +26,7 @@ class Downloader(threading.Thread):
     def download_realtime(self, exsymbol):
         request = stock.utils.request.Request()
         url = "http://qt.gtimg.cn/q=" + exsymbol
-        if symbol in INDEX.values():
+        if exsymbol in INDEX.values():
             filepath = os.path.join(REAL_DIR['index'], exsymbol)
             request.download_file(url, filepath)
         else:

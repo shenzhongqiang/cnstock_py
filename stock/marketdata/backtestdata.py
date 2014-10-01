@@ -21,10 +21,6 @@ class BackTestData(MarketData):
     def get_data(self, exsymbol):
         history_by_today = self.get_history_by_date(exsymbol)
 
-        if len(history_by_today) < 2:
-            raise TooFewHistoryBars("%s has fewer than 2 history bars" \
-                % (exsymbol))
-
         bar_today = history_by_today[0]
         if bar_today.dt < self.dt:
             raise NoHistoryBar("no history bar for %s on %s" \

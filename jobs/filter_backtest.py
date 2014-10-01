@@ -45,6 +45,6 @@ class FilterMT:
         with open(outfile, 'w') as f:
             f.write(html)
 
-f = longuppershadow.LongUpperShadow
+f = longlowershadow.LongLowerShadow
 FilterMT(f, sys.argv[1]).run()
 

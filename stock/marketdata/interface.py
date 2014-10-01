@@ -7,6 +7,9 @@ from abc import *
 class NoHistoryBeforeDate(Exception):
     pass
 
+class TooFewBarsBeforeDate(Exception):
+    pass
+
 class MarketData:
     __metaclass__ = ABCMeta
 
@@ -33,6 +36,9 @@ class MarketData:
             raise NoHistoryBeforeDate("no history data for %s before %s" \
                 % (exsymbol, self.date))
 
+        if len(history) < 10:
+            raise TooFewBarsBeforeDate("fewer than 2 bars for %s before %s" \
+                % (exsymbol, self.date))
         return history
 
     # get all history bars in file
