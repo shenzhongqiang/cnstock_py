@@ -36,25 +36,16 @@ class Downloader(threading.Thread):
 
 if __name__ == "__main__":
     queue = Queue.Queue()
-    for i in range(20):
+    for i in range(10):
         t = Downloader(queue)
         t.setDaemon(True)
         t.start()
 
     # download stock symbols
     symbols = stock.utils.symbol_util.get_stock_symbols('all')
-    for symbol in symbols:
-        queue.put(symbol)
-
-    queue.join()
-
-    # download index symbols
     index_symbols = stock.utils.symbol_util.get_index_symbols()
-    for i in range(len(index_symbols)):
-        t = Downloader(queue)
-        t.setDaemon(True)
-        t.start()
-    for symbol in index_symbols:
+    symbols.extend(index_symbols)
+    for symbol in symbols:
         queue.put(symbol)
 
     queue.join()

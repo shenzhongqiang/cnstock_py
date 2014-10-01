@@ -47,18 +47,10 @@ if __name__ == "__main__":
 
     # download stock symbols
     symbols = stock.utils.symbol_util.get_stock_symbols('all')
+    index_symbols = stock.utils.symbol_util.get_index_symbols()
+    symbols.extend(index_symbols)
     for symbol in symbols:
         queue.put(symbol)
 
     queue.join()
 
-    # download index symbols
-    index_symbols = stock.utils.symbol_util.get_index_symbols()
-    for i in range(len(index_symbols)):
-        t = Downloader(queue)
-        t.setDaemon(True)
-        t.start()
-    for symbol in index_symbols:
-        queue.put(symbol)
-
-    queue.join()

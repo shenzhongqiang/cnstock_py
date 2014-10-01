@@ -45,7 +45,6 @@ class FilterMT:
         with open(outfile, 'w') as f:
             f.write(html)
 
-f = zhangting.ZhangTing
-#f = crossstar.CrossStar
+f = longuppershadow.LongUpperShadow
 FilterMT(f, sys.argv[1]).run()
 
