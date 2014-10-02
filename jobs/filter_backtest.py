@@ -56,6 +56,6 @@ for f in filters:
 env = Environment(loader=FileSystemLoader(TMPLDIR))
 template = env.get_template('stock_list.tmpl')
 html = template.render(stocks=result)
-outfile = os.path.join(OUTDIR, date + '.html')
+outfile = os.path.join(OUTDIR, 'backtest_' + date + '.html')
 with open(outfile, 'w') as f:
     f.write(html)
