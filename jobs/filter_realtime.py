@@ -32,15 +32,26 @@ class FilterMT:
         queue.join()
 
         output.sort(key=lambda x: x.chgperc, reverse=True)
+        return output
 
-        env = Environment(loader=FileSystemLoader(TMPLDIR))
-        template = env.get_template('stock_list.tmpl')
-        html = template.render(stocks=output)
-        dt = datetime.datetime.today()
-        date = dt.strftime("%y%m%d")
-        outfile = os.path.join(OUTDIR, date + '.html')
-        with open(outfile, 'w') as f:
-            f.write(html)
+filters = [
+    longlowershadow.LongLowerShadow,
+    longuppershadow.LongUpperShadow,
+    crossstar.CrossStar,
+    zhangting.ZhangTing,
+]
 
-f = crossstar.CrossStar
-FilterMT(f).run()
+dt = datetime.datetime.today()
+date = dt.strftime("%y%m%d")
+result = {}
+for f in filters:
+    output = FilterMT(f).run()
+    fname = f.__name__
+    result[fname] = output
+
+env = Environment(loader=FileSystemLoader(TMPLDIR))
+template = env.get_template('stock_list.tmpl')
+html = template.render(stocks=result)
+outfile = os.path.join(OUTDIR, date + '.html')
+with open(outfile, 'w') as f:
+    f.write(html)

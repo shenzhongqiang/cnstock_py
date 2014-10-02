@@ -10,17 +10,20 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
 </head>
 <body>
-    <h1>Total: {{ stocks|length }}</h1>
+    {% for fname, output in stocks.iteritems() %}
+    <p class="lead">{{ fname }}: {{ output|length }}</p>
     <table class="table">
         <thead>
             <th>symbol</th><th>cnname</th><th>chgperc</th><th>pe</th><th>cvalue</th><th>value</th>
         <thead>
         <tbody>
-        {% for s in stocks %}
+        {% for s in output %}
         <tr><td><a href="http://stockhtm.finance.qq.com/sstock/ggcx/{{ s.symbol }}.shtml?pgv_ref=fi_smartbox&_ver=2.0">{{ s.symbol }}</a></td><td>{{ s.cnname }}</td><td>{{ s.chgperc }}</td><td>{{ s.pe }}</td><td>{{ s.cvalue }}</td><td>{{ s.value }}</td></tr>
         {% endfor %}
         </tbody>
     </table>
+    <p></p>
+    {% endfor %}
     <script src="https://code.jquery.com/jquery.js"></script>
     <script src="static/js/bootstrap.min.js"></script>
 </body>
