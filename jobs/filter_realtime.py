@@ -42,6 +42,8 @@ filters = [
     longuppershadow.LongUpperShadow,
     crossstar.CrossStar,
     zhangting.ZhangTing,
+    lianzhang.LianZhang,
+    volup.VolUp,
 ]
 
 dt = datetime.datetime.today()

@@ -48,6 +48,7 @@ filters = [
     crossstar.CrossStar,
     zhangting.ZhangTing,
     lianzhang.LianZhang,
+    volup.VolUp,
 ]
 
 date = sys.argv[1]
