@@ -13,6 +13,9 @@ if len(sys.argv) < 2:
     sys.stderr.write('Usage: %s <date>\n' % sys.argv[0])
     sys.exit(1)
 
+if not os.path.isdir(OUTDIR):
+    os.makedirs(OUTDIR)
+
 class FilterMT:
     def __init__(self, f, date):
         self.f = f

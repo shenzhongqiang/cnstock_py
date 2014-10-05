@@ -9,6 +9,9 @@ import stock.utils.symbol_util
 import os.path
 import datetime
 
+if not os.path.isdir(OUTDIR):
+    os.makedirs(OUTDIR)
+
 class FilterMT:
     def __init__(self, f):
         self.f = f
