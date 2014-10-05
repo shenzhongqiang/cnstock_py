@@ -40,7 +40,7 @@ class Downloader(threading.Thread):
 
 if __name__ == "__main__":
     queue = Queue.Queue()
-    for i in range(20):
+    for i in range(10):
         t = Downloader(queue)
         t.setDaemon(True)
         t.start()
