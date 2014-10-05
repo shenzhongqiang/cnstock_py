@@ -5,7 +5,7 @@ class ZhangTing(Filter):
     def check(self, exsymbol):
         #print exsymbol
         try:
-            bars = []
+            bars = [0] * 3
             if isinstance(self.marketdata, realtimedata.RealTimeData):
                 bars[0] = self.marketdata.get_data(exsymbol)
                 history = self.marketdata.get_history_by_date(exsymbol)
