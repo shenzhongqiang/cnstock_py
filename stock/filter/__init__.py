@@ -1,1 +1,3 @@
-__all__ = ['zhangting', 'crossstar', 'longuppershadow', 'longlowershadow']
+__all__ = ['zhangting', 'crossstar', \
+    'longuppershadow', 'longlowershadow', \
+    'lianzhang']

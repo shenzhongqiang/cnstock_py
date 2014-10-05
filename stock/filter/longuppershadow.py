@@ -15,10 +15,11 @@ class LongUpperShadow(Filter):
                 bar_yest = history[1]
 
             vol = bar_today.volume
+            zt_price = round(bar_yest.close * 1.1 * 100) / 100
             if vol == 0:
                 return
 
-            if bar_today.high == bar_today.low:
+            if zt_price == bar_today.close:
                 return
 
             chgperc = (bar_today.close / bar_yest.close - 1) * 100

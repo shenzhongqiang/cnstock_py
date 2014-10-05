@@ -44,6 +44,7 @@ filters = [
     longuppershadow.LongUpperShadow,
     crossstar.CrossStar,
     zhangting.ZhangTing,
+    lianzhang.LianZhang,
 ]
 
 date = sys.argv[1]

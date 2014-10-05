@@ -15,18 +15,20 @@ class LongLowerShadow(Filter):
                 bar_yest = history[1]
 
             vol = bar_today.volume
+            zt_price = round(bar_yest.close * 1.1 * 100) / 100
             if vol == 0:
                 return
 
-            if bar_today.high == bar_today.low:
+            if zt_price == bar_today.close:
                 return
 
             chgperc = (bar_today.close / bar_yest.close - 1) * 100
-            is_deep = bar_today.low < bar_today.close * 0.95
-            small_body = abs(bar_today.close - bar_today.open) < \
-                bar_today.open * 0.02
+            is_deep = bar_today.low < bar_today.open * 0.94
+            is_back = bar_today.close > bar_yest.close * 0.98
+            small_body = bar_today.close < bar_today.open * 1.05 \
+                and bar_today.close > bar_today.open * 0.95
 
-            if is_deep and small_body and chgperc > -2:
+            if is_deep and is_back and small_body:
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
                     pe=bar_today.pe, cvalue=bar_today.cvalue, value=bar_today.value))
         except Exception, e:
