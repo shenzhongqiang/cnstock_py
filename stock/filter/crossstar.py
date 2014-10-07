@@ -23,9 +23,10 @@ class CrossStar(Filter):
             if bar_today.high == bar_today.low:
                 return
 
-            chgperc = bar1.close / bar2.close - 1
+            chg_yest = bar1.close / bar2.close - 1
+            chgperc = (bar_today.close / bar1.close - 1) * 100
             crossed = abs(bar_today.close - bar_today.open) / bar_today.close < 0.05
-            if crossed and chgperc > 0.08:
+            if crossed and chg_yest > 0.08:
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
                     pe=bar_today.pe, cvalue=bar_today.cvalue, value=bar_today.value))
         except Exception, e:
