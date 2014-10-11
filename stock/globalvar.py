@@ -32,4 +32,4 @@ INDEX = {
     'cy': 'sz399006',
 }
 
-
+DBFILE = os.path.join(ROOTDIR, 'cnstock.db')
