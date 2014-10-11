@@ -14,12 +14,12 @@ class TestTradeOrder(unittest.TestCase):
 #        engine = create_engine('sqlite:///' + DBFILE, echo=False)
 #        Base.metadata.drop_all(engine)
 #
-    def setup(self):
-        engine = create_engine('sqlite:///' + DBFILE, echo=False)
+    def setUp(self):
+        engine = create_engine('sqlite:///' + DBFILE, echo=True)
         Base.metadata.create_all(engine)
 
-    def teardown(self):
-        engine = create_engine('sqlite:///' + DBFILE, echo=False)
+    def tearDown(self):
+        engine = create_engine('sqlite:///' + DBFILE, echo=True)
         Base.metadata.drop_all(engine)
 
     def test_buy(self):

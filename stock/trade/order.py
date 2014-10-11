@@ -43,7 +43,7 @@ def sell(exsymbol, price, buy_date, amount):
     session.delete(pos)
     d = datetime.strptime(buy_date, '%y%m%d')
     tranx = Tranx(exsymbol=exsymbol, price=price, date=d, \
-        amount=amount, type='buy')
+        amount=amount, type='sell')
     session.add(tranx)
     session.commit()
 
