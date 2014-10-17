@@ -12,30 +12,10 @@ import datetime
 if not os.path.isdir(OUTDIR):
     os.makedirs(OUTDIR)
 
-class FilterMT:
-    def __init__(self, f):
-        self.f = f
-
-    def run(self):
-        queue = Queue.Queue()
-        lock = threading.RLock()
-        output = []
-        marketdata = realtimedata.RealTimeData(lock=lock)
-
-        for i in range(1):
-            t = self.f(queue, marketdata, output)
-            t.setDaemon(True)
-            t.start()
-
-        # download stock symbols
-        symbols = stock.utils.symbol_util.get_stock_symbols('all')
-        for symbol in symbols:
-            queue.put(symbol)
-
-        queue.join()
-
-        output.sort(key=lambda x: x.chgperc, reverse=True)
-        return output
+dt = datetime.datetime.today()
+date = dt.strftime("%y%m%d")
+lock = threading.RLock()
+marketdata = realtimedata.RealTimeData(lock=lock)
 
 filters = [
     longlowershadow.LongLowerShadow,
@@ -46,11 +26,9 @@ filters = [
     volup.VolUp,
 ]
 
-dt = datetime.datetime.today()
-date = dt.strftime("%y%m%d")
 result = {}
 for f in filters:
-    output = FilterMT(f).run()
+    output = filter_mt.FilterMT(f, marketdata).run()
     fname = f.__name__
     result[fname] = output
 
