@@ -26,3 +26,7 @@ class TestSymbolUtil(unittest.TestCase):
         self.assertTrue(os.path.isfile(SYM['sh']))
         self.assertTrue(os.path.isfile(SYM['sz']))
         self.assertTrue(os.path.isfile(SYM['cy']))
+
+    def test_get_trading_dates(self):
+        dates = get_trading_dates()
+        self.assertTrue(len(dates) > 0)
