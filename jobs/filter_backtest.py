@@ -20,8 +20,8 @@ lock = threading.RLock()
 marketdata = backtestdata.BackTestData(lock=lock, date=date)
 
 filters = [
-    longlowershadow.LongLowerShadow,
     longuppershadow.LongUpperShadow,
+    longlowershadow.LongLowerShadow,
     crossstar.CrossStar,
     zhangting.ZhangTing,
     lianzhang.LianZhang,
@@ -30,7 +30,7 @@ filters = [
 
 result = {}
 for f in filters:
-    output = filter_mt.FilterMT(f, marketdata).run()
+    output = filter_mt.FilterMT(f, marketdata).filter_stock()
     fname = f.__name__
     result[fname] = output
 

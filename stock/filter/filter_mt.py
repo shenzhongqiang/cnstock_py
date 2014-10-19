@@ -6,7 +6,7 @@ class FilterMT:
         self.filter_cls = filter_cls
         self.marketdata = marketdata
 
-    def run(self):
+    def filter_stock(self, params):
         queue = Queue.Queue()
         output = []
 
