@@ -6,11 +6,12 @@ import Queue
 class Filter(threading.Thread):
     __metaclass__ = ABCMeta
 
-    def __init__(self, queue, marketdata, output):
+    def __init__(self, queue, marketdata, output, params=None):
         threading.Thread.__init__(self)
         self.queue = queue
         self.marketdata = marketdata
         self.output = output
+        self.params = params
 
     def run(self):
         while True:
@@ -24,7 +25,7 @@ class Filter(threading.Thread):
 
 class CheckResult:
     def __init__(self, exsymbol, chgperc=None, cnname=None, \
-        pe=None, cvalue=None, value=None):
+        pe=None, cvalue=None, value=None, bar_today=None):
         self.exsymbol = exsymbol
         self.chgperc = chgperc
         self.symbol = exsymbol[2:]
@@ -32,5 +33,4 @@ class CheckResult:
         self.pe = pe
         self.cvalue = cvalue
         self.value = value
-
-
+        self.bar_today = bar_today

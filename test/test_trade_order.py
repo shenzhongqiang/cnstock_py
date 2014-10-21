@@ -37,3 +37,7 @@ class TestTradeOrder(unittest.TestCase):
         pos = get_positions()
         self.assertTrue(len(pos) == 1)
 
+    def test_has_position(self):
+        buy('sh500001', 20.0, '140901', 100)
+        has_pos = has_position('sh500001')
+        self.assertTrue(has_pos)

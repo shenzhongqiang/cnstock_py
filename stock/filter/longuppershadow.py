@@ -1,7 +1,17 @@
 from stock.filter.interface import Filter, CheckResult
+from stock.globalvar import *
 from stock.marketdata import *
+import logging
+import logging.config
+
+logging.config.fileConfig(LOGCONF)
+logger = logging.getLogger(__name__)
 
 class LongUpperShadow(Filter):
+    def __init__(self, queue, marketdata, output, \
+        params={"high": 1.04, "body": 0.02, "chg": 0.06}):
+        super(LongUpperShadow, self).__init__(queue, marketdata, output, params)
+
     def check(self, exsymbol):
         #print exsymbol
         try:
@@ -26,12 +36,19 @@ class LongUpperShadow(Filter):
 
             chgperc = (bar_today.close / bar1.close - 1) * 100
             chg_yest = bar1.close / bar2.close - 1
-            is_high = bar_today.high > bar_today.open * 1.04
+            params = self.params
+            is_high = bar_today.high > bar_today.open * params["high"]
             small_body = abs(bar_today.close - bar_today.open) < \
-                bar_today.open * 0.02
-            if chg_yest > 0.06 and is_high and small_body:
-                self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
-                    pe=bar_today.pe, cvalue=bar_today.cvalue, value=bar_today.value))
+                bar_today.open * params["body"]
+            if chg_yest > params["chg"] and is_high and small_body:
+                self.output.append(CheckResult(
+                    exsymbol, \
+                    chgperc=chgperc, \
+                    pe=bar_today.pe, \
+                    cvalue=bar_today.cvalue, \
+                    value=bar_today.value, \
+                    bar_today=bar_today))
+        except IOError, e:
+            logger.error("cannot open: %s" % (e.filename))
         except Exception, e:
-            print e.message
-
+            logger.error("%s: %s" % (type(e), e.message))

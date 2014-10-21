@@ -7,6 +7,11 @@ from jinja2 import Environment, FileSystemLoader
 import stock.utils.symbol_util
 import os.path
 import sys
+import logging
+import logging.config
+
+logging.config.fileConfig(LOGCONF)
+logger = logging.getLogger(__name__)
 
 if len(sys.argv) < 2:
     sys.stderr.write('Usage: %s <date>\n' % sys.argv[0])
@@ -30,8 +35,8 @@ filters = [
 
 result = {}
 for f in filters:
-    output = filter_mt.FilterMT(f, marketdata).filter_stock()
     fname = f.__name__
+    output = filter_mt.FilterMT(f, marketdata).filter_stock()
     result[fname] = output
 
 env = Environment(loader=FileSystemLoader(TMPLDIR))

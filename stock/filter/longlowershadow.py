@@ -1,5 +1,11 @@
 from stock.filter.interface import Filter, CheckResult
+from stock.globalvar import *
 from stock.marketdata import *
+import logging
+import logging.config
+
+logging.config.fileConfig(LOGCONF)
+logger = logging.getLogger(__name__)
 
 class LongLowerShadow(Filter):
     def check(self, exsymbol):
@@ -31,7 +37,7 @@ class LongLowerShadow(Filter):
             if is_deep and is_back and small_body:
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
                     pe=bar_today.pe, cvalue=bar_today.cvalue, value=bar_today.value))
+        except IOError, e:
+            logger.error("cannot open: %s" % (e.filename))
         except Exception, e:
-            print e.message
-
-
+            logger.error("%s: %s" % (type(e), e.message))

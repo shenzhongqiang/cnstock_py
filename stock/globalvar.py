@@ -33,3 +33,4 @@ INDEX = {
 }
 
 DBFILE = os.path.join(ROOTDIR, 'cnstock.db')
+LOGCONF = os.path.join(ROOTDIR, 'conf', 'logging.conf')

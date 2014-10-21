@@ -1,5 +1,11 @@
 from stock.filter.interface import Filter, CheckResult
+from stock.globalvar import *
 from stock.marketdata import *
+import logging
+import logging.config
+
+logging.config.fileConfig(LOGCONF)
+logger = logging.getLogger(__name__)
 
 class LianZhang(Filter):
     def check(self, exsymbol):
@@ -25,6 +31,7 @@ class LianZhang(Filter):
             if wuliang:
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
                     pe=bars[0].pe, cvalue=bars[0].cvalue, value=bars[0].value))
+        except IOError, e:
+            logger.error("cannot open: %s" % (e.filename))
         except Exception, e:
-            print e.message
-
+            logger.error("%s: %s" % (type(e), e.message))
