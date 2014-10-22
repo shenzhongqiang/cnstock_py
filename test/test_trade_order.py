@@ -17,27 +17,28 @@ class TestTradeOrder(unittest.TestCase):
     def setUp(self):
         engine = create_engine('sqlite:///' + DBFILE, echo=True)
         Base.metadata.create_all(engine)
+        self.order = Order(engine)
 
     def tearDown(self):
         engine = create_engine('sqlite:///' + DBFILE, echo=True)
         Base.metadata.drop_all(engine)
 
     def test_buy(self):
-        buy('sh500001', 20.0, '140901', 100)
+        self.order.buy('sh500001', 20.0, '140901', 100)
         with self.assertRaises(PositionAlreadyExists):
-            buy('sh500001', 20.0, '140902', 200)
+            self.order.buy('sh500001', 20.0, '140902', 200)
         with self.assertRaises(NotEnoughSharesToSell):
-            sell('sh500001', 20.0, '140902', 200)
+            self.order.sell('sh500001', 20.0, '140902', 200)
         with self.assertRaises(PositionNotExists):
-            sell('sh500002', 20.0, '140902', 200)
-        sell('sh500001', 25.0, '140902', 100)
+            self.order.sell('sh500002', 20.0, '140902', 200)
+        self.order.sell('sh500001', 25.0, '140902', 100)
 
     def test_get_positions(self):
-        buy('sh500001', 20.0, '140901', 100)
-        pos = get_positions()
+        self.order.buy('sh500001', 20.0, '140901', 100)
+        pos = self.order.get_positions()
         self.assertTrue(len(pos) == 1)
 
     def test_has_position(self):
-        buy('sh500001', 20.0, '140901', 100)
-        has_pos = has_position('sh500001')
+        self.order.buy('sh500001', 20.0, '140901', 100)
+        has_pos = self.order.has_position('sh500001')
         self.assertTrue(has_pos)
