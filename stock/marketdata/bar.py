@@ -27,3 +27,6 @@ class Bar:
         self.ampl = ampl
         self.cvalue = cvalue
         self.value = value
+
+    def __repr__(self):
+        return "<stock.marketdata.bar.Bar: %s %f>" % (self.date, self.close)

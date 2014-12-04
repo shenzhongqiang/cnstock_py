@@ -1,14 +1,19 @@
+# -*- coding: utf-8 -*-
+
 import threading
 import Queue
 from stock.filter import *
 from stock.utils.request import *
 from stock.marketdata import *
+from stock.marketdata.bar import Bar
 from stock.utils.symbol_util import *
 from stock.globalvar import *
-from datetime import datetime
+import datetime
 import re
 import sys
 import math
+import json
+import os.path
 
 def get_ipo_info(exsymbol):
     symbol = exsymbol[2:]
@@ -21,7 +26,7 @@ def get_ipo_info(exsymbol):
     i = 0
     price = 0
     total = 0
-    zhuan = 0
+    zhuan = get_ipo_zhuan(exsymbol)
     while i < len(lines):
         if state == 0 and \
             re.search('<table cellpadding="0" cellspacing="0" class="tab1">', lines[i]):
@@ -43,22 +48,23 @@ def get_ipo_info(exsymbol):
                 total = re.sub(r',' , '', total)
                 total = int(total)
                 i = i + 9
-                continue
-            if tr_count == 8:
-                i = i + 5
-                zhuan = lines[i].strip()
-                zhuan = re.sub(r'&nbsp;', '', zhuan)
-                zhuan = 0 if zhuan == '' else int(zhuan)
-                i = i + 9
                 state = 2
                 continue
 
         i = i + 1
     return (price, total, zhuan)
 
+def get_ipo_zhuan(exsymbol):
+    symbol = exsymbol[2:]
+    url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=NS&sty=NSD&stat=3&code=%s" % symbol
+    req = Request()
+    result = req.send_request(url)
+    result = re.sub('^\(|\)$', '', result)
+    data = json.loads(result)[0]
+    return int(data[u'老股转让数量'])
 
-if __name__ == "__main__":
-    f = open('ipolist', 'r')
+def get_ipo_list():
+    f = open(IPOLIST, 'r')
     content = f.read()
     f.close()
     lines = content.split('\n')
@@ -66,7 +72,112 @@ if __name__ == "__main__":
     while i < len(lines) - 1:
         line = lines[i]
         exsymbol = line.split(',')[0]
-        print exsymbol
         (price, total, zhuan) = get_ipo_info(exsymbol)
-        print "%f, %d, %d" % (price, total, zhuan)
+        print "%s,%f,%d,%d" % (exsymbol, price, total, zhuan)
         i = i + 1
+
+def get_stock_history():
+    f = open(IPOLIST, 'r')
+    content = f.read()
+    f.close()
+    lines = content.split('\n')
+    req = Request()
+    i = 0
+    while i < len(lines) - 1:
+        line = lines[i]
+        exsymbol = line.split(',')[0]
+        url = 'http://data.gtimg.cn/flashdata/hushen/daily/14/%s.js' % exsymbol
+        filepath = os.path.join(IPO_DIR, exsymbol)
+        req.download_file(url, filepath)
+        print "downloaded %s" % exsymbol
+        i = i + 1
+
+def get_stock_data(exsymbol):
+    history = get_history_in_file(exsymbol)
+    print history
+
+def get_history_in_file(exsymbol):
+    file = os.path.join(IPO_DIR, exsymbol)
+    f = open(file, "r")
+    contents = f.read()
+    f.close()
+    lines = contents.split('\\n\\\n')
+
+    lock = threading.RLock()
+    history = []
+    start = 0
+    i = 1
+    while i <= len(lines) - 2:
+        line = lines[i]
+        (date, o, close, high, low, volume) = line.split(' ')
+        dt = datetime.datetime.strptime(date, "%y%m%d")
+        bar = Bar(lock, exsymbol, date=date, dt=dt, open=float(o), \
+            close=float(close), high=float(high), low=float(low), \
+            volume=float(volume))
+        history.append(bar)
+        i = i + 1
+
+    return history
+
+def get_ipo_symbol_table():
+    f = open(IPOLIST, 'r')
+    content = f.read()
+    f.close()
+    lines = content.split('\n')
+    table = {}
+    i = len(lines) - 2
+    while i >= 1:
+        line = lines[i]
+        (exsymbol, price, total) = line.split(",")[0:3]
+        table[exsymbol] = {'price': float(price), 'total': int(total)/100}
+        i = i - 1
+
+    return table
+
+def get_accu_volume(history, i):
+    total = 0
+    k = 0
+    while k <= i:
+        total += history[k].volume
+        k = k + 1
+    return total
+
+def get_max_price(history, i):
+    num = 30
+    k = i + 1
+    max_price = 0
+    max_i = 0
+    while k <= i + num and k < len(history):
+        if history[k].close > max_price:
+            max_price = history[k].close
+            max_i = k
+        k = k + 1
+
+    return (max_i, max_price)
+
+
+if __name__ == "__main__":
+    table = get_ipo_symbol_table()
+    pl = 0.0
+    for (exsymbol,v) in table.iteritems():
+        history = get_history_in_file(exsymbol)
+        i = 1
+        while i < len(history):
+            zt_price = round(history[i-1].close * 1.1 * 100) /100
+            if history[i].close != zt_price:
+                break
+            i = i + 1
+
+        if i < len(history) - 1:
+            accu_vol = get_accu_volume(history, i)
+            ipo_vol = v['total']
+            perc = accu_vol/ipo_vol
+            (max_i, max_price) = get_max_price(history, i)
+            max_vol = get_accu_volume(history, max_i)
+            max_perc = max_vol / ipo_vol
+            price_chg = max_price / history[i].close - 1
+            pl += price_chg
+            #print "%f,%f" % (history[i].close, max_price)
+            print "%s,%d,%d,%f,%f,%.1f%%" % (exsymbol, i, max_i, perc, max_perc, price_chg * 100)
+
+    print pl

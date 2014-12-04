@@ -26,6 +26,9 @@ SYM = {
     'id':  os.path.join(SYMDIR, 'symbols.id'),
 }
 
+IPO_DIR = os.path.join(ROOTDIR, 'data/ipo')
+IPOLIST = os.path.join(IPO_DIR, 'list')
+
 INDEX = {
     'sh': 'sh000001',
     'sz': 'sz399001',
