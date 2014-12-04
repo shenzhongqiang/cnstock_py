@@ -2,7 +2,7 @@
 
 import threading
 import Queue
-from stock.filter import *
+from stock.filter.utils import *
 from stock.utils.request import *
 from stock.marketdata import *
 from stock.marketdata.bar import Bar
@@ -163,7 +163,9 @@ if __name__ == "__main__":
         history = get_history_in_file(exsymbol)
         i = 1
         while i < len(history):
-            zt_price = round(history[i-1].close * 1.1 * 100) /100
+            zt_price = get_zt_price(history[i-1].close)
+            if exsymbol == "sz300391":
+                print "%d:%f" % (i, zt_price)
             if history[i].close != zt_price:
                 break
             i = i + 1

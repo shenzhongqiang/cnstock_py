@@ -1,4 +1,5 @@
 from stock.filter.interface import Filter, CheckResult
+from stock.filter.utils import *
 from stock.globalvar import *
 from stock.marketdata import *
 import logging
@@ -27,7 +28,7 @@ class LongUpperShadow(Filter):
                 bar2 = history[2]
 
             vol = bar_today.volume
-            zt_price = round(bar1.close * 1.1 * 100) / 100
+            zt_price = get_zt_price(bar1.close)
             if vol == 0:
                 return
 

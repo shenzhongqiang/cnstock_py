@@ -1,4 +1,5 @@
 from stock.filter.interface import Filter, CheckResult
+from stock.filter.utils import *
 from stock.globalvar import *
 from stock.marketdata import *
 import logging
@@ -21,7 +22,7 @@ class ZhangTing(Filter):
                 bars[0:3] = history[0:3]
 
             vol = bars[0].volume
-            zt_price = round(bars[1].close * 1.1 * 100) / 100
+            zt_price = get_zt_price(bars[1].close)
             if vol == 0:
                 return
 
@@ -29,7 +30,7 @@ class ZhangTing(Filter):
                 return
 
             chgperc = (bars[0].close / bars[1].close - 1) * 100
-            yest_zt_price = round(bars[2].close * 1.1 * 100) / 100
+            yest_zt_price = get_zt_price(bars[2].close)
             if yest_zt_price == bars[1].close:
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
                     pe=bars[0].pe, cvalue=bars[0].cvalue, value=bars[0].value))

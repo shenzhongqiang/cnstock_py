@@ -1,4 +1,5 @@
 from stock.filter.interface import Filter, CheckResult
+from stock.filter.utils import *
 from stock.globalvar import *
 from stock.marketdata import *
 import logging
@@ -22,7 +23,7 @@ class LianZhang(Filter):
 
             wuliang = True
             for i in range(5):
-                zt_price = round(bars[i+1].close * 1.1 * 100) / 100
+                zt_price = get_zt_price(bars[i+1].close)
                 today_close = bars[i].close
                 if zt_price != today_close:
                     wuliang = False
