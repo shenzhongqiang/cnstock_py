@@ -64,7 +64,7 @@ def get_ipo_zhuan(exsymbol):
     return int(data[u'老股转让数量'])
 
 def get_ipo_list():
-    f = open(IPOLIST, 'r')
+    f = open(os.path.join(IPO_DIR, '2012'), 'r')
     content = f.read()
     f.close()
     lines = content.split('\n')
@@ -77,7 +77,7 @@ def get_ipo_list():
         i = i + 1
 
 def get_stock_history():
-    f = open(IPOLIST, 'r')
+    f = open(os.path.join(IPO_DIR, '2012'), 'r')
     content = f.read()
     f.close()
     lines = content.split('\n')
@@ -86,7 +86,7 @@ def get_stock_history():
     while i < len(lines) - 1:
         line = lines[i]
         exsymbol = line.split(',')[0]
-        url = 'http://data.gtimg.cn/flashdata/hushen/daily/14/%s.js' % exsymbol
+        url = 'http://data.gtimg.cn/flashdata/hushen/daily/12/%s.js' % exsymbol
         filepath = os.path.join(IPO_DIR, exsymbol)
         req.download_file(url, filepath)
         print "downloaded %s" % exsymbol
@@ -120,7 +120,7 @@ def get_history_in_file(exsymbol):
     return history
 
 def get_ipo_symbol_table():
-    f = open(IPOLIST, 'r')
+    f = open(os.path.join(IPO_DIR, '2012'), 'r')
     content = f.read()
     f.close()
     lines = content.split('\n')
@@ -155,8 +155,7 @@ def get_max_price(history, i):
 
     return (max_i, max_price)
 
-
-if __name__ == "__main__":
+def get_max_profit():
     table = get_ipo_symbol_table()
     pl = 0.0
     for (exsymbol,v) in table.iteritems():
@@ -164,8 +163,6 @@ if __name__ == "__main__":
         i = 1
         while i < len(history):
             zt_price = get_zt_price(history[i-1].close)
-            if exsymbol == "sz300391":
-                print "%d:%f" % (i, zt_price)
             if history[i].close != zt_price:
                 break
             i = i + 1
@@ -183,3 +180,31 @@ if __name__ == "__main__":
             print "%s,%d,%d,%f,%f,%.1f%%" % (exsymbol, i, max_i, perc, max_perc, price_chg * 100)
 
     print pl
+
+def get_profit_volume():
+    table = get_ipo_symbol_table()
+    nod = 10
+    pl = 0.0
+    for (exsymbol,v) in table.iteritems():
+        history = get_history_in_file(exsymbol)
+        i = 1
+        while i < len(history):
+            zt_price = get_zt_price(history[i-1].close)
+            if history[i].close != zt_price:
+                break
+            i = i + 1
+
+        if i + 9 <= len(history) - 1:
+            accu_vol = get_accu_volume(history, i - 1)
+            next_vol = get_accu_volume(history, i + 9)
+            ipo_vol = v['total']
+            accu_perc = accu_vol/ipo_vol
+            next_perc = (next_vol - accu_vol) / ipo_vol
+            accu_chg = history[i + 9].close / history[i - 1].close - 1
+            pl += accu_chg
+            #print "%f,%f" % (history[i].close, max_price)
+            print "%s,%f,%f,%.1f%%" % (exsymbol, accu_perc, next_perc, accu_chg * 100)
+
+    print pl
+if __name__ == "__main__":
+    get_max_profit()

@@ -31,6 +31,7 @@ filters = [
     zhangting.ZhangTing,
     lianzhang.LianZhang,
     volup.VolUp,
+    high.High,
 ]
 
 result = {}
