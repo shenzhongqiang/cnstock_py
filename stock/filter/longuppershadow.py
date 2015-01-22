@@ -32,6 +32,9 @@ class LongUpperShadow(Filter):
             if vol == 0:
                 return
 
+            if len(history) < 100:
+                return
+
             if zt_price == bar_today.close:
                 return
 

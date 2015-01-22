@@ -26,6 +26,9 @@ class CrossStar(Filter):
             if vol == 0:
                 return
 
+            if len(history) < 100:
+                return
+
             if bar_today.high == bar_today.low:
                 return
 

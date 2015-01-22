@@ -21,6 +21,9 @@ class LianZhang(Filter):
                 history = self.marketdata.get_history_by_date(exsymbol)
                 bars[0:6] = history[0:6]
 
+            if len(history) < 100:
+                return
+
             wuliang = True
             for i in range(5):
                 zt_price = get_zt_price(bars[i+1].close)
