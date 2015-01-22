@@ -1,0 +1,11 @@
+server {
+    error_log /var/log/nginx/stock.log debug;
+    root /home/ubuntu/projects/cnstock_py/html;
+    index index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+        autoindex on;
+    }
+
+}
