@@ -12,35 +12,32 @@ class LongLowerShadow(Filter):
     def check(self, exsymbol):
         #print exsymbol
         try:
+            bars = [0] * 5
             if isinstance(self.marketdata, realtimedata.RealTimeData):
-                bar_today = self.marketdata.get_data(exsymbol)
+                bars[0] = self.marketdata.get_data(exsymbol)
                 history = self.marketdata.get_history_by_date(exsymbol)
-                bar_yest = history[0]
+                bars[1:5] = history[0:4]
             elif isinstance(self.marketdata, backtestdata.BackTestData):
                 history = self.marketdata.get_history_by_date(exsymbol)
-                bar_today = history[0]
-                bar_yest = history[1]
+                bars[0:5] = history[0:5]
 
-            vol = bar_today.volume
-            zt_price = get_zt_price(bar_yest.close)
+            vol = bars[0].volume
+            zt_price = get_zt_price(bars[1].close)
             if vol == 0:
                 return
 
-            if len(history) < 100:
+            if zt_price == bars[0].close:
                 return
 
-            if zt_price == bar_today.close:
-                return
+            chgperc = (bars[0].close / bars[1].close - 1) * 100
+            lower_low = (bars[0].low < bars[1].low) and \
+                (bars[1].low < bars[2].low)
+            small_body = abs(bars[0].close - bars[0].open) \
+                < (bars[0].high - bars[0].low) * 0.2
 
-            chgperc = (bar_today.close / bar_yest.close - 1) * 100
-            is_deep = bar_today.low < bar_today.open * 0.94
-            is_back = bar_today.close > bar_yest.close * 0.98
-            small_body = bar_today.close < bar_today.open * 1.05 \
-                and bar_today.close > bar_today.open * 0.95
-
-            if is_deep and is_back and small_body:
+            if lower_low and small_body:
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
-                    pe=bar_today.pe, cvalue=bar_today.cvalue, value=bar_today.value))
+                    pe=bars[0].pe, cvalue=bars[0].cvalue, value=bars[0].value))
         except IOError, e:
             logger.error("cannot open: %s" % (e.filename))
         except Exception, e:

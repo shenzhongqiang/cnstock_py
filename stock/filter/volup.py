@@ -24,9 +24,6 @@ class VolUp(Filter):
             if vol == 0:
                 return
 
-            if len(history) < 100:
-                return
-
             if bars[0].high == bars[0].low:
                 return
 
