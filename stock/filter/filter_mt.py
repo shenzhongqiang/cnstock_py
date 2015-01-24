@@ -15,7 +15,7 @@ class FilterMT:
             t.setDaemon(True)
             t.start()
 
-        # download stock symbols
+        # get all stock symbols
         symbols = stock.utils.symbol_util.get_stock_symbols('all')
         for symbol in symbols:
             queue.put(symbol)
