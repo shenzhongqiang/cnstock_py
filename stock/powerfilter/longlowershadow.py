@@ -38,8 +38,9 @@ class LongLowerShadow:
                     (bars[1].low < bars[2].low)
                 small_body = abs(bars[0].close - bars[0].open) \
                     < (bars[0].high - bars[0].low) * 0.2
-
-                if lower_low and small_body:
+                small_range = (bars[0].high - bars[0].low) \
+                    < bars[0].close * 0.03
+                if lower_low and small_body and not small_range:
                     basket.append({'exsymbol': exsymbol, 'bars': bars})
 
             except IOError, e:
