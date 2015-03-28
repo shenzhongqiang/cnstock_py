@@ -85,3 +85,23 @@ def download_symbols():
     f_sz.close()
     f_cy.close()
 
+def is_symbol_cy(symbol):
+    patt = re.compile('^sz3')
+    if patt.search(symbol) and symbol != INDEX['cy']:
+        return True
+    else:
+        return False
+
+def is_symbol_sh(symbol):
+    patt = re.compile('^sh')
+    if patt.search(symbol) and symbol != INDEX['sh']:
+        return True
+    else:
+        return False
+
+def is_symbol_sz(symbol):
+    patt = re.compile('^sz0')
+    if patt.search(symbol) and symbol != INDEX['sz']:
+        return True
+    else:
+        return False

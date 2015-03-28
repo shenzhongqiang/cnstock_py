@@ -1,1 +1,1 @@
-__all__ = ['longlowershadow']
+__all__ = ['longlowershadow', 'longuppershadow', 'strong']

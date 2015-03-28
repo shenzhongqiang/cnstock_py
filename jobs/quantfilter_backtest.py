@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import threading
 from stock.globalvar import *
-from stock.powerfilter import *
+from stock.quant import *
 from stock.marketdata import *
 from jinja2 import Environment, FileSystemLoader
 import stock.utils.symbol_util
@@ -25,9 +25,7 @@ lock = threading.RLock()
 marketdata = backtestdata.BackTestData(lock=lock, date=date)
 
 filters = [
-    longlowershadow.LongLowerShadow,
-    longuppershadow.LongUpperShadow,
-    strong.Strong,
+    covar.CoVar
 ]
 
 result = {}
@@ -37,9 +35,10 @@ for f in filters:
     output = f(marketdata).check(exsymbols)
     result[fname] = output
 
-env = Environment(loader=FileSystemLoader(TMPLDIR))
-template = env.get_template('stock_list.tmpl')
-html = template.render(stocks=result)
-outfile = os.path.join(OUTDIR, 'power_backtest_' + date + '.html')
-with open(outfile, 'w') as f:
-    f.write(html)
+#env = Environment(loader=FileSystemLoader(TMPLDIR))
+#template = env.get_template('stock_list.tmpl')
+#html = template.render(stocks=result)
+#outfile = os.path.join(OUTDIR, 'backtest_' + date + '.html')
+#with open(outfile, 'w') as f:
+#    f.write(html)
+#

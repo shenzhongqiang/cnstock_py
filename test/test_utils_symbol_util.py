@@ -30,3 +30,21 @@ class TestSymbolUtil(unittest.TestCase):
     def test_get_trading_dates(self):
         dates = get_trading_dates()
         self.assertTrue(len(dates) > 0)
+
+    def test_is_symbol_cy(self):
+        res = is_symbol_cy('sh600005')
+        self.assertTrue(res == False)
+        res = is_symbol_cy('sz300001')
+        self.assertTrue(res == True)
+
+    def test_is_symbol_sh(self):
+        res = is_symbol_sh('sh600005')
+        self.assertTrue(res == True)
+        res = is_symbol_sh('sz000001')
+        self.assertTrue(res == False)
+
+    def test_is_symbol_sz(self):
+        res = is_symbol_sz('sz000005')
+        self.assertTrue(res == True)
+        res = is_symbol_sz('sz300001')
+        self.assertTrue(res == False)

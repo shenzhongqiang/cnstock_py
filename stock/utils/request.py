@@ -1,5 +1,11 @@
 import urllib
 import urllib2
+import logging
+import logging.config
+from stock.globalvar import *
+
+logging.config.fileConfig(LOGCONF)
+logger = logging.getLogger(__name__)
 
 class RequestError(Exception):
     pass
@@ -20,9 +26,11 @@ class Request:
                     raise RequestError('HTTP code is not 200. Error sending request to url: ' + url)
                 return response.read()
             except urllib2.URLError, e:
-                print "Request failed for %s with reason: %s" % (url, e.reason)
+                logger.error("Request failed for %s with reason: %s" % (url, e.reason))
             except RequestError, e:
-                print "Request failed for %s with reason: %s" % (url, e.reason)
+                logger.error("Request failed for %s with reason: %s" % (url, e.reason))
+            except:
+                logger.error("Unknown error: %s" % str(e))
             i = i + 1
 
     def download_file(self, url, path):

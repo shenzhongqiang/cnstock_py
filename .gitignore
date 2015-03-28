@@ -3,3 +3,4 @@ data/
 *.pyc
 *.db
 .DS_Store
+*.swp

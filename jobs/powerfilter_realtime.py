@@ -27,6 +27,8 @@ if not os.path.isdir(OUTDIR):
 
 filters = [
     longlowershadow.LongLowerShadow,
+    longuppershadow.LongUpperShadow,
+    strong.Strong,
 ]
 
 result = {}
