@@ -48,7 +48,7 @@ class MarketData:
         today_date = self.date
 
         # read from cache first
-        contents = self.__class__.r.get(exsymbol):
+        contents = self.__class__.r.get(exsymbol)
         if contents == None:
             file = ''
             if exsymbol in INDEX.values():
