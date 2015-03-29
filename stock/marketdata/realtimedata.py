@@ -33,6 +33,7 @@ class RealTimeData(MarketData):
             f = open(file, "r")
             contents = f.read()
             f.close()
+            self.__class__.r.set(exsymbol, contents)
 
         # get exsymbol
         m = re.match(r"v_(.*?)=", contents)

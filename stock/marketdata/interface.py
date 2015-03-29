@@ -58,6 +58,7 @@ class MarketData:
             f = open(file, "r")
             contents = f.read()
             f.close()
+            self.__class__.r.set(exsymbol, contents)
 
         lines = contents.split('\\n\\\n')
 
