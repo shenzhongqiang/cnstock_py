@@ -8,7 +8,7 @@ init:
 test:
 	$(NOSECMD) -sv test/
 
-download_symbols:
+get_symbols:
 	PYTHONPATH=$(PYTHONPATH) python jobs/get_symbols.py
 
 get_history:

@@ -1,6 +1,7 @@
 import datetime
 import re
 import os.path
+import redis
 from stock.utils.request import *
 from stock.utils.uniform import *
 from stock.globalvar import *
@@ -11,21 +12,27 @@ class CannotExtractExsymbol(Exception):
     pass
 
 class RealTimeData(MarketData):
+    r = redis.StrictRedis(host='localhost', port=6379, db=1)
+
     def __init__(self, lock, date=None):
         MarketData.__init__(self, lock)
         self.dt = datetime.datetime.today()
         self.date = self.dt.strftime("%y%m%d")
 
     def get_data(self, exsymbol):
-        file = ''
-        if exsymbol in INDEX.values():
-            file = os.path.join(REAL_DIR['index'], exsymbol)
-        else:
-            file = os.path.join(REAL_DIR['stock'], exsymbol)
+        # read from cache first
+        contents = self.__class__.r.get(exsymbol)
 
-        f = open(file, "r")
-        contents = f.read()
-        f.close()
+        if contents == None:
+            file = ''
+            if exsymbol in INDEX.values():
+                file = os.path.join(REAL_DIR['index'], exsymbol)
+            else:
+                file = os.path.join(REAL_DIR['stock'], exsymbol)
+
+            f = open(file, "r")
+            contents = f.read()
+            f.close()
 
         # get exsymbol
         m = re.match(r"v_(.*?)=", contents)

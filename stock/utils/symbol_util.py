@@ -14,6 +14,7 @@ def get_stock_symbols(type='all'):
     content = f.read()
     f.close()
     symbols = content.split('\n')
+    symbols = filter(None, symbols)
     return symbols
 
 def get_index_symbols():

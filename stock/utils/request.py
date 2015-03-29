@@ -42,13 +42,16 @@ class Request:
                 response = urllib2.urlopen(req, timeout=self.timeout)
                 if response.code != 200:
                     raise RequestError('HTTP code is not 200. Error downloading file from url: ' + url)
+                content = response.read()
                 file = open(path, 'w')
-                file.write(response.read())
+                file.write(content)
                 file.close()
-                return
+                return content
             except urllib2.URLError, e:
                 print "Request failed for %s with reason: %s" % (url, e.reason)
             except RequestError, e:
+                print "Request failed for %s with reason: %s" % (url, e.reason)
+            except Exception, e:
                 print "Request failed for %s with reason: %s" % (url, e.reason)
             i = i + 1
 
