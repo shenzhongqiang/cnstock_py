@@ -51,7 +51,7 @@ class Request:
                 print "Request failed for %s with reason: %s" % (url, e.reason)
             except RequestError, e:
                 print "Request failed for %s with reason: %s" % (url, e.reason)
-            except Exception, e:
-                print "Request failed for %s with reason: %s" % (url, e.reason)
+            except:
+                print "Unknown error"
             i = i + 1
 
