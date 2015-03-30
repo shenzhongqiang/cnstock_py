@@ -21,7 +21,7 @@ class RealTimeData(MarketData):
 
     def get_data(self, exsymbol):
         # read from cache first
-        contents = self.__class__.r.get(exsymbol)
+        contents = self.__class__.r_realtime.get(exsymbol)
 
         if contents == None:
             file = ''
@@ -33,7 +33,7 @@ class RealTimeData(MarketData):
             f = open(file, "r")
             contents = f.read()
             f.close()
-            self.__class__.r.set(exsymbol, contents)
+            self.__class__.r_realtime.set(exsymbol, contents)
 
         # get exsymbol
         m = re.match(r"v_(.*?)=", contents)
@@ -45,6 +45,8 @@ class RealTimeData(MarketData):
         result = re.sub("^v_.*?=\"|\";$", "", contents)
         data = result.split("~")
         pe = 0 if data[39] == '' else float(data[39])
+        data[44] = '0' if data[44] == '' else data[44]
+        data[45] = '0' if data[45] == '' else data[45]
         bar = Bar(self.lock, exsymbol, date=self.date, dt=self.dt, \
             cnname=data[1], close=float(data[3]), lclose=float(data[4]), \
             open=float(data[5]), volume=float(data[6]), chg=float(data[31]), \

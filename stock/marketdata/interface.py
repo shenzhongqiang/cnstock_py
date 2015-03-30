@@ -13,7 +13,8 @@ class TooFewBarsBeforeDate(Exception):
 
 class MarketData:
     __metaclass__ = ABCMeta
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    r_history = redis.StrictRedis(host='localhost', port=6379, db=0)
+    r_realtime = redis.StrictRedis(host='localhost', port=6379, db=1)
 
     @abstractmethod
     def __init__(self, lock):
@@ -48,7 +49,7 @@ class MarketData:
         today_date = self.date
 
         # read from cache first
-        contents = self.__class__.r.get(exsymbol)
+        contents = self.__class__.r_history.get(exsymbol)
         if contents == None:
             file = ''
             if exsymbol in INDEX.values():
@@ -58,7 +59,7 @@ class MarketData:
             f = open(file, "r")
             contents = f.read()
             f.close()
-            self.__class__.r.set(exsymbol, contents)
+            self.__class__.r_history.set(exsymbol, contents)
 
         lines = contents.split('\\n\\\n')
 
