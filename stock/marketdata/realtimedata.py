@@ -12,10 +12,8 @@ class CannotExtractExsymbol(Exception):
     pass
 
 class RealTimeData(MarketData):
-    r = redis.StrictRedis(host='localhost', port=6379, db=1)
-
-    def __init__(self, lock, date=None):
-        MarketData.__init__(self, lock)
+    def __init__(self, date=None):
+        MarketData.__init__(self)
         self.dt = datetime.datetime.today()
         self.date = self.dt.strftime("%y%m%d")
 
@@ -47,7 +45,7 @@ class RealTimeData(MarketData):
         pe = 0 if data[39] == '' else float(data[39])
         data[44] = '0' if data[44] == '' else data[44]
         data[45] = '0' if data[45] == '' else data[45]
-        bar = Bar(self.lock, exsymbol, date=self.date, dt=self.dt, \
+        bar = Bar(exsymbol, date=self.date, dt=self.dt, \
             cnname=data[1], close=float(data[3]), lclose=float(data[4]), \
             open=float(data[5]), volume=float(data[6]), chg=float(data[31]), \
             chgperc=float(data[32]), high=float(data[33]), low=float(data[34]), \

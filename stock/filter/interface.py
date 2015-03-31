@@ -1,23 +1,13 @@
 from abc import *
 import stock.marketdata
-import threading
-import Queue
 
-class Filter(threading.Thread):
+class Filter:
     __metaclass__ = ABCMeta
 
-    def __init__(self, queue, marketdata, output, params=None):
-        threading.Thread.__init__(self)
-        self.queue = queue
+    def __init__(self, marketdata, output, params=None):
         self.marketdata = marketdata
         self.output = output
         self.params = params
-
-    def run(self):
-        while True:
-            exsymbol = self.queue.get()
-            self.check(exsymbol)
-            self.queue.task_done()
 
     @abstractmethod
     def check(self, exsymbol):

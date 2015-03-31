@@ -1,7 +1,7 @@
-import datetime
 import os.path
 from stock.marketdata.bar import Bar
 from stock.globalvar import *
+from stock.utils.dt import *
 from abc import *
 import redis
 
@@ -17,8 +17,8 @@ class MarketData:
     r_realtime = redis.StrictRedis(host='localhost', port=6379, db=1)
 
     @abstractmethod
-    def __init__(self, lock):
-        self.lock = lock
+    def __init__(self):
+        pass
 
     @abstractmethod
     def get_data(self, exsymbol):
@@ -69,11 +69,11 @@ class MarketData:
         while i >= 2:
             line = lines[i]
             (date, o, close, high, low, volume) = line.split(' ')
-            dt = datetime.datetime.strptime(date, "%y%m%d")
+            dt = parse_datetime(date)
             if dt <= self.dt:
                 start = 1
             if start == 1:
-                bar = Bar(self.lock, exsymbol, date=date, dt=dt, open=float(o), \
+                bar = Bar(exsymbol, date=date, dt=dt, open=float(o), \
                     close=float(close), high=float(high), low=float(low), \
                     volume=float(volume))
                 history.append(bar)

@@ -9,9 +9,9 @@ logging.config.fileConfig(LOGCONF)
 logger = logging.getLogger(__name__)
 
 class High(Filter):
-    def __init__(self, queue, marketdata, output, \
+    def __init__(self, marketdata, output, \
         params={"high": 1.09,}):
-        super(High, self).__init__(queue, marketdata, output, params)
+        super(High, self).__init__(marketdata, output, params)
 
     def check(self, exsymbol):
         #print exsymbol

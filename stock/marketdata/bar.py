@@ -1,7 +1,7 @@
-import datetime
+from stock.utils.dt import *
 
 class Bar:
-    def __init__(self, lock, exsymbol, date, dt=None, cnname=None, \
+    def __init__(self, exsymbol, date, dt=None, cnname=None, \
         close=None, lclose=None, open=None, volume=None, \
         chg=None, chgperc=None, high=None, low=None, \
         amount=None, pe=None, ampl=None, cvalue=None, \
@@ -10,7 +10,7 @@ class Bar:
         self.symbol = exsymbol[2:]
         self.date = date
         if dt == None:
-            self.dt = datetime.datetime.strptime(date, "%y%m%d")
+            self.dt = parse_datetime(date)
         else:
             self.dt =dt
         self.cnname = cnname

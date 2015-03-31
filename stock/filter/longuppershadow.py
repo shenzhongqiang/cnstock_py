@@ -9,9 +9,9 @@ logging.config.fileConfig(LOGCONF)
 logger = logging.getLogger(__name__)
 
 class LongUpperShadow(Filter):
-    def __init__(self, queue, marketdata, output, \
+    def __init__(self, marketdata, output, \
         params={"high": 1.04, "body": 0.02, "chg": 0.06}):
-        super(LongUpperShadow, self).__init__(queue, marketdata, output, params)
+        super(LongUpperShadow, self).__init__(marketdata, output, params)
 
     def check(self, exsymbol):
         #print exsymbol
