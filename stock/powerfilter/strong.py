@@ -48,17 +48,17 @@ class Strong:
 
                 bar_change = bars[0].close / bars[1].close - 1
                 if is_symbol_cy(exsymbol):
-                    if chg['cy'] <= -0.02 and bar_change >= 0.01:
+                    if chg['cy'] <= -0.01 and bar_change >= 0.01:
                         output.append(CheckResult(exsymbol, chgperc=bar_change*100,
                             pe=bars[0].pe, cvalue=bars[0].cvalue,
                             value=bars[0].value))
                 elif is_symbol_sh(exsymbol):
-                    if chg['sh'] <= -0.02 and bar_change >= 0.01:
+                    if chg['sh'] <= -0.01 and bar_change >= 0.01:
                         output.append(CheckResult(exsymbol, chgperc=bar_change*100,
                             pe=bars[0].pe, cvalue=bars[0].cvalue,
                             value=bars[0].value))
                 elif is_symbol_sz(exsymbol):
-                    if chg['sz'] <= -0.02 and bar_change >= 0.01:
+                    if chg['sz'] <= -0.01 and bar_change >= 0.01:
                         output.append(CheckResult(exsymbol, chgperc=bar_change*100,
                             pe=bars[0].pe, cvalue=bars[0].cvalue,
                             value=bars[0].value))

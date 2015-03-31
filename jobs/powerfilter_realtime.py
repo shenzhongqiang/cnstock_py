@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import threading
 from stock.globalvar import *
 from stock.powerfilter import *
 from stock.marketdata import *
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 dt = datetime.datetime.today()
 date = dt.strftime("%y%m%d")
-lock = threading.RLock()
-marketdata = realtimedata.RealTimeData(lock=lock)
+marketdata = realtimedata.RealTimeData()
 
 if not os.path.isdir(OUTDIR):
     os.makedirs(OUTDIR)
