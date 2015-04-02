@@ -35,7 +35,7 @@ class Downloader(threading.Thread):
         else:
             filepath = os.path.join(REAL_DIR['stock'], exsymbol)
             content = request.download_file(url, filepath)
-        self.__class__.r.set(symbol, content)
+        self.__class__.r.set(exsymbol, content)
 
 if __name__ == "__main__":
     queue = Queue.Queue()
