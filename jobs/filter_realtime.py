@@ -15,7 +15,7 @@ if not os.path.isdir(OUTDIR):
 dt = datetime.datetime.today()
 date = dt.strftime("%y%m%d")
 lock = threading.RLock()
-marketdata = realtimedata.RealTimeData(lock=lock)
+marketdata = realtimedata.RealTimeData()
 
 filters = [
     longlowershadow.LongLowerShadow,
