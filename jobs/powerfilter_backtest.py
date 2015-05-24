@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import threading
 from stock.globalvar import *
 from stock.powerfilter import *
 from stock.marketdata import *
@@ -21,8 +20,7 @@ if not os.path.isdir(OUTDIR):
     os.makedirs(OUTDIR)
 
 date = sys.argv[1]
-lock = threading.RLock()
-marketdata = backtestdata.BackTestData(lock=lock, date=date)
+marketdata = backtestdata.BackTestData(date=date)
 
 filters = [
     longlowershadow.LongLowerShadow,

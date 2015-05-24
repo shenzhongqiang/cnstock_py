@@ -1,12 +1,10 @@
 from stock.marketdata.realtimedata import *
-import threading
 import unittest
 from stock.globalvar import *
 
 class TestRealTimeData(unittest.TestCase):
     def setUp(self):
-        lock = threading.RLock()
-        self.realtimedata = RealTimeData(lock=lock)
+        self.realtimedata = RealTimeData()
 
     def tearDown(self):
         pass

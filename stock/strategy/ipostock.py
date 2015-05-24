@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import threading
 import Queue
 from stock.filter.utils import *
 from stock.utils.request import *
@@ -103,7 +102,6 @@ def get_history_in_file(exsymbol):
     f.close()
     lines = contents.split('\\n\\\n')
 
-    lock = threading.RLock()
     history = []
     start = 0
     i = 1
@@ -111,7 +109,7 @@ def get_history_in_file(exsymbol):
         line = lines[i]
         (date, o, close, high, low, volume) = line.split(' ')
         dt = datetime.datetime.strptime(date, "%y%m%d")
-        bar = Bar(lock, exsymbol, date=date, dt=dt, open=float(o), \
+        bar = Bar(exsymbol, date=date, dt=dt, open=float(o), \
             close=float(close), high=float(high), low=float(low), \
             volume=float(volume))
         history.append(bar)

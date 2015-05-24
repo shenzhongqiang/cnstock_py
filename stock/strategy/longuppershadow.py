@@ -23,7 +23,7 @@ def demo_trade(dates, db_file=DBFILE, high=1.06):
         output = []
 
         # filter stocks
-        marketdata = backtestdata.BackTestData(lock=lock, date=date)
+        marketdata = backtestdata.BackTestData(date=date)
         for i in range(1):
             t = longuppershadow.LongUpperShadow(queue, marketdata, output,
                 params={"high":high, "body":0.02, "chg":0.06})
@@ -83,7 +83,6 @@ Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 real_ord = Order(engine)
 
-lock = threading.RLock()
 f = longuppershadow.LongUpperShadow
 dates_desc = get_trading_dates()
 dates_asc = dates_desc[::-1]
@@ -102,7 +101,7 @@ for i in range(start, end):
     output = []
 
     # filter stocks
-    marketdata = backtestdata.BackTestData(lock=lock, date=date)
+    marketdata = backtestdata.BackTestData(date=date)
     for j in range(1):
         t = longuppershadow.LongUpperShadow(queue, marketdata, output,
             params={"high":op_high, "body":0.02, "chg":0.06})
