@@ -24,7 +24,7 @@ def get_index_symbol(type):
     return INDEX[type]
 
 def get_trading_dates():
-    file = os.path.join(HIST_DIR['index'], 'sh000001')
+    file = os.path.join(HIST_DIR['stock'], "latest", 'sh000001')
     f = open(file, "r")
     contents = f.read()
     f.close()

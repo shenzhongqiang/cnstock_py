@@ -1,7 +1,6 @@
 import datetime
 import re
 import os.path
-import redis
 from stock.utils.request import *
 from stock.utils.uniform import *
 from stock.globalvar import *
@@ -18,20 +17,10 @@ class RealTimeData(MarketData):
         self.date = self.dt.strftime("%y%m%d")
 
     def get_data(self, exsymbol):
-        # read from cache first
-        contents = self.__class__.r_realtime.get(exsymbol)
-
-        if contents == None:
-            file = ''
-            if exsymbol in INDEX.values():
-                file = os.path.join(REAL_DIR['index'], exsymbol)
-            else:
-                file = os.path.join(REAL_DIR['stock'], exsymbol)
-
-            f = open(file, "r")
-            contents = f.read()
-            f.close()
-            self.__class__.r_realtime.set(exsymbol, contents)
+        file = os.path.join(REAL_DIR['stock'], exsymbol)
+        f = open(file, "r")
+        contents = f.read()
+        f.close()
 
         # get exsymbol
         m = re.match(r"v_(.*?)=", contents)

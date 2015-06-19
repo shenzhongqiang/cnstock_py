@@ -3,7 +3,6 @@ from stock.marketdata.bar import Bar
 from stock.globalvar import *
 from stock.utils.dt import *
 from abc import *
-import redis
 
 class NoHistoryBeforeDate(Exception):
     pass
@@ -13,8 +12,6 @@ class TooFewBarsBeforeDate(Exception):
 
 class MarketData:
     __metaclass__ = ABCMeta
-    r_history = redis.StrictRedis(host='localhost', port=6379, db=0)
-    r_realtime = redis.StrictRedis(host='localhost', port=6379, db=1)
 
     @abstractmethod
     def __init__(self):
@@ -40,7 +37,7 @@ class MarketData:
                 % (exsymbol, self.date))
 
         if len(history) < 10:
-            raise TooFewBarsBeforeDate("fewer than 2 bars for %s before %s" \
+            raise TooFewBarsBeforeDate("too few bars for %s before %s" \
                 % (exsymbol, self.date))
         return history
 
@@ -48,18 +45,10 @@ class MarketData:
     def get_history_in_file(self, exsymbol):
         today_date = self.date
 
-        # read from cache first
-        contents = self.__class__.r_history.get(exsymbol)
-        if contents == None:
-            file = ''
-            if exsymbol in INDEX.values():
-                file = os.path.join(HIST_DIR['index'], exsymbol)
-            else:
-                file = os.path.join(HIST_DIR['stock'], exsymbol)
-            f = open(file, "r")
-            contents = f.read()
-            f.close()
-            self.__class__.r_history.set(exsymbol, contents)
+        file = os.path.join(HIST_DIR['stock'], "latest", exsymbol)
+        f = open(file, "r")
+        contents = f.read()
+        f.close()
 
         lines = contents.split('\\n\\\n')
 

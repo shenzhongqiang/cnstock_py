@@ -2,7 +2,6 @@
 import os.path
 import threading
 import Queue
-import redis
 import stock.utils.request
 import stock.utils.symbol_util
 from stock.globalvar import *
@@ -13,7 +12,6 @@ for k,v in REAL_DIR.items():
         os.makedirs(v)
 
 class Downloader(threading.Thread):
-    r = redis.StrictRedis(host='localhost', port=6379, db=1)
     def __init__(self, queue):
         threading.Thread.__init__(self)
         self.queue = queue
@@ -29,13 +27,8 @@ class Downloader(threading.Thread):
         request = stock.utils.request.Request()
         url = "http://qt.gtimg.cn/q=" + exsymbol
         content = ""
-        if exsymbol in INDEX.values():
-            filepath = os.path.join(REAL_DIR['index'], exsymbol)
-            content = request.download_file(url, filepath)
-        else:
-            filepath = os.path.join(REAL_DIR['stock'], exsymbol)
-            content = request.download_file(url, filepath)
-        self.__class__.r.set(exsymbol, content)
+        filepath = os.path.join(REAL_DIR['stock'], exsymbol)
+        content = request.download_file(url, filepath)
 
 if __name__ == "__main__":
     queue = Queue.Queue()

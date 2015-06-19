@@ -2,19 +2,21 @@
 import os.path
 import threading
 import Queue
-import redis
 import stock.utils.request
 import stock.utils.symbol_util
 from stock.globalvar import *
+
+archived_years = ["15","14","13","12","11"]
 
 # check if directory exists, if not create directory
 for k,v in HIST_DIR.items():
     if not os.path.isdir(v):
         os.makedirs(v)
+        os.makedirs(os.path.join(v, "latest"))
+        for year in archived_years:
+            os.makedirs(os.path.join(v, year))
 
 class Downloader(threading.Thread):
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    r.flushall()
     def __init__(self, queue):
         threading.Thread.__init__(self)
         self.queue = queue
@@ -24,24 +26,37 @@ class Downloader(threading.Thread):
             symbol = self.queue.get()
             print symbol
             self.download_history(symbol)
+            self.download_archived_history(symbol)
             self.queue.task_done()
 
     def download_history(self, symbol):
         request = stock.utils.request.Request()
         url = "http://data.gtimg.cn/flashdata/hushen/latest/daily/%s.js?maxage=43201" % (symbol)
         content = ""
-        if symbol in INDEX.values():
-            filepath = os.path.join(HIST_DIR['index'], symbol)
-            content = request.download_file(url, filepath)
-        else:
-            filepath = os.path.join(HIST_DIR['stock'], symbol)
+        filepath = os.path.join(HIST_DIR['stock'], "latest", symbol)
+        content = request.download_file(url, filepath)
+        symbol_digit = symbol[2:]
+        fenhong_url = "http://stock.finance.qq.com/corp1/distri.php?zqdm=%s" % (symbol_digit)
+        fenhong_path = os.path.join(HIST_DIR['fenhong'], symbol)
+        request.download_file(fenhong_url, fenhong_path)
+
+    def download_archived_history(self, symbol):
+        request = stock.utils.request.Request()
+        urls = ["http://data.gtimg.cn/flashdata/hushen/daily/15/%s.js" % (symbol),
+            "http://data.gtimg.cn/flashdata/hushen/daily/14/%s.js" % (symbol),
+            "http://data.gtimg.cn/flashdata/hushen/daily/13/%s.js" % (symbol),
+            "http://data.gtimg.cn/flashdata/hushen/daily/12/%s.js" % (symbol),
+            "http://data.gtimg.cn/flashdata/hushen/daily/11/%s.js" % (symbol)]
+
+        content = ""
+        for year in archived_years:
+            filepath = os.path.join(HIST_DIR['stock'], year, symbol)
+            url = "http://data.gtimg.cn/flashdata/hushen/daily/%s/%s.js" % (year, symbol)
             content = request.download_file(url, filepath)
             symbol_digit = symbol[2:]
             fenhong_url = "http://stock.finance.qq.com/corp1/distri.php?zqdm=%s" % (symbol_digit)
-            fenhong_path = os.path.join(HIST_DIR['fenhong'], symbol)
-            request.download_file(fenhong_url, fenhong_path)
-
-        self.__class__.r.set(symbol, content)
+        fenhong_path = os.path.join(HIST_DIR['fenhong'], symbol)
+        request.download_file(fenhong_url, fenhong_path)
 
 if __name__ == "__main__":
     queue = Queue.Queue()
