@@ -3,24 +3,15 @@ from stock.trade.order import *
 import unittest
 from stock.globalvar import *
 
+echo=False
 class TestTradeOrder(unittest.TestCase):
-#    @classmethod
-#    def setup_class(cls):
-#        engine = create_engine('sqlite:///' + DBFILE, echo=False)
-#        Base.metadata.create_all(engine)
-#
-#    @classmethod
-#    def teardown_class(cls):
-#        engine = create_engine('sqlite:///' + DBFILE, echo=False)
-#        Base.metadata.drop_all(engine)
-#
     def setUp(self):
-        engine = create_engine('sqlite:///' + DBFILE, echo=True)
+        engine = create_engine('sqlite:///' + DBFILE, echo=echo)
         Base.metadata.create_all(engine)
         self.order = Order(engine)
 
     def tearDown(self):
-        engine = create_engine('sqlite:///' + DBFILE, echo=True)
+        engine = create_engine('sqlite:///' + DBFILE, echo=echo)
         Base.metadata.drop_all(engine)
 
     def test_buy(self):
@@ -42,3 +33,14 @@ class TestTradeOrder(unittest.TestCase):
         self.order.buy('sh500001', 20.0, '140901', 100)
         has_pos = self.order.has_position('sh500001')
         self.assertTrue(has_pos)
+
+    def test_raise_exception(self):
+        self.order.buy('sh500001', 10.0, '150101', 100)
+        with self.assertRaises(PositionAlreadyExists):
+            self.order.buy('sh500001', 20.0, '150101', 100)
+        with self.assertRaises(IllegalPrice):
+            self.order.sell('sh500001', -1, '150101', 100)
+        with self.assertRaises(NotEnoughSharesToSell):
+            self.order.sell('sh500001', 15.0, '150101', 500)
+        with self.assertRaises(NotSellingAllShares):
+            self.order.sell('sh500001', 15.0, '150101', 50)

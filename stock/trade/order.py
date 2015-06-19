@@ -21,6 +21,12 @@ class NotEnoughSharesToSell(Exception):
 class IllegalPrice(Exception):
     pass
 
+class MultiplePositionsForSameSymbol(Exception):
+    pass
+
+class NotSellingAllShares(Exception):
+    pass
+
 engine = create_engine('sqlite:///' + DBFILE, echo=False, \
     connect_args={'check_same_thread':False},)
 Session = sessionmaker(bind=engine)
@@ -54,12 +60,17 @@ class Order:
     def sell(self, exsymbol, price, sell_date, amount):
         Session = self.Session
         session = Session()
-        pos = session.query(Position).filter_by(exsymbol=exsymbol).first()
-        if pos == None:
+        positions = session.query(Position).filter_by(exsymbol=exsymbol).all()
+        if len(positions) > 1:
+            raise MultiplePositionsForSameSymbol(exsymbol)
+        if len(positions) == 0:
             raise PositionNotExists(exsymbol)
+        pos = positions[0]
         if pos.amount < amount:
             raise NotEnoughSharesToSell("You are trying to sell %d, but only %d shares %s can be sold" % \
                 (amount, pos.amount, exsymbol))
+        if pos.amount > amount:
+            raise NotSellingAllShares("You need to sell all shares of %s" % (exsymbol))
         if price <= 0:
             raise IllegalPrice("%f is not a legal price" % price)
 

@@ -14,8 +14,6 @@ class ClosedTranx:
         self.amount = amount
         self.pl = (close_price - open_price) * amount
 
-
-
 class Report:
     def __init__(self, engine=None):
         if engine == None:
@@ -56,8 +54,9 @@ class Report:
     def print_report(self):
         closed = self.get_closed_tranx()
         total = 0
+        print "\nEXSymbol\tOpen Date\tOpen\tAmount\tClose Date\tClose\tProfit"
         for ct in closed:
-            print("%s, %s, %f, %d, %s, %f, %f" % (ct.exsymbol, \
+            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f" % (ct.exsymbol, \
                 ct.open_date.strftime('%Y-%m-%d'), \
                 ct.open_price, \
                 ct.amount, \
@@ -68,18 +67,3 @@ class Report:
 
         print "Total: %d" % (total)
 
-
-if __name__ == "__main__":
-    from stock.trade.order import *
-    from sqlalchemy.ext.declarative import declarative_base
-    engine = create_engine('sqlite:///' + DBFILE, echo=False)
-    Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine, checkfirst=True)
-    buy('sh000001', 20, '140901', 1000)
-    buy('sh000002', 50, '140901', 2000)
-    sell('sh000001', 30, '140902', 1000)
-    sell('sh000002', 60, '140902', 2000)
-
-    report = Report(engine)
-    report.print_report()
-    Base.metadata.drop_all(engine)
