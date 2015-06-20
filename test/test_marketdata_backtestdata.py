@@ -5,13 +5,19 @@ from stock.globalvar import *
 
 class TestBackTestData(unittest.TestCase):
     def setUp(self):
-        self.backtestdata = backtestdata.BackTestData(date='140801')
+        self.backtestdata = backtestdata.BackTestData(date='150618')
 
     def tearDown(self):
         pass
 
     def test_get_history_in_file(self):
         history = self.backtestdata.get_history_in_file('sz300059')
+        self.assertTrue(len(history) > 0)
+
+    def test_get_archived_history_in_file(self):
+        history = self.backtestdata.get_archived_history_in_file('sh000001')
+        for bar in history:
+            print bar.date
         self.assertTrue(len(history) > 0)
 
     def test_get_history_by_date(self):

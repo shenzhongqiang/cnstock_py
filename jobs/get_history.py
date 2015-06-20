@@ -6,14 +6,12 @@ import stock.utils.request
 import stock.utils.symbol_util
 from stock.globalvar import *
 
-archived_years = ["15","14","13","12","11"]
-
 # check if directory exists, if not create directory
 for k,v in HIST_DIR.items():
     if not os.path.isdir(v):
         os.makedirs(v)
         os.makedirs(os.path.join(v, "latest"))
-        for year in archived_years:
+        for year in ARCHIVED_YEARS:
             os.makedirs(os.path.join(v, year))
 
 class Downloader(threading.Thread):
@@ -49,7 +47,7 @@ class Downloader(threading.Thread):
             "http://data.gtimg.cn/flashdata/hushen/daily/11/%s.js" % (symbol)]
 
         content = ""
-        for year in archived_years:
+        for year in ARCHIVED_YEARS:
             filepath = os.path.join(HIST_DIR['stock'], year, symbol)
             url = "http://data.gtimg.cn/flashdata/hushen/daily/%s/%s.js" % (year, symbol)
             content = request.download_file(url, filepath)
