@@ -7,12 +7,16 @@ import stock.utils.symbol_util
 from stock.globalvar import *
 
 # check if directory exists, if not create directory
-for k,v in HIST_DIR.items():
-    if not os.path.isdir(v):
-        os.makedirs(v)
-        os.makedirs(os.path.join(v, "latest"))
-        for year in ARCHIVED_YEARS:
-            os.makedirs(os.path.join(v, year))
+stock_dir = HIST_DIR['stock']
+if not os.path.isdir(stock_dir):
+    os.makedirs(stock_dir)
+    os.makedirs(os.path.join(stock_dir, "latest"))
+    for year in ARCHIVED_YEARS:
+        os.makedirs(os.path.join(stock_dir, year))
+
+fuquan_dir = HIST_DIR['fuquan']
+if not os.path.isdir(fuquan_dir):
+    os.makedirs(fuquan_dir)
 
 class Downloader(threading.Thread):
     def __init__(self, queue):
@@ -34,9 +38,9 @@ class Downloader(threading.Thread):
         filepath = os.path.join(HIST_DIR['stock'], "latest", symbol)
         content = request.download_file(url, filepath)
         symbol_digit = symbol[2:]
-        fenhong_url = "http://stock.finance.qq.com/corp1/distri.php?zqdm=%s" % (symbol_digit)
-        fenhong_path = os.path.join(HIST_DIR['fenhong'], symbol)
-        request.download_file(fenhong_url, fenhong_path)
+        fuquan_url = "http://data.gtimg.cn/flashdata/hushen/fuquan/%s.js?maxage=6000000" % (symbol)
+        fuquan_path = os.path.join(HIST_DIR['fuquan'], symbol)
+        request.download_file(fuquan_url, fuquan_path)
 
     def download_archived_history(self, symbol):
         request = stock.utils.request.Request()
@@ -51,10 +55,6 @@ class Downloader(threading.Thread):
             filepath = os.path.join(HIST_DIR['stock'], year, symbol)
             url = "http://data.gtimg.cn/flashdata/hushen/daily/%s/%s.js" % (year, symbol)
             content = request.download_file(url, filepath)
-            symbol_digit = symbol[2:]
-            fenhong_url = "http://stock.finance.qq.com/corp1/distri.php?zqdm=%s" % (symbol_digit)
-        fenhong_path = os.path.join(HIST_DIR['fenhong'], symbol)
-        request.download_file(fenhong_url, fenhong_path)
 
 if __name__ == "__main__":
     queue = Queue.Queue()

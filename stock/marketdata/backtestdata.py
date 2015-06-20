@@ -1,7 +1,7 @@
 import re
 import os.path
 from stock.utils.request import *
-from stock.utils.uniform import *
+from stock.utils.fuquan import *
 from stock.utils.dt import *
 from stock.globalvar import *
 from stock.marketdata.interface import MarketData

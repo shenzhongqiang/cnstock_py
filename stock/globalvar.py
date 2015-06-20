@@ -9,7 +9,7 @@ OUTDIR = os.path.join(os.path.dirname( \
 SYMDIR = os.path.join(ROOTDIR, 'data/symbol')
 HIST_DIR = {
     'stock': os.path.join(ROOTDIR, 'data/history/stock'),
-    'fenhong': os.path.join(ROOTDIR, 'data/history/fenhong'),
+    'fuquan': os.path.join(ROOTDIR, 'data/history/fuquan'),
 }
 
 REAL_DIR = {
