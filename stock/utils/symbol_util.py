@@ -41,6 +41,25 @@ def get_trading_dates():
 
     return dates
 
+def get_archived_trading_dates():
+    dates = []
+    for year in ARCHIVED_YEARS:
+        filepath = os.path.join(HIST_DIR['stock'], year, 'sh000001')
+        f = open(filepath, "r")
+        contents = f.read()
+        f.close()
+        lines = contents.split('\\n\\\n')
+
+        start = 0
+        i = len(lines) - 2
+        while i >= 1:
+            line = lines[i]
+            (date, o, close, high, low, volume) = line.split(' ')
+            dates.append(date)
+            i = i - 1
+
+    return dates
+
 def download_symbols():
     base_url = "http://stock.gtimg.cn/data/index.php?appn=rank&t=ranka/chr&o=0&l=40&v=list_data"
     request = Request()

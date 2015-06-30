@@ -1,5 +1,7 @@
+import os.path
+import sys
 import numpy as np
-from sklearn.svm import SVR
+from sklearn.svm import SVC
 from sklearn.cross_validation import *
 from sklearn import preprocessing
 from sklearn import metrics
@@ -9,51 +11,52 @@ from stock.utils.symbol_util import *
 from stock.globalvar import *
 from stock.marketdata import *
 
-def construct_data_target(history, i):
-    num = 5
-    y = history[i].close
-    x = []
-    for j in range(i+num, i, -1):
-        x.append(history[j].open)
-        x.append(history[j].close)
-        x.append(history[j].high)
-        x.append(history[j].low)
-        x.append(history[j].volume)
-    return (x,y)
+if len(sys.argv) < 2:
+    sys.stderr.write('Usage: %s <date>\n' % sys.argv[0])
+    sys.exit(1)
 
-def predict_close(history, i):
-    days=3
-    Xtrain = np.zeros((days,25))
-    ytrain = np.zeros((days,))
-    for k in range(days):
-        [Xtrain[k], ytrain[k]] = construct_data_target(history,i+days-k)
+date = sys.argv[1]
+filepath = os.path.join(os.path.dirname(__file__),
+    "train")
+f = open(filepath)
+contents = f.read()
+f.close()
 
-    scaler = preprocessing.StandardScaler().fit(Xtrain)
-    Xtrain = scaler.transform(Xtrain)
-    svr_rbf = SVR(kernel='poly', C=1e3, gamma=1e-3)
-    #svr_rbf = linear_model.SGDRegressor()
-    model = svr_rbf.fit(Xtrain, ytrain)
-    [xtest, yreal] = construct_data_target(history, i)
-    y_predict =  model.predict(scaler.transform([xtest]))
-    #print cross_val_score(svr_rbf, Xtrain, ytrain)
-    print "predict:%f, real:%f" % (y_predict, yreal)
-    return (yreal, y_predict)
+lines = contents.split("\n")
+X = []
+y = []
+for line in lines:
+    if line == "":
+        continue
 
-marketdata = backtestdata.BackTestData(date="150617")
-history = marketdata.get_history_by_date("sh000001")
+    data = line.split(",")
+    pattern = map(lambda x: float(x), data[2:9])
+    X.append(pattern)
+    y.append(int(data[9]))
 
-X = range(70)
-yreal = np.zeros((70,))
-ypredict = np.zeros((70,))
-for i in X:
-    [yreal[i], ypredict[i]] = predict_close(history,69-i)
-plt.scatter(X, yreal, c='k')
-plt.hold('on')
-plt.plot(X, ypredict, c='g')
-plt.xlabel('data')
-plt.ylabel('target')
-plt.title('Support Vector Regression')
-plt.legend()
-plt.show()
+X = np.array(X)
+y = np.array(y)
+clf = linear_model.SGDClassifier().fit(X, y)
 
+ypred = clf.predict(X)
+print metrics.accuracy_score(y, ypred)
 
+symbols = get_stock_symbols('all')
+marketdata = backtestdata.BackTestData(date=date)
+for exsymbol in symbols:
+    try:
+        bars = marketdata.get_history_by_date(exsymbol)
+        pattern = [
+            bars[3].close/bars[4].close - 1,
+            bars[2].open/bars[3].close - 1,
+            bars[2].close/bars[3].close - 1,
+            bars[1].open/bars[2].close - 1,
+            bars[1].close/bars[2].close - 1,
+            bars[0].open/bars[1].close - 1,
+            bars[0].close/bars[1].close - 1,
+        ]
+        pred = clf.predict([pattern])
+        if pred[0] == 1:
+            print exsymbol
+    except Exception, e:
+        print "%s: %s" % (type(e), e.message)

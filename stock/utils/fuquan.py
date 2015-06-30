@@ -34,6 +34,9 @@ class Fuquan:
     @classmethod
     def parse_fuquan_data(cls, exsymbol):
         filepath = os.path.join(HIST_DIR['fuquan'], exsymbol)
+        if not os.path.isfile(filepath):
+            return []
+
         f = open(filepath, "r")
         contents = f.read()
         f.close()
