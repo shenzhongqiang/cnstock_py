@@ -6,6 +6,9 @@ from stock.globalvar import *
 class Fuquan:
     @classmethod
     def fuquan_history(cls, history):
+        if len(history) == 0:
+            return
+
         exsymbol = history[0].exsymbol
         fq_hist = cls.parse_fuquan_data(exsymbol)
         for item in fq_hist:
