@@ -41,17 +41,18 @@ class Order:
         Session = self.Session
         session = Session()
         pos = session.query(Position).filter_by(exsymbol=exsymbol).first()
-        if pos != None:
-            raise PositionAlreadyExists(exsymbol)
+
         if price <= 0:
             raise IllegalPrice("%f is not a legal price" % price)
 
         d = datetime.strptime(buy_date, '%y%m%d')
-        pos = Position(exsymbol=exsymbol, price=price, date=d, \
-            amount=amount)
+        if pos != None:
+            pos.amount += amount
+        else:
+            pos = Position(exsymbol=exsymbol, amount=amount)
+            session.add(pos)
         tranx = Tranx(exsymbol=exsymbol, price=price, date=d, \
             amount=amount, type='buy')
-        session.add(pos)
         session.add(tranx)
         session.commit()
         logger.info("bought: symbol: %s, amount: %d, price: %f, date: %s" %
@@ -70,11 +71,11 @@ class Order:
             raise NotEnoughSharesToSell("You are trying to sell %d, but only %d shares %s can be sold" % \
                 (amount, pos.amount, exsymbol))
         if pos.amount > amount:
-            raise NotSellingAllShares("You need to sell all shares of %s" % (exsymbol))
+            pos.amount -= amount
+            #raise NotSellingAllShares("You need to sell all shares of %s" % (exsymbol))
         if price <= 0:
             raise IllegalPrice("%f is not a legal price" % price)
 
-        session.delete(pos)
         d = datetime.strptime(sell_date, '%y%m%d')
         tranx = Tranx(exsymbol=exsymbol, price=price, date=d, \
             amount=amount, type='sell')

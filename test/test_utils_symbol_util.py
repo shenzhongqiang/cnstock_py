@@ -21,7 +21,7 @@ class TestSymbolUtil(unittest.TestCase):
         self.assertEqual(index, 'sh000001')
 
     def test_download_symbols(self):
-        download_symbols()
+        #download_symbols()
         self.assertTrue(os.path.isfile(SYM['all']))
         self.assertTrue(os.path.isfile(SYM['sh']))
         self.assertTrue(os.path.isfile(SYM['sz']))
@@ -52,3 +52,9 @@ class TestSymbolUtil(unittest.TestCase):
         self.assertTrue(res == True)
         res = is_symbol_sz('sz300001')
         self.assertTrue(res == False)
+
+    def test_is_st(self):
+        res = is_st('sh603838')
+        self.assertTrue(res == False)
+        res = is_st('sz000927')
+        self.assertTrue(res == True)

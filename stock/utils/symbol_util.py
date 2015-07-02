@@ -60,6 +60,16 @@ def get_archived_trading_dates():
 
     return dates
 
+def is_st(exsymbol):
+    url = "http://push2.gtimg.cn/q=%s" % (exsymbol)
+    request = Request()
+    result = request.send_request(url)
+    cnname = result.split('~')[1]
+    match = re.search(r"ST", cnname)
+    if match:
+        return True
+    return False
+
 def download_symbols():
     base_url = "http://stock.gtimg.cn/data/index.php?appn=rank&t=ranka/chr&o=0&l=40&v=list_data"
     request = Request()
@@ -85,6 +95,9 @@ def download_symbols():
     p_sz = re.compile('^sz0')
     p_cy = re.compile('^sz3')
     for s in symbols:
+        if is_st(s):
+            continue
+
         if p_sh.search(s) and s != INDEX['sh']:
             sh_symbols.append(s)
         elif p_sz.search(s) and s != INDEX['sz']:

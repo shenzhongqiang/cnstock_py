@@ -1,7 +1,19 @@
+import copy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from stock.globalvar import *
 from stock.trade.models import *
+
+class NotEnoughSharesToSell(Exception):
+    pass
+
+class OpenTranx:
+    def __init__(self, exsymbol, open_date,
+        open_price, amount):
+        self.exsymbol = exsymbol
+        self.open_date = open_date
+        self.open_price = open_price
+        self.amount = amount
 
 class ClosedTranx:
     def __init__(self, exsymbol, open_date, close_date, \
@@ -24,25 +36,59 @@ class Report:
         Session = self.Session
         session = Session()
         tranx_rows = session.query(Tranx).order_by(Tranx.date).all()
-        opened = []
-        closed = []
+        exsymbol_tranx = {}
+        closed_tranx = []
 
         for row in tranx_rows:
             t = row.type
             if t == 'buy':
-                opened.append(row)
-            else:
-                matched_row = filter(lambda x: x.exsymbol == row.exsymbol, opened)[0]
-                ct = ClosedTranx(exsymbol=row.exsymbol, \
-                    open_date=matched_row.date, \
-                    open_price=matched_row.price, \
-                    close_date=row.date, \
-                    close_price=row.price, \
+                if not row.exsymbol in exsymbol_tranx:
+                    exsymbol_tranx[row.exsymbol] = {"amount": 0, "queue": []}
+                exsymbol_tranx[row.exsymbol]["amount"] += row.amount
+                ot = OpenTranx(exsymbol=row.exsymbol,
+                    open_date=row.date,
+                    open_price=row.price,
                     amount=row.amount)
-                closed.append(ct)
-                opened.remove(matched_row)
+                exsymbol_tranx[row.exsymbol]["queue"].append(ot)
+            else:
+                open_amount = exsymbol_tranx[row.exsymbol]["amount"]
+                open_queue = exsymbol_tranx[row.exsymbol]["queue"]
+                if open_amount < row.amount:
+                    raise NotEnoughSharesToSell(
+                        "%s: trying to sell %d shares while only %d shares were opened" % (
+                            row.exsymbol, row.amount, open_amount))
 
-        return closed
+                updated_open_queue = copy.deepcopy(open_queue)
+                amount_to_close = row.amount
+                for ot in open_queue:
+                    if ot.amount <= amount_to_close:
+                        updated_open_queue.pop(0)
+                        amount_to_close -= ot.amount
+                        ct = ClosedTranx(exsymbol=row.exsymbol,
+                            open_date=ot.open_date,
+                            open_price=ot.open_price,
+                            close_date=row.date,
+                            close_price=row.price,
+                            amount=ot.amount)
+                        closed_tranx.append(ct)
+                    else:
+                        if amount_to_close == 0:
+                            break
+                        else:
+                            updated_open_queue[0].amount -= amount_to_close
+                            ct = ClosedTranx(exsymbol=row.exsymbol,
+                                open_date=ot.open_date,
+                                open_price=ot.open_price,
+                                close_date=row.date,
+                                close_price=row.price,
+                                amount=amount_to_close)
+                            closed_tranx.append(ct)
+                            amount_to_close = 0
+                            break
+                exsymbol_tranx[row.exsymbol]["queue"] = updated_open_queue
+                exsymbol_tranx[row.exsymbol]["amount"] -= row.amount
+
+        return closed_tranx
 
     def get_profit_loss(self):
         closed = self.get_closed_tranx()

@@ -7,14 +7,11 @@ class Position(Base):
     __tablename__ = 'position'
     id = Column(Integer, primary_key=True)
     exsymbol = Column(String(8))
-    price = Column(Float)
-    date = Column(Date)
     amount = Column(Integer)
 
     def __repr__(self):
-        return "<Position(exsymbol='%s', price='%s', \
-            date='%s', amount='%d')>" % (exsymbol, \
-            price, date.strftime('%Y-%m-%d'), amount)
+        return "<Position(exsymbol='%s', amount='%d')>" % (
+        self.exsymbol, self.amount)
 
 class Tranx(Base):
     __tablename__ = 'tranx'
@@ -26,10 +23,8 @@ class Tranx(Base):
     type = Column(Enum('buy', 'sell'))
 
     def __repr__(self):
-        return "<Tranx(exsymbol='%s', price='%s', \
-            date='%s', amount='%d', type='%s')>" % \
-            (exsymbol, price, date.strftime('%Y-%m-%d'),
-            amount, type)
+        return "<Tranx(exsymbol='%s', price='%s', date='%s', amount='%d', type='%s')>" % (
+        self.exsymbol, self.price, self.date.strftime('%Y-%m-%d'), self.amount, self.type)
 
 if __name__ == "__main__":
     engine = create_engine('sqlite:///' + DBFILE, echo=True)
