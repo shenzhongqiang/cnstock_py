@@ -37,7 +37,7 @@ Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 order = Order(engine)
 
-dates = get_archived_trading_dates()[30:50]
+dates = get_archived_trading_dates()[50:70]
 dates_asc = dates[::-1]
 exsymbol_history = get_exsymbol_history()
 for date in dates_asc:

@@ -100,15 +100,17 @@ class Report:
     def print_report(self):
         closed = self.get_closed_tranx()
         total = 0
-        print "\nEXSymbol\tOpen Date\tOpen\tAmount\tClose Date\tClose\tProfit"
+        print "\nEXSymbol\tOpen Date\tOpen\tAmount\tClose Date\tClose\tProfit\tPercent"
         for ct in closed:
-            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f" % (ct.exsymbol, \
-                ct.open_date.strftime('%Y-%m-%d'), \
-                ct.open_price, \
-                ct.amount, \
-                ct.close_date.strftime('%Y-%m-%d'), \
-                ct.close_price, \
-                ct.pl))
+            chg = ct.close_price / ct.open_price - 1
+            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.2f" % (ct.exsymbol,
+                ct.open_date.strftime('%Y-%m-%d'),
+                ct.open_price,
+                ct.amount,
+                ct.close_date.strftime('%Y-%m-%d'),
+                ct.close_price,
+                ct.pl,
+                chg))
             total += ct.pl
 
         print "Total: %d" % (total)

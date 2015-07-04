@@ -58,7 +58,6 @@ def is_zhangting(exsymbol, history, date):
     yest_close = history[1].close
     today_close = history[0].close
     zt_price = get_zt_price(yest_close)
-    print exsymbol, zt_price, today_close, date
     if abs(zt_price - today_close) < 1e-5:
         return True
     return False

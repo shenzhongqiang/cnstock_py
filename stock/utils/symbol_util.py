@@ -60,15 +60,24 @@ def get_archived_trading_dates():
 
     return dates
 
-def is_st(exsymbol):
-    url = "http://push2.gtimg.cn/q=%s" % (exsymbol)
+def get_st(exsymbols):
+    exsymbol_str = ",".join(exsymbols)
+    url = "http://push2.gtimg.cn/q=%s" % (exsymbol_str)
     request = Request()
     result = request.send_request(url)
-    cnname = result.split('~')[1]
-    match = re.search(r"ST", cnname)
-    if match:
-        return True
-    return False
+    lines = result.split("\n")
+    st = {}
+    for line in lines:
+        if line == "":
+            continue
+        cnname = line.split('~')[1]
+        exsymbol = line.split('=')[0][2:]
+        match = re.search(r"ST", cnname)
+        if match:
+            st[exsymbol] = True
+        else:
+            st[exsymbol] = False
+    return st
 
 def download_symbols():
     base_url = "http://stock.gtimg.cn/data/index.php?appn=rank&t=ranka/chr&o=0&l=40&v=list_data"
@@ -81,7 +90,9 @@ def download_symbols():
         pattern = re.compile('data:\'(.*)\'')
         s = pattern.search(result)
         gsymbols = s.group(1).split(',')
-        symbols = symbols + gsymbols
+        st = get_st(gsymbols)
+        gsymbols = filter(lambda x: st[x] == False, gsymbols)
+        symbols.extend(gsymbols)
         if len(gsymbols) < 40:
             break
 
@@ -95,9 +106,6 @@ def download_symbols():
     p_sz = re.compile('^sz0')
     p_cy = re.compile('^sz3')
     for s in symbols:
-        if is_st(s):
-            continue
-
         if p_sh.search(s) and s != INDEX['sh']:
             sh_symbols.append(s)
         elif p_sz.search(s) and s != INDEX['sz']:

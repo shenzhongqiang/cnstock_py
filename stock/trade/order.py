@@ -73,6 +73,8 @@ class Order:
         if pos.amount > amount:
             pos.amount -= amount
             #raise NotSellingAllShares("You need to sell all shares of %s" % (exsymbol))
+        if pos.amount == amount:
+            session.delete(pos)
         if price <= 0:
             raise IllegalPrice("%f is not a legal price" % price)
 
