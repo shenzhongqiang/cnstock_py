@@ -24,7 +24,11 @@ class ClosedTranx:
         self.open_price = open_price
         self.close_price = close_price
         self.amount = amount
-        self.pl = (close_price - open_price) * amount
+        self.comm = 8e-4 * self.open_price * self.amount + \
+            8e-4 * self.close_price * self.amount + \
+            6e-4 * self.amount * 2 + \
+            1e-3 * self.close_price * self.amount
+        self.pl = (close_price - open_price) * amount - self.comm
 
 class Report:
     def __init__(self, engine=None):

@@ -62,6 +62,12 @@ def is_zhangting(exsymbol, history, date):
         return True
     return False
 
+def is_dieting(yest, today):
+    dt_price = get_dt_price(yest)
+    if abs(dt_price - today) < 1e-5:
+        return True
+    return False
+
 def is_buyable(exsymbol, history, date):
     dt = parse_datetime(date)
     if history[0].dt == dt and \

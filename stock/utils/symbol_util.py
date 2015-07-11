@@ -91,8 +91,8 @@ def download_symbols():
         s = pattern.search(result)
         gsymbols = s.group(1).split(',')
         st = get_st(gsymbols)
-        gsymbols = filter(lambda x: st[x] == False, gsymbols)
-        symbols.extend(gsymbols)
+        non_st_gsymbols = filter(lambda x: st[x] == False, gsymbols)
+        symbols.extend(non_st_gsymbols)
         if len(gsymbols) < 40:
             break
 
