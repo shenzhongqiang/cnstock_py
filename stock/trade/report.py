@@ -1,4 +1,7 @@
+import datetime
 import copy
+import matplotlib.pyplot as plt
+from matplotlib.dates import date2num, DateFormatter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from stock.globalvar import *
@@ -105,9 +108,12 @@ class Report:
         closed = self.get_closed_tranx()
         total = 0
         print "\nEXSymbol\tOpen Date\tOpen\tAmount\tClose Date\tClose\tProfit\tPercent"
+        series = []
         for ct in closed:
             chg = ct.close_price / ct.open_price - 1
-            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.2f" % (ct.exsymbol,
+            total += ct.pl
+            series.append(total)
+            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.2f\t" % (ct.exsymbol,
                 ct.open_date.strftime('%Y-%m-%d'),
                 ct.open_price,
                 ct.amount,
@@ -115,7 +121,19 @@ class Report:
                 ct.close_price,
                 ct.pl,
                 chg))
-            total += ct.pl
 
         print "Total: %d" % (total)
 
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.xaxis.set_major_formatter(DateFormatter("%Y%m%d"))
+        dates = [ x.open_date for x in closed ]
+        min_dt = dates[0]
+        max_dt = dates[-1]
+        delta = datetime.timedelta(days=2)
+        ax.set_xlim(min_dt - delta, max_dt + delta)
+        ax.xaxis_date()
+        ax.autoscale_view()
+        plt.setp(plt.gca().get_xticklabels(), rotation=90, horizontalalignment='right')
+        plt.plot(dates, series)
+        plt.show()
