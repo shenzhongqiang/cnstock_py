@@ -13,7 +13,7 @@ class TestUtilsFuquan(unittest.TestCase):
 
     def test_parse_fuquan_data(self):
         self.assertTrue(len(Fuquan.parse_fuquan_data('sz300253')) > 0)
-        marketdata = backtestdata.BackTestData(date='150618')
+        marketdata = backtestdata.BackTestData(date='151031')
         history = marketdata.get_archived_history_in_file('sz300253')
         Fuquan.fuquan_history(history)
         history = marketdata.get_archived_history_in_file('sh000001')

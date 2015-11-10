@@ -31,6 +31,7 @@ filters = [
     lianzhang.LianZhang,
     volup.VolUp,
     high.High,
+    round_bottom.RoundBottom,
 ]
 
 result = {}
