@@ -32,6 +32,7 @@ filters = [
     volup.VolUp,
     high.High,
     round_bottom.RoundBottom,
+    kangdie.Kangdie,
 ]
 
 result = {}

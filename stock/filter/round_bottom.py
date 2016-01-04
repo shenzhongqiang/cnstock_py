@@ -70,7 +70,6 @@ class RoundBottom(Filter):
 
             chgperc = (bars[0].close / bars[1].close - 1) * 100
             if lm.coef_[0] > 0.5 and mse < 150:
-                print exsymbol, lm.coef_[0], mse
                 self.output.append(CheckResult(exsymbol, chgperc=chgperc, \
                     pe=bars[0].pe, cvalue=bars[0].cvalue, value=bars[0].value))
         except IOError, e:

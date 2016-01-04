@@ -11,8 +11,6 @@ logger = logging.getLogger(__name__)
 class ZhangTing(Filter):
     def check(self, exsymbol):
         try:
-            if exsymbol == "sz300468":
-                print 1
             bars = [0] * 3
             if isinstance(self.marketdata, realtimedata.RealTimeData):
                 bars[0] = self.marketdata.get_data(exsymbol)
@@ -24,8 +22,6 @@ class ZhangTing(Filter):
 
             vol = bars[0].volume
             zt_price = get_zt_price(bars[1].close)
-            if exsymbol == "sz300468":
-                print exsymbol
             if vol == 0:
                 return
 

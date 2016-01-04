@@ -10,6 +10,9 @@ class NoHistoryBeforeDate(Exception):
 class TooFewBarsBeforeDate(Exception):
     pass
 
+class StockNotTradable(Exception):
+    pass
+
 class MarketData:
     __metaclass__ = ABCMeta
 
@@ -59,7 +62,9 @@ class MarketData:
             line = lines[i]
             (date, o, close, high, low, volume) = line.split(' ')
             dt = parse_datetime(date)
-            if dt <= self.dt:
+            if start == 0 and dt <= self.dt:
+                if dt < self.dt:
+                    raise StockNotTradable("%s not tradable on %s" % (exsymbol, today_date))
                 start = 1
             if start == 1:
                 bar = Bar(exsymbol, date=date, dt=dt, open=float(o), \
