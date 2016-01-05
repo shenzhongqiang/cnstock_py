@@ -49,8 +49,7 @@ class Kangdie(Filter):
             chg4 = bar4.close / bar5.close - 1
             chg5 = bar5.close / bar6.close - 1
             chg6 = bar6.close / bar7.close - 1
-            if chg3 > 0 and \
-                chg4 > 0 and chg5 >0 and chg6 > 0:
+            if chg0 > 0:
                 self.output.append(CheckResult(
                     exsymbol, \
                     chgperc=chgperc, \

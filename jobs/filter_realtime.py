@@ -17,13 +17,15 @@ date = dt.strftime("%y%m%d")
 marketdata = realtimedata.RealTimeData()
 
 filters = [
-    longlowershadow.LongLowerShadow,
-    longuppershadow.LongUpperShadow,
-    crossstar.CrossStar,
-    zhangting.ZhangTing,
-    lianzhang.LianZhang,
-    volup.VolUp,
-    high.High,
+#    longlowershadow.LongLowerShadow,
+#    longuppershadow.LongUpperShadow,
+#    crossstar.CrossStar,
+#    zhangting.ZhangTing,
+#    lianzhang.LianZhang,
+#    volup.VolUp,
+#    high.High,
+#    round_bottom.RoundBottom,
+    kangdie.Kangdie,
 ]
 
 result = {}
