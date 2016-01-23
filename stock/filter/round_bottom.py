@@ -38,12 +38,16 @@ class RoundBottom(Filter):
             if isinstance(self.marketdata, realtimedata.RealTimeData):
                 bar_today = self.marketdata.get_data(exsymbol)
                 history = self.marketdata.get_archived_history_in_file(exsymbol)
+                if len(history) < 100:
+                    return
                 Fuquan.fuquan_history(history)
                 bars.append(bar_today)
                 for i in range(20):
                     bars.append(history[i])
             elif isinstance(self.marketdata, backtestdata.BackTestData):
                 history = self.marketdata.get_archived_history_in_file(exsymbol)
+                if len(history) < 100:
+                    return
                 Fuquan.fuquan_history(history)
                 for i in range(21):
                     bars.append(history[i])
