@@ -36,9 +36,10 @@ df['chg'] = df['open'].pct_change().shift(-1)
 df['ma20'] = pd.rolling_mean(df.close, 20).shift(1)
 result_df = df['2011-01-01': '2015-12-30']
 
-result_df = result_df[result_df.ma20 > result_df.ma20.shift(1)]
-gap_df = result_df[result_df.gapup > 0.002]
-pl = (gap_df.chg + 1).cumprod()
+result_df = result_df[result_df.ma20 < result_df.ma20.shift(1)]
+gap_df = result_df[result_df.gapup < -0.003]
+gap_df['negchg'] = gap_df.apply(lambda row: row['chg'] * -1.0, axis=1)
+pl = (gap_df.negchg + 1).cumprod()
 j = np.argmax(np.maximum.accumulate(pl) - pl)
 i = np.argmax(pl[:j])
 max_drawdown = pl[i] - pl[j]
@@ -54,17 +55,19 @@ y = []
 z = []
 d = []
 for gap in np.linspace(-0.02, 0.02, 1000):
-    gap_df = result_df[result_df.gapup > gap]
-    if len(gap_df.values) < 1:
+    gap_df = result_df[result_df.gapup < gap]
+    if len(gap_df.values) < 30:
         continue
-    pl = (gap_df.chg + 1).cumprod()
+    #print gap
+    gap_df['negchg'] = gap_df.apply(lambda row: row['chg'] * -1.0, axis=1)
+    pl = (gap_df.negchg + 1).cumprod()
     j = np.argmax(np.maximum.accumulate(pl) - pl)
     i = np.argmax(pl[:j])
     max_drawdown = pl[i] - pl[j]
     x.append(gap)
     y.append(pl[-1])
     z.append(max_drawdown)
-    d.append(gap_df.chg.std())
+    d.append(gap_df.negchg.std())
 
 fig, axes = plt.subplots(3, 1)
 axes[0].plot(x, y)
