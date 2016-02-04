@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 from stock.utils.symbol_util import *
 from stock.globalvar import *
 from stock.marketdata import *
-from stock.utils.fuquan import *
+from stock.utils import fuquan
 
 def func(exsymbol, lower, upper=-0.05):
     marketdata = backtestdata.BackTestData("160105")
     index_hist = marketdata.get_archived_history_in_file("sh000001")
     stock_hist = marketdata.get_archived_history_in_file(exsymbol)
-    Fuquan.fuquan_history(index_hist)
-    Fuquan.fuquan_history(stock_hist)
+    fuquan.fuquan_history(index_hist)
+    fuquan.fuquan_history(stock_hist)
 
     i = 0
     synced_index_hist = []

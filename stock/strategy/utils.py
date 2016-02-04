@@ -2,7 +2,7 @@ import os.path
 from stock.filter.utils import *
 from stock.globalvar import *
 from stock.utils.dt import *
-from stock.utils.fuquan import *
+from stock.utils import fuquan
 from stock.utils.symbol_util import *
 from stock.marketdata.bar import Bar
 
@@ -42,7 +42,7 @@ def get_exsymbol_history():
         except Exception, e:
             continue
 
-        Fuquan.fuquan_history(all_history)
+        fuquan.fuquan_history(all_history)
         exsymbol_history[exsymbol] = all_history
     return exsymbol_history
 

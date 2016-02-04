@@ -1,7 +1,7 @@
 from stock.filter.interface import Filter, CheckResult
 from stock.globalvar import *
 from stock.marketdata import *
-from stock.utils.fuquan import *
+from stock.utils import fuquan
 import logging
 import logging.config
 import traceback
@@ -40,7 +40,7 @@ class RoundBottom(Filter):
                 history = self.marketdata.get_archived_history_in_file(exsymbol)
                 if len(history) < 100:
                     return
-                Fuquan.fuquan_history(history)
+                fuquan.fuquan_history(history)
                 bars.append(bar_today)
                 for i in range(20):
                     bars.append(history[i])
@@ -48,7 +48,7 @@ class RoundBottom(Filter):
                 history = self.marketdata.get_archived_history_in_file(exsymbol)
                 if len(history) < 100:
                     return
-                Fuquan.fuquan_history(history)
+                fuquan.fuquan_history(history)
                 for i in range(21):
                     bars.append(history[i])
 

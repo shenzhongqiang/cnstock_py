@@ -5,7 +5,7 @@ from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 from stock.utils.symbol_util import *
-from stock.utils.fuquan import *
+from stock.utils import fuquan
 from stock.globalvar import *
 from stock.marketdata import *
 from stock.filter.utils import *
@@ -60,7 +60,7 @@ print "exsymbol\ttime\tlen\tcoef\tmse\tavg\tdiff"
 for exsymbol in symbols:
     try:
         history = marketdata.get_archived_history_in_file(exsymbol)
-        Fuquan.fuquan_history(history)
+        fuquan.fuquan_history(history)
         history.reverse()
         k = 100
         while k < len(history):
