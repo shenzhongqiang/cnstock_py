@@ -2,7 +2,7 @@
 import os.path
 import threading
 import Queue
-import stock.utils.request
+from stock.utils import request
 import stock.utils.symbol_util
 from stock.globalvar import *
 
@@ -24,7 +24,6 @@ class Downloader(threading.Thread):
             self.queue.task_done()
 
     def download_realtime(self, exsymbol):
-        request = stock.utils.request.Request()
         url = "http://qt.gtimg.cn/q=" + exsymbol
         content = ""
         filepath = os.path.join(REAL_DIR['stock'], exsymbol)

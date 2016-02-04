@@ -1,6 +1,6 @@
 import os.path
 import re
-from stock.utils.request import *
+from stock.utils import request
 from stock.globalvar import *
 
 class InvalidType(Exception):
@@ -63,7 +63,6 @@ def get_archived_trading_dates():
 def get_st(exsymbols):
     exsymbol_str = ",".join(exsymbols)
     url = "http://push2.gtimg.cn/q=%s" % (exsymbol_str)
-    request = Request()
     result = request.send_request(url)
     lines = result.split("\n")
     st = {}
@@ -81,7 +80,6 @@ def get_st(exsymbols):
 
 def download_symbols():
     base_url = "http://stock.gtimg.cn/data/index.php?appn=rank&t=ranka/chr&o=0&l=40&v=list_data"
-    request = Request()
     symbols = []
     i = 1
     while True:

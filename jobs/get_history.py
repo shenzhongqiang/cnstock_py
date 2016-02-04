@@ -2,7 +2,7 @@
 import os.path
 import threading
 import Queue
-import stock.utils.request
+from stock.utils import request
 import stock.utils.symbol_util
 from stock.globalvar import *
 
@@ -34,7 +34,6 @@ class Downloader(threading.Thread):
             self.queue.task_done()
 
     def download_history(self, symbol):
-        request = stock.utils.request.Request()
         url = "http://data.gtimg.cn/flashdata/hushen/latest/daily/%s.js?maxage=43201" % (symbol)
         content = ""
         filepath = os.path.join(HIST_DIR['stock'], "latest", symbol)
@@ -45,8 +44,6 @@ class Downloader(threading.Thread):
         request.download_file(fuquan_url, fuquan_path)
 
     def download_archived_history(self, symbol):
-        request = stock.utils.request.Request()
-
         content = ""
         for year in ARCHIVED_YEARS:
             filepath = os.path.join(HIST_DIR['stock'], year, symbol)
