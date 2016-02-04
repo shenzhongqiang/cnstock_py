@@ -34,6 +34,6 @@ INDEX = {
     'cy': 'sz399006',
 }
 
-ARCHIVED_YEARS = ["15","14","13","12","11"]
+ARCHIVED_YEARS = ["15","14","13","12","11","10","09","08","07","06"]
 DBFILE = os.path.join(ROOTDIR, 'cnstock.db')
 LOGCONF = os.path.join(ROOTDIR, 'conf', 'logging.conf')

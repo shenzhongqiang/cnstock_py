@@ -28,6 +28,7 @@ class TestTradeReport(unittest.TestCase):
 
     def test_sell_seperate(self):
         self.order.buy('sh000001', 20, '140901', 2000)
+        print self.order.get_positions()
         self.order.sell('sh000001', 30, '140902', 1000)
         self.order.sell('sh000001', 40, '140903', 1000)
         closed = self.report.get_closed_tranx()

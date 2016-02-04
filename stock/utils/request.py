@@ -35,7 +35,8 @@ class Request:
                 logger.error("Request failed for %s with reason: %s" % (url, e.reason))
             except RequestError, e:
                 logger.error("Request failed for %s with reason: %s" % (url, e.reason))
-            except:
+            except Exception, e:
+                print str(e)
                 logger.error("Unknown error")
             i = i + 1
 
@@ -57,7 +58,8 @@ class Request:
                 print "Request failed for %s with reason: %s" % (url, e.reason)
             except RequestError, e:
                 print "Request failed for %s with reason: %s" % (url, e.reason)
-            except:
+            except Exception, e:
+                print str(e)
                 print "Unknown error"
             i = i + 1
 

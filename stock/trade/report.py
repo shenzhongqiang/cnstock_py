@@ -1,5 +1,6 @@
 import datetime
 import copy
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num, DateFormatter
 from sqlalchemy import create_engine
@@ -32,6 +33,33 @@ class ClosedTranx:
             6e-4 * self.amount * 2 + \
             1e-3 * self.close_price * self.amount
         self.pl = (close_price - open_price) * amount - self.comm
+
+    def get_exsymbol(self):
+        return self.exsymbol
+
+    def get_open_date(self):
+        return self.open_date.strftime('%Y-%m-%d')
+
+    def get_close_date(self):
+        return self.close_date.strftime('%Y-%m-%d')
+
+    def get_open_price(self):
+        return self.open_price
+
+    def get_close_price(self):
+        return self.close_price
+
+    def get_amount(self):
+        return self.amount
+
+    def get_comm(self):
+        return self.comm
+
+    def get_profit(self):
+        return self.pl
+
+    def get_change(self):
+        return self.close_price /self.open_price - 1
 
 class Report:
     def __init__(self, engine=None):
@@ -104,25 +132,40 @@ class Report:
             total += ct.pl
         return total
 
+    def get_max_drawdown(self, profit_series):
+        j = np.argmax(np.maximum.accumulate(profit_series) - profit_series)
+        i = np.argmax(profit_series[:j+1])
+        max_drawdown = profit_series[i] - profit_series[j]
+        return max_drawdown
+
     def print_report(self):
         closed = self.get_closed_tranx()
-        total = 0
+        cum_total = 0
         print "\nEXSymbol\tOpen Date\tOpen\tAmount\tClose Date\tClose\tProfit\tPercent"
         series = []
+        win_trades = 0
         for ct in closed:
-            chg = ct.close_price / ct.open_price - 1
-            total += ct.pl
-            series.append(total)
-            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.2f\t" % (ct.exsymbol,
-                ct.open_date.strftime('%Y-%m-%d'),
-                ct.open_price,
-                ct.amount,
-                ct.close_date.strftime('%Y-%m-%d'),
-                ct.close_price,
-                ct.pl,
+            chg = ct.get_change()
+            if chg > 0:
+                win_trades +=1
+            cum_total += ct.get_profit()
+            series.append(cum_total)
+            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.2f\t" % (
+                ct.get_exsymbol(),
+                ct.get_open_date(),
+                ct.get_open_price(),
+                ct.get_amount(),
+                ct.get_close_date(),
+                ct.get_close_price(),
+                ct.get_profit(),
                 chg))
 
-        print "Total: %d" % (total)
+        max_drawdown = self.get_max_drawdown(series)
+        win_rate = win_trades / len(closed)
+        print "Profit: %f" % (cum_total)
+        print "Max Drawdown: %f" % (max_drawdown)
+        print "Num of Trades: %d" % (len(closed))
+        print "Win Rate: %f" % win_rate
 
         fig = plt.figure()
         ax = fig.add_subplot(111)

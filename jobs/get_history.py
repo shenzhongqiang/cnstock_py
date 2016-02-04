@@ -11,8 +11,10 @@ stock_dir = HIST_DIR['stock']
 if not os.path.isdir(stock_dir):
     os.makedirs(stock_dir)
     os.makedirs(os.path.join(stock_dir, "latest"))
-    for year in ARCHIVED_YEARS:
-        os.makedirs(os.path.join(stock_dir, year))
+for year in ARCHIVED_YEARS:
+    year_dir = os.path.join(stock_dir, year)
+    if not os.path.isdir(year_dir):
+        os.makedirs(year_dir)
 
 fuquan_dir = HIST_DIR['fuquan']
 if not os.path.isdir(fuquan_dir):
@@ -44,11 +46,6 @@ class Downloader(threading.Thread):
 
     def download_archived_history(self, symbol):
         request = stock.utils.request.Request()
-        urls = ["http://data.gtimg.cn/flashdata/hushen/daily/15/%s.js" % (symbol),
-            "http://data.gtimg.cn/flashdata/hushen/daily/14/%s.js" % (symbol),
-            "http://data.gtimg.cn/flashdata/hushen/daily/13/%s.js" % (symbol),
-            "http://data.gtimg.cn/flashdata/hushen/daily/12/%s.js" % (symbol),
-            "http://data.gtimg.cn/flashdata/hushen/daily/11/%s.js" % (symbol)]
 
         content = ""
         for year in ARCHIVED_YEARS:
