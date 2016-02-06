@@ -10,6 +10,7 @@ class TestTradeReport(unittest.TestCase):
         Base.metadata.create_all(engine)
         self.order = Order(engine)
         self.report = Report(engine)
+        self.order.add_account(100000)
 
     def tearDown(self):
         engine = create_engine('sqlite:///' + DBFILE, echo=echo)
@@ -19,7 +20,11 @@ class TestTradeReport(unittest.TestCase):
         self.order.buy('sh000001', 20, '140901', 1000)
         self.order.buy('sh000002', 50, '140901', 2000)
         self.order.sell('sh000001', 30, '140902', 1000)
+        balance = self.order.get_account_balance()
+        self.assertAlmostEqual(balance, 109928.8)
         self.order.sell('sh000002', 60, '140902', 2000)
+        balance = self.order.get_account_balance()
+        self.assertAlmostEqual(balance, 129630.4)
         closed = self.report.get_closed_tranx()
         comm = closed[0].get_comm()
         self.assertEqual(comm, 71.2)

@@ -9,6 +9,7 @@ class TestTradeOrder(unittest.TestCase):
         engine = create_engine('sqlite:///' + DBFILE, echo=echo)
         Base.metadata.create_all(engine)
         self.order = Order(engine)
+        self.order.add_account(100000)
 
     def tearDown(self):
         engine = create_engine('sqlite:///' + DBFILE, echo=echo)
@@ -16,8 +17,6 @@ class TestTradeOrder(unittest.TestCase):
 
     def test_buy(self):
         self.order.buy('sh500001', 20.0, '140901', 100)
-        with self.assertRaises(PositionAlreadyExists):
-            self.order.buy('sh500001', 20.0, '140902', 200)
         with self.assertRaises(NotEnoughSharesToSell):
             self.order.sell('sh500001', 20.0, '140902', 200)
         with self.assertRaises(PositionNotExists):
@@ -36,11 +35,10 @@ class TestTradeOrder(unittest.TestCase):
 
     def test_raise_exception(self):
         self.order.buy('sh500001', 10.0, '150101', 100)
-        with self.assertRaises(PositionAlreadyExists):
-            self.order.buy('sh500001', 20.0, '150101', 100)
         with self.assertRaises(IllegalPrice):
-            self.order.sell('sh500001', -1, '150101', 100)
+            self.order.sell('sh500001', -1, '150101', 50)
         with self.assertRaises(NotEnoughSharesToSell):
             self.order.sell('sh500001', 15.0, '150101', 500)
-        with self.assertRaises(NotSellingAllShares):
-            self.order.sell('sh500001', 15.0, '150101', 50)
+        self.order.sell('sh500001', 15.0, '150101', 50)
+        with self.assertRaises(PositionNotExists):
+            self.order.sell('sh500001', 15.0, '150101', 500)
