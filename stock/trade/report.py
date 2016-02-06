@@ -11,6 +11,12 @@ from stock.trade.models import *
 class NotEnoughSharesToSell(Exception):
     pass
 
+def get_commission(open_price, close_price, amount):
+    return 8e-4 * open_price * amount + \
+        8e-4 * close_price * amount + \
+        6e-4 * amount * 2 + \
+        1e-3 * close_price * amount
+
 class OpenTranx:
     def __init__(self, exsymbol, open_date,
         open_price, amount):
@@ -28,10 +34,7 @@ class ClosedTranx:
         self.open_price = open_price
         self.close_price = close_price
         self.amount = amount
-        self.comm = 8e-4 * self.open_price * self.amount + \
-            8e-4 * self.close_price * self.amount + \
-            6e-4 * self.amount * 2 + \
-            1e-3 * self.close_price * self.amount
+        self.comm = get_commission(open_price, close_price, amount)
         self.pl = (close_price - open_price) * amount - self.comm
 
     def get_exsymbol(self):
@@ -150,7 +153,7 @@ class Report:
                 win_trades +=1
             cum_total += ct.get_profit()
             series.append(cum_total)
-            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.2f\t" % (
+            print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.4f\t" % (
                 ct.get_exsymbol(),
                 ct.get_open_date(),
                 ct.get_open_price(),
@@ -161,7 +164,7 @@ class Report:
                 chg))
 
         max_drawdown = self.get_max_drawdown(series)
-        win_rate = win_trades / len(closed)
+        win_rate = float(win_trades) / len(closed)
         print "Profit: %f" % (cum_total)
         print "Max Drawdown: %f" % (max_drawdown)
         print "Num of Trades: %d" % (len(closed))

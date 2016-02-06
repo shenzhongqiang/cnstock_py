@@ -27,14 +27,12 @@ class MultiplePositionsForSameSymbol(Exception):
 class NotSellingAllShares(Exception):
     pass
 
-engine = create_engine('sqlite:///' + DBFILE, echo=False, \
+ENGINE = create_engine('sqlite:///' + DBFILE, echo=False, \
     connect_args={'check_same_thread':False},)
-Session = sessionmaker(bind=engine)
+Session = sessionmaker(bind=ENGINE)
 
 class Order:
-    def __init__(self, engine=None):
-        if engine == None:
-            engine = create_engine('sqlite:///' + DBFILE, echo=False)
+    def __init__(self, engine=ENGINE):
         self.Session = sessionmaker(bind=engine)
 
     def buy(self, exsymbol, price, buy_date, amount):

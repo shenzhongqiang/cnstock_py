@@ -21,20 +21,23 @@ class TestTradeReport(unittest.TestCase):
         self.order.sell('sh000001', 30, '140902', 1000)
         self.order.sell('sh000002', 60, '140902', 2000)
         closed = self.report.get_closed_tranx()
+        comm = closed[0].get_comm()
+        self.assertEqual(comm, 71.2)
+        comm = closed[1].get_comm()
+        self.assertEqual(comm, 298.4)
         self.assertEqual(len(closed), 2)
         pl = self.report.get_profit_loss()
-        self.assertTrue(pl, 30000)
+        self.assertAlmostEqual(pl, 29630.4)
         self.report.print_report()
 
     def test_sell_seperate(self):
         self.order.buy('sh000001', 20, '140901', 2000)
-        print self.order.get_positions()
         self.order.sell('sh000001', 30, '140902', 1000)
         self.order.sell('sh000001', 40, '140903', 1000)
         closed = self.report.get_closed_tranx()
         self.assertEqual(len(closed), 2)
         pl = self.report.get_profit_loss()
-        self.assertTrue(pl, 30000)
+        self.assertAlmostEqual(pl, 29839.6)
         self.report.print_report()
 
     def test_buy_seperate(self):
@@ -47,5 +50,5 @@ class TestTradeReport(unittest.TestCase):
         closed = self.report.get_closed_tranx()
         self.assertEqual(len(closed), 2)
         pl = self.report.get_profit_loss()
-        self.assertTrue(pl, 50000)
+        self.assertAlmostEqual(pl, 49724.4)
         self.report.print_report()
