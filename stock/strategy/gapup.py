@@ -29,23 +29,30 @@ df = pd.DataFrame({"high": highs,
     "open": opens,
     "close": closes,
     "volume": volumes}, index=dates)
+df['last_close'] = df.close.shift(1)
+df['next_open'] = df.open.shift(-1)
 df['gapup'] = pd.Series(df.open / df.close.shift(1) - 1)
 df.index = pd.to_datetime(df.index, format='%y%m%d')
 df['chg'] = df['open'].pct_change().shift(-1)
 #df['chg'] = df['close'] / df['open'] - 1
 df['ma20'] = pd.rolling_mean(df.close, 20).shift(1)
-result_df = df['2011-01-01': '2015-12-30']
+result_df = df['2015-01-01': '2015-12-30']
 
 result_df = result_df[result_df.ma20 > result_df.ma20.shift(1)]
 gap_df = result_df[result_df.gapup > 0.002]
+print gap_df
 pl = (gap_df.chg + 1).cumprod()
 j = np.argmax(np.maximum.accumulate(pl) - pl)
 i = np.argmax(pl[:j])
 max_drawdown = pl[i] - pl[j]
 print len(pl), max_drawdown, pl[-1]
 fig = plt.figure()
+dates = gap_df.index
 ax2 = fig.add_subplot(1,1,1)
-ax2.plot(pl)
+ax2.xaxis.set_major_formatter(DateFormatter("%Y%m%d"))
+ax2.xaxis_date()
+plt.setp(plt.gca().get_xticklabels(), rotation=90, horizontalalignment='right')
+ax2.plot(dates, pl)
 plt.show()
 
 #''' tuning code
