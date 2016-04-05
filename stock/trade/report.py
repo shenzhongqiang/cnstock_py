@@ -136,10 +136,33 @@ class Report:
         return total
 
     def get_max_drawdown(self, profit_series):
+        if len(profit_series) == 0:
+            return 0.0
         j = np.argmax(np.maximum.accumulate(profit_series) - profit_series)
         i = np.argmax(profit_series[:j+1])
         max_drawdown = profit_series[i] - profit_series[j]
         return max_drawdown
+
+    def get_summary(self):
+        closed = self.get_closed_tranx()
+        cum_total = 0
+        series = []
+        win_trades = 0
+        for ct in closed:
+            chg = ct.get_change()
+            if chg > 0:
+                win_trades +=1
+            cum_total += ct.get_profit()
+            series.append(cum_total)
+
+        max_drawdown = self.get_max_drawdown(series)
+        win_rate = float(win_trades) / len(closed)
+        return {
+            "profit": cum_total,
+            "max_drawdown": max_drawdown,
+            "num_of_trades": len(closed),
+            "win_rate": win_rate,
+        }
 
     def print_report(self):
         closed = self.get_closed_tranx()

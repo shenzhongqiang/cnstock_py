@@ -8,5 +8,6 @@ if not os.path.isdir(SYMDIR):
 
 print "start to download symbols"
 stock.utils.symbol_util.download_symbols()
+stock.utils.symbol_util.get_zz500_symbols()
 print "download finished"
 

@@ -24,15 +24,15 @@ date = sys.argv[1]
 marketdata = backtestdata.BackTestData(date=date)
 
 filters = [
-    longuppershadow.LongUpperShadow,
-    longlowershadow.LongLowerShadow,
-    crossstar.CrossStar,
-    zhangting.ZhangTing,
-    lianzhang.LianZhang,
+#    longuppershadow.LongUpperShadow,
+#    longlowershadow.LongLowerShadow,
+#    crossstar.CrossStar,
+#    zhangting.ZhangTing,
+#    lianzhang.LianZhang,
     volup.VolUp,
-    high.High,
-    round_bottom.RoundBottom,
-    kangdie.Kangdie,
+#    high.High,
+#    round_bottom.RoundBottom,
+#    kangdie.Kangdie,
 ]
 
 result = {}

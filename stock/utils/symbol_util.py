@@ -1,5 +1,6 @@
 import os.path
 import re
+import json
 from stock.utils import request
 from stock.globalvar import *
 
@@ -144,3 +145,30 @@ def is_symbol_sz(symbol):
         return True
     else:
         return False
+
+def symbol_to_exsymbol(symbol):
+    exsymbol = ''
+    if re.search(r'^6', symbol):
+        exsymbol = 'sh' + symbol
+    elif re.search(r'^3', symbol):
+        exsymbol = 'sz' + symbol
+    elif re.search(r'^0', symbol):
+        exsymbol = 'sz' + symbol
+    return exsymbol
+
+def get_zz500_symbols():
+    base_url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SHSZZS&sty=SHSZZS&st=0&sr=-1&p=%d&ps=50&js=var%%20UNiDhWtX={pages:(pc),data:[(x)]}&code=000905"
+    patt = re.compile(r'data:(\[.*\])')
+    symbols = []
+    for i in range(1, 11):
+        url = base_url % (i)
+        result = request.send_request(url)
+        matched = patt.search(result)
+        data = json.loads(matched.group(1))
+        for item in data:
+            symbols.append(symbol_to_exsymbol(
+                item.split(",")[0]))
+
+    f= open(SYM['zz500'], "w")
+    f.write('\n'.join(symbols))
+    f.close()

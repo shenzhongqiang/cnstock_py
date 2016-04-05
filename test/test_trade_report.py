@@ -33,7 +33,6 @@ class TestTradeReport(unittest.TestCase):
         self.assertEqual(len(closed), 2)
         pl = self.report.get_profit_loss()
         self.assertAlmostEqual(pl, 29630.4)
-        self.report.print_report()
 
     def test_sell_seperate(self):
         self.order.buy('sh000001', 20, '140901', 2000)
@@ -43,7 +42,6 @@ class TestTradeReport(unittest.TestCase):
         self.assertEqual(len(closed), 2)
         pl = self.report.get_profit_loss()
         self.assertAlmostEqual(pl, 29839.6)
-        self.report.print_report()
 
     def test_buy_seperate(self):
         self.order.buy('sh000001', 20, '140901', 2000)
@@ -56,4 +54,13 @@ class TestTradeReport(unittest.TestCase):
         self.assertEqual(len(closed), 2)
         pl = self.report.get_profit_loss()
         self.assertAlmostEqual(pl, 49724.4)
-        self.report.print_report()
+
+    def test_get_max_drawdown(self):
+        result = self.report.get_max_drawdown([1,2,3,4,1,5,0])
+        self.assertEqual(result, 5)
+        result = self.report.get_max_drawdown([])
+        self.assertEqual(result, 0)
+        result = self.report.get_max_drawdown([1,2,3,4,5,6])
+        self.assertEqual(result, 0)
+        result = self.report.get_max_drawdown([6,5,4,3,2,1])
+        self.assertEqual(result, 5)
