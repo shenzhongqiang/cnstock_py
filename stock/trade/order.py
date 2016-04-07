@@ -53,6 +53,7 @@ class Order:
     def buy(self, exsymbol, price, buy_date, amount):
         pos = self.session.query(Position).filter_by(exsymbol=exsymbol).first()
 
+        buy_date_str = buy_date.strftime('%Y-%m-%d %H:%M:%S')
         balance = self.get_account_balance()
         if balance < price * amount:
             raise NotEnoughMoney()
@@ -60,18 +61,17 @@ class Order:
         if price <= 0:
             raise IllegalPrice("%f is not a legal price" % price)
 
-        d = datetime.strptime(buy_date, '%y%m%d')
         if pos != None:
             pos.amount += amount
         else:
             pos = Position(exsymbol=exsymbol, amount=amount)
             self.session.add(pos)
-        tranx = Tranx(exsymbol=exsymbol, price=price, date=d, \
+        tranx = Tranx(exsymbol=exsymbol, price=price, date=buy_date, \
             amount=amount, closed=0, profit=0, type='buy')
         self.session.add(tranx)
         self.session.commit()
         logger.info("bought: symbol: %s, amount: %d, price: %f, date: %s" %
-            (exsymbol, amount, price, buy_date))
+            (exsymbol, amount, price, buy_date_str))
 
     def sell(self, exsymbol, price, sell_date, amount):
         positions = self.session.query(Position).filter_by(exsymbol=exsymbol).all()
@@ -92,7 +92,7 @@ class Order:
             raise IllegalPrice("%f is not a legal price" % price)
 
         # close existing open transactions
-        d = datetime.strptime(sell_date, '%y%m%d')
+        sell_date_str = sell_date.strftime('%Y-%m-%d %H:%M:%S')
         account = self.get_account()
 
         tranx_rows = self.session.query(Tranx).filter(text(
@@ -104,7 +104,7 @@ class Order:
                 closed_tranx = ClosedTranx(exsymbol=exsymbol,
                     open_date=open_tranx_row.date,
                     open_price=open_tranx_row.price,
-                    close_date=d,
+                    close_date=sell_date,
                     close_price=price,
                     amount=remain_to_close)
                 profit = closed_tranx.get_profit()
@@ -116,7 +116,7 @@ class Order:
                 closed_tranx = ClosedTranx(exsymbol=exsymbol,
                     open_date=open_tranx_row.date,
                     open_price=open_tranx_row.price,
-                    close_date=d,
+                    close_date=sell_date,
                     close_price=price,
                     amount=open_amount)
                 profit = closed_tranx.get_profit()
@@ -125,12 +125,12 @@ class Order:
                 account.profit = account.profit + profit
                 remain_to_close = remain_to_close - open_amount
 
-        tranx = Tranx(exsymbol=exsymbol, price=price, date=d, \
+        tranx = Tranx(exsymbol=exsymbol, price=price, date=sell_date, \
             amount=amount, type='sell')
         self.session.add(tranx)
         self.session.commit()
         logger.info("sold: symbol: %s, amount: %d, price: %f, date: %s" %
-            (exsymbol, amount, price, sell_date))
+            (exsymbol, amount, price, sell_date_str))
 
     def get_positions(self):
         positions = self.session.query(Position).all()

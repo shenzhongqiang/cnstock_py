@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float, Date, Enum, create_engine
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, create_engine
 from stock.globalvar import *
 
 Base = declarative_base()
@@ -28,7 +28,7 @@ class Tranx(Base):
     id = Column(Integer, primary_key=True)
     exsymbol = Column(String(8))
     price = Column(Float)
-    date = Column(Date)
+    date = Column(DateTime)
     amount = Column(Integer)
     closed = Column(Integer)
     profit = Column(Float)
@@ -36,7 +36,7 @@ class Tranx(Base):
 
     def __repr__(self):
         return "<Tranx(exsymbol='%s', price='%s', date='%s', amount='%d', closed='%d', profit='%f', type='%s')>" % (
-        self.exsymbol, self.price, self.date.strftime('%Y-%m-%d'),
+        self.exsymbol, self.price, self.date.strftime('%Y-%m-%d %H:%M:%S'),
         self.amount, self.closed, self.profit, self.type)
 
 if __name__ == "__main__":

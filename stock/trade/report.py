@@ -41,10 +41,10 @@ class ClosedTranx:
         return self.exsymbol
 
     def get_open_date(self):
-        return self.open_date.strftime('%Y-%m-%d')
+        return self.open_date.strftime('%Y-%m-%d %H:%M:%S')
 
     def get_close_date(self):
-        return self.close_date.strftime('%Y-%m-%d')
+        return self.close_date.strftime('%Y-%m-%d %H:%M:%S')
 
     def get_open_price(self):
         return self.open_price
