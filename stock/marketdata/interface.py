@@ -1,8 +1,11 @@
 import os.path
+import datetime
 from stock.marketdata.bar import Bar
 from stock.globalvar import *
 from stock.utils.dt import *
+from stock.utils.symbol_util import *
 from abc import *
+import tushare as ts
 
 class NoHistoryBeforeDate(Exception):
     pass
@@ -22,14 +25,20 @@ class MarketData:
         pass
 
     def get_history_by_date(self, exsymbol):
-        bars = self.get_history_in_file(exsymbol)
+        symbol = exsymbol_to_symbol(exsymbol)
+        df = ts.get_k_data(symbol)
+        print df
         history = []
         start = 0
-        for bar in bars:
-            if start == 0 and bar.dt <= self.dt:
+        for index, row in df.iloc[::-1].iterrows():
+            dt = datetime.datetime.strptime(row["date"], "%Y-%m-%d")
+            if start == 0 and dt <= self.dt:
                 start = 1
 
             if start == 1:
+                bar = Bar(row.code, date=row.date, dt=dt, open=row.open,
+                    close=row.close, high=row.high, low=row.low,
+                    volume=row.volume)
                 history.append(bar)
 
         if start == 0:
@@ -41,70 +50,3 @@ class MarketData:
                 % (exsymbol, self.date))
         return history
 
-    # get all history bars in file
-    def get_history_in_file(self, exsymbol):
-        today_date = self.date
-
-        file = os.path.join(HIST_DIR['stock'], "latest", exsymbol)
-        f = open(file, "r")
-        contents = f.read()
-        f.close()
-
-        lines = contents.split('\\n\\\n')
-
-        history = []
-        start = 0
-        i = len(lines) - 2
-        while i >= 2:
-            line = lines[i]
-            (date, o, close, high, low, volume) = line.split(' ')
-            dt = parse_datetime(date)
-            if start == 0 and dt <= self.dt:
-                start = 1
-            if start == 1:
-                bar = Bar(exsymbol, date=date, dt=dt, open=float(o), \
-                    close=float(close), high=float(high), low=float(low), \
-                    volume=float(volume))
-                history.append(bar)
-            i = i - 1
-
-        if start == 0:
-            raise NoHistoryBeforeDate("no history data for %s before %s" \
-                % (exsymbol, self.date))
-
-        return history
-
-    def get_archived_history_in_file(self, exsymbol):
-        today_date = self.date
-
-        history = []
-        start = 0
-        for year in ARCHIVED_YEARS:
-            filepath = os.path.join(HIST_DIR['stock'], year, exsymbol)
-            if not os.path.isfile(filepath):
-                continue
-
-            f = open(filepath, "r")
-            contents = f.read()
-            f.close()
-
-            lines = contents.split('\\n\\\n')
-            i = len(lines) - 2
-            while i >= 1:
-                line = lines[i]
-                (date, o, close, high, low, volume) = line.split(' ')
-                dt = parse_datetime(date)
-                if dt <= self.dt:
-                    start = 1
-                if start == 1:
-                    bar = Bar(exsymbol, date=date, dt=dt, open=float(o), \
-                        close=float(close), high=float(high), low=float(low), \
-                        volume=float(volume))
-                    history.append(bar)
-                i = i - 1
-
-        if start == 0:
-            raise NoHistoryBeforeDate("no history data for %s before %s" \
-                % (exsymbol, self.date))
-
-        return history

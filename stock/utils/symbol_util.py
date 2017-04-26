@@ -156,6 +156,9 @@ def symbol_to_exsymbol(symbol):
         exsymbol = 'sz' + symbol
     return exsymbol
 
+def exsymbol_to_symbol(exsymbol):
+    return exsymbol[2:]
+
 def get_zz500_symbols():
     base_url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SHSZZS&sty=SHSZZS&st=0&sr=-1&p=%d&ps=50&js=var%%20UNiDhWtX={pages:(pc),data:[(x)]}&code=000905"
     patt = re.compile(r'data:(\[.*\])')
