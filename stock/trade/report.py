@@ -148,12 +148,14 @@ class Report:
         cum_total = 0
         series = []
         win_trades = 0
+        comm_total = 0
         for ct in closed:
             chg = ct.get_change()
             if chg > 0:
                 win_trades +=1
             cum_total += ct.get_profit()
             series.append(cum_total)
+            comm_total += ct.get_comm()
 
         max_drawdown = self.get_max_drawdown(series)
         win_rate = float(win_trades) / len(closed)
@@ -162,6 +164,7 @@ class Report:
             "max_drawdown": max_drawdown,
             "num_of_trades": len(closed),
             "win_rate": win_rate,
+            "comm_total": comm_total,
         }
 
     def print_report(self):
@@ -170,11 +173,13 @@ class Report:
         print "\nEXSymbol\tOpen Date\tOpen\tAmount\tClose Date\tClose\tProfit\tPercent"
         series = []
         win_trades = 0
+        comm_total = 0
         for ct in closed:
             chg = ct.get_change()
             if chg > 0:
                 win_trades +=1
             cum_total += ct.get_profit()
+            comm_total += ct.get_comm()
             series.append(cum_total)
             print("%s\t%s\t%.2f\t%d\t%s\t%.2f\t%.2f\t%.4f\t" % (
                 ct.get_exsymbol(),
@@ -192,6 +197,7 @@ class Report:
         print "Max Drawdown: %f" % (max_drawdown)
         print "Num of Trades: %d" % (len(closed))
         print "Win Rate: %f" % win_rate
+        print "Comm Cost: %f" % comm_total
 
         fig = plt.figure()
         ax = fig.add_subplot(111)

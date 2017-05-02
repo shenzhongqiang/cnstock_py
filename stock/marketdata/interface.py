@@ -5,6 +5,7 @@ from stock.globalvar import *
 from stock.utils.dt import *
 from stock.utils.symbol_util import *
 from abc import *
+import pandas as pd
 import tushare as ts
 
 class NoHistoryBeforeDate(Exception):
@@ -12,6 +13,11 @@ class NoHistoryBeforeDate(Exception):
 
 class TooFewBarsBeforeDate(Exception):
     pass
+
+def load_csv(symbol):
+    path = os.path.join(HIST_DIR["stock"], symbol)
+    df = pd.read_csv(path, index_col=0, dtype=str)
+    return df
 
 class MarketData:
     __metaclass__ = ABCMeta
@@ -26,8 +32,7 @@ class MarketData:
 
     def get_history_by_date(self, exsymbol):
         symbol = exsymbol_to_symbol(exsymbol)
-        df = ts.get_k_data(symbol)
-        print df
+        df = load_csv(symbol)
         history = []
         start = 0
         for index, row in df.iloc[::-1].iterrows():

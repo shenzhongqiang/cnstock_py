@@ -42,3 +42,5 @@ nosetests.xml
 .ropeproject
 
 db.sqlite3
+data
+cnstock.db

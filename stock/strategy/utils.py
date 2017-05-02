@@ -1,49 +1,52 @@
+import datetime
 import os.path
+from multiprocessing import Pool
 from stock.filter.utils import *
 from stock.globalvar import *
 from stock.utils.dt import *
 from stock.utils import fuquan
 from stock.utils.symbol_util import *
 from stock.marketdata.bar import Bar
+import pandas as pd
 
-def get_complete_history(exsymbol):
+def load_csv(symbol):
+    path = os.path.join(HIST_DIR["stock"], symbol)
+    df = pd.read_csv(path, dtype=str)
+    return df
+
+def get_complete_history(symbol):
+    try:
+        path = os.path.join(HIST_DIR["stock"], symbol)
+        df = pd.read_csv(path, dtype=str, engine="c")
+    except IOError, e:
+        return [symbol, []]
+
     all_history = []
-    for year in ARCHIVED_YEARS:
-        filepath = os.path.join(HIST_DIR['stock'], year, exsymbol)
-        if not os.path.isfile(filepath):
-            continue
+    for index, row in df.iloc[::-1].iterrows():
+        dt = datetime.datetime.strptime(row["date"], "%Y-%m-%d")
+        exsymbol = symbol_to_exsymbol(symbol)
+        bar = Bar(exsymbol, date=row["date"], dt=dt, open=float(row["open"]),
+            close=float(row["close"]), high=float(row["high"]), low=float(row["low"]),
+            volume=float(row["volume"]))
+        all_history.append(bar)
 
-        f = open(filepath, "r")
-        contents = f.read()
-        f.close()
-
-        lines = contents.split('\\n\\\n')
-        i = len(lines) - 2
-        while i >= 1:
-            line = lines[i]
-            (date, o, close, high, low, volume) = line.split(' ')
-            dt = parse_datetime(date)
-            bar = Bar(exsymbol, date=date, dt=dt, open=float(o), \
-                close=float(close), high=float(high), low=float(low), \
-                volume=float(volume))
-            all_history.append(bar)
-            i = i - 1
-
-    return all_history
+    return [symbol, all_history]
 
 def get_exsymbol_history():
-    exsymbols = get_stock_symbols('all')
-    indice = get_index_symbols()
-    exsymbols.extend(indice)
+    p = Pool(20)
+    symbols = get_stock_symbols()
     exsymbol_history = {}
-    for exsymbol in exsymbols:
-        try:
-            all_history = get_complete_history(exsymbol)
-        except Exception, e:
-            continue
 
-        fuquan.fuquan_history(all_history)
-        exsymbol_history[exsymbol] = all_history
+    results = []
+    for symbol in symbols:
+        res = p.apply_async(get_complete_history, (symbol,))
+        results.append(res)
+
+    for res in results:
+        data = res.get()
+        symbol = data[0]
+        exsymbol = symbol_to_exsymbol(symbol)
+        exsymbol_history[exsymbol] = data[1]
     return exsymbol_history
 
 def get_history_by_date(all_history, date):

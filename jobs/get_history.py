@@ -5,20 +5,15 @@ import Queue
 from stock.utils import request
 import stock.utils.symbol_util
 from stock.globalvar import *
+import tushare as ts
 
 # check if directory exists, if not create directory
 stock_dir = HIST_DIR['stock']
+index_dir = HIST_DIR['index']
 if not os.path.isdir(stock_dir):
     os.makedirs(stock_dir)
-    os.makedirs(os.path.join(stock_dir, "latest"))
-for year in ARCHIVED_YEARS:
-    year_dir = os.path.join(stock_dir, year)
-    if not os.path.isdir(year_dir):
-        os.makedirs(year_dir)
-
-fuquan_dir = HIST_DIR['fuquan']
-if not os.path.isdir(fuquan_dir):
-    os.makedirs(fuquan_dir)
+if not os.path.isdir(index_dir):
+    os.makedirs(index_dir)
 
 class Downloader(threading.Thread):
     def __init__(self, queue):
@@ -27,28 +22,23 @@ class Downloader(threading.Thread):
 
     def run(self):
         while True:
-            symbol = self.queue.get()
-            print symbol
-            self.download_history(symbol)
-            self.download_archived_history(symbol)
-            self.queue.task_done()
+            try:
+                data = self.queue.get()
+                print data["symbol"]
+                self.download_stock_history(data["symbol"], is_index=data["is_index"])
+                self.queue.task_done()
+            except Exception, e:
+                print str(e)
+                self.queue.task_done()
 
-    def download_history(self, symbol):
-        url = "http://data.gtimg.cn/flashdata/hushen/latest/daily/%s.js?maxage=43201" % (symbol)
-        content = ""
-        filepath = os.path.join(HIST_DIR['stock'], "latest", symbol)
-        content = request.download_file(url, filepath)
-        symbol_digit = symbol[2:]
-        fuquan_url = "http://data.gtimg.cn/flashdata/hushen/fuquan/%s.js?maxage=6000000" % (symbol)
-        fuquan_path = os.path.join(HIST_DIR['fuquan'], symbol)
-        request.download_file(fuquan_url, fuquan_path)
-
-    def download_archived_history(self, symbol):
-        content = ""
-        for year in ARCHIVED_YEARS:
-            filepath = os.path.join(HIST_DIR['stock'], year, symbol)
-            url = "http://data.gtimg.cn/flashdata/hushen/daily/%s/%s.js" % (year, symbol)
-            content = request.download_file(url, filepath)
+    def download_stock_history(self, symbol, is_index):
+        df = ts.get_k_data(symbol, index=is_index)
+        path = None
+        if not is_index:
+            path = os.path.join(stock_dir, symbol)
+        else:
+            path = os.path.join(index_dir, symbol)
+        df.to_csv(path)
 
 if __name__ == "__main__":
     queue = Queue.Queue()
@@ -58,11 +48,13 @@ if __name__ == "__main__":
         t.start()
 
     # download stock symbols
-    symbols = stock.utils.symbol_util.get_stock_symbols('all')
+    symbols = stock.utils.symbol_util.get_stock_symbols()
     index_symbols = stock.utils.symbol_util.get_index_symbols()
-    symbols.extend(index_symbols)
     for symbol in symbols:
-        queue.put(symbol)
+        queue.put({"symbol": symbol, "is_index": False})
+
+    for symbol in index_symbols:
+        queue.put({"symbol": symbol, "is_index": True})
 
     queue.join()
 

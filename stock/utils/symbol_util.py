@@ -1,25 +1,22 @@
+import datetime
 import os.path
 import re
 import json
 from stock.utils import request
 from stock.globalvar import *
+import tushare as ts
+import pandas as pd
 
 class InvalidType(Exception):
     pass
 
-def get_stock_symbols(type='all'):
-    if type not in SYM:
-        raise InvalidType('Please specify the type: all|sh|sz|cy')
-    filename = SYM[type]
-    f = open(filename, "r")
-    content = f.read()
-    f.close()
-    symbols = content.split('\n')
-    symbols = filter(None, symbols)
-    return symbols
+def get_stock_symbols():
+    df = pd.read_csv(SYM["all"], dtype=str)
+    return df.code.tolist()
 
 def get_index_symbols():
-    return INDEX.values()
+    df = pd.read_csv(SYM["all"], dtype=str)
+    return df.code.tolist()
 
 def get_index_symbol(type):
     return INDEX[type]
@@ -42,24 +39,18 @@ def get_trading_dates():
 
     return dates
 
-def get_archived_trading_dates():
-    dates = []
-    for year in ARCHIVED_YEARS:
-        filepath = os.path.join(HIST_DIR['stock'], year, 'sh000001')
-        f = open(filepath, "r")
-        contents = f.read()
-        f.close()
-        lines = contents.split('\\n\\\n')
+def get_archived_trading_dates(start, end):
+    df = ts.get_k_data('000001', index=True)
+    dates = df.date[::-1].tolist()
+    dts = map(lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"), dates)
+    result = []
+    start_dt = datetime.datetime.strptime(start, "%Y-%m-%d")
+    end_dt = datetime.datetime.strptime(end, "%Y-%m-%d")
+    for dt in dts:
+        if dt >= start_dt and dt <= end_dt:
+            result.append(dt)
 
-        start = 0
-        i = len(lines) - 2
-        while i >= 1:
-            line = lines[i]
-            (date, o, close, high, low, volume) = line.split(' ')
-            dates.append(date)
-            i = i - 1
-
-    return dates
+    return map(lambda x: datetime.datetime.strftime(x, "%Y-%m-%d"), result)
 
 def get_st(exsymbols):
     exsymbol_str = ",".join(exsymbols)
@@ -80,50 +71,10 @@ def get_st(exsymbols):
     return st
 
 def download_symbols():
-    base_url = "http://stock.gtimg.cn/data/index.php?appn=rank&t=ranka/chr&o=0&l=40&v=list_data"
-    symbols = []
-    i = 1
-    while True:
-        url = base_url + "&p=" + str(i)
-        result = request.send_request(url)
-        pattern = re.compile('data:\'(.*)\'')
-        s = pattern.search(result)
-        gsymbols = s.group(1).split(',')
-        st = get_st(gsymbols)
-        non_st_gsymbols = filter(lambda x: st[x] == False, gsymbols)
-        symbols.extend(non_st_gsymbols)
-        if len(gsymbols) < 40:
-            break
-
-        i = i + 1
-
-    sh_symbols = []
-    sz_symbols = []
-    cy_symbols = []
-
-    p_sh = re.compile('^sh')
-    p_sz = re.compile('^sz0')
-    p_cy = re.compile('^sz3')
-    for s in symbols:
-        if p_sh.search(s) and s != INDEX['sh']:
-            sh_symbols.append(s)
-        elif p_sz.search(s) and s != INDEX['sz']:
-            sz_symbols.append(s)
-        elif p_cy.search(s) and s != INDEX['cy']:
-            cy_symbols.append(s)
-
-    f_all = open(SYM['all'], "w")
-    f_sh = open(SYM['sh'], "w")
-    f_sz = open(SYM['sz'], "w")
-    f_cy = open(SYM['cy'], "w")
-    f_all.write('\n'.join(symbols))
-    f_sh.write('\n'.join(sh_symbols))
-    f_sz.write('\n'.join(sz_symbols))
-    f_cy.write('\n'.join(cy_symbols))
-    f_all.close()
-    f_sh.close()
-    f_sz.close()
-    f_cy.close()
+    df = ts.get_stock_basics()
+    df.to_csv(SYM["all"])
+    index_df = ts.get_index()
+    index_df.to_csv(SYM["id"])
 
 def is_symbol_cy(symbol):
     patt = re.compile('^sz3')
@@ -159,19 +110,3 @@ def symbol_to_exsymbol(symbol):
 def exsymbol_to_symbol(exsymbol):
     return exsymbol[2:]
 
-def get_zz500_symbols():
-    base_url = "http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?type=SHSZZS&sty=SHSZZS&st=0&sr=-1&p=%d&ps=50&js=var%%20UNiDhWtX={pages:(pc),data:[(x)]}&code=000905"
-    patt = re.compile(r'data:(\[.*\])')
-    symbols = []
-    for i in range(1, 11):
-        url = base_url % (i)
-        result = request.send_request(url)
-        matched = patt.search(result)
-        data = json.loads(matched.group(1))
-        for item in data:
-            symbols.append(symbol_to_exsymbol(
-                item.split(",")[0]))
-
-    f= open(SYM['zz500'], "w")
-    f.write('\n'.join(symbols))
-    f.close()
