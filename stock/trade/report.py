@@ -128,36 +128,47 @@ class Report:
 
         return closed_tranx
 
-    def get_profit_loss(self):
-        closed = self.get_closed_tranx()
+    def __get_profit_loss(self, closed_tranx):
         total = 0
-        for ct in closed:
+        for ct in closed_tranx:
             total += ct.pl
         return total
 
-    def get_max_drawdown(self, profit_series):
+    def __get_max_drawdown(self, closed_tranx):
+        cum_total = 0.0
+        profit_series = []
+        for ct in closed_tranx:
+            cum_total += ct.get_profit()
+            profit_series.append(cum_total)
+
         if len(profit_series) == 0:
             return 0.0
+
         j = np.argmax(np.maximum.accumulate(profit_series) - profit_series)
         i = np.argmax(profit_series[:j+1])
         max_drawdown = profit_series[i] - profit_series[j]
         return max_drawdown
 
-    def get_summary(self):
-        closed = self.get_closed_tranx()
-        cum_total = 0
-        series = []
+    def __get_win_trades(self, closed_tranx):
         win_trades = 0
-        comm_total = 0
-        for ct in closed:
+        for ct in closed_tranx:
             chg = ct.get_change()
             if chg > 0:
                 win_trades +=1
-            cum_total += ct.get_profit()
-            series.append(cum_total)
-            comm_total += ct.get_comm()
+        return win_trades
 
-        max_drawdown = self.get_max_drawdown(series)
+    def __get_comm_total(self, closed_tranx):
+        comm_total = 0.0
+        for ct in closed_tranx:
+            comm_total += ct.get_comm()
+        return comm_total
+
+    def get_summary(self):
+        closed = self.get_closed_tranx()
+        cum_total = self.__get_profit_loss(closed)
+        comm_total = self.__get_comm_total(closed)
+        win_trades = self.__get_win_trades(closed)
+        max_drawdown = self.__get_max_drawdown(closed)
         win_rate = float(win_trades) / len(closed)
         return {
             "profit": cum_total,
@@ -191,7 +202,7 @@ class Report:
                 ct.get_profit(),
                 chg))
 
-        max_drawdown = self.get_max_drawdown(series)
+        max_drawdown = self.__get_max_drawdown(closed)
         win_rate = float(win_trades) / len(closed)
         print "Profit: %f" % (cum_total)
         print "Max Drawdown: %f" % (max_drawdown)
