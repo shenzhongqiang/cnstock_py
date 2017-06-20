@@ -4,6 +4,7 @@ import re
 import json
 from stock.utils import request
 from stock.globalvar import *
+from stock.marketdata.utils import load_csv
 import tushare as ts
 import pandas as pd
 
@@ -22,26 +23,14 @@ def get_index_symbol(type):
     return INDEX[type]
 
 def get_trading_dates():
-    file = os.path.join(HIST_DIR['stock'], "latest", 'sh000001')
-    f = open(file, "r")
-    contents = f.read()
-    f.close()
-    lines = contents.split('\\n\\\n')
-
-    dates = []
-    start = 0
-    i = len(lines) - 2
-    while i >= 2:
-        line = lines[i]
-        (date, o, close, high, low, volume) = line.split(' ')
-        dates.append(date)
-        i = i - 1
-
-    return dates
+    index_path = os.path.join(HIST_DIR["index"], "000001")
+    df = load_csv(index_path)
+    return df.date.tolist()
 
 def get_archived_trading_dates(start, end):
-    df = ts.get_k_data('000001', index=True)
-    dates = df.date[::-1].tolist()
+    index_path = os.path.join(HIST_DIR["index"], "000001")
+    df = load_csv(index_path)
+    dates = df.date.tolist()
     dts = map(lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"), dates)
     result = []
     start_dt = datetime.datetime.strptime(start, "%Y-%m-%d")

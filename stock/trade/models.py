@@ -1,6 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, create_engine
-from stock.globalvar import *
+from stock.globalvar import DBFILE
 
 Base = declarative_base()
 class Account(Base):

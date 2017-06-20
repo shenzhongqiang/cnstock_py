@@ -1,3 +1,4 @@
+from tqdm import tqdm, trange
 import datetime
 import os.path
 from multiprocessing import Pool
@@ -7,17 +8,13 @@ from stock.utils.dt import *
 from stock.utils import fuquan
 from stock.utils.symbol_util import *
 from stock.marketdata.bar import Bar
+from stock.marketdata.utils import load_csv
 import pandas as pd
-
-def load_csv(symbol):
-    path = os.path.join(HIST_DIR["stock"], symbol)
-    df = pd.read_csv(path, dtype=str)
-    return df
 
 def get_complete_history(symbol):
     try:
         path = os.path.join(HIST_DIR["stock"], symbol)
-        df = pd.read_csv(path, dtype=str, engine="c")
+        df = load_csv(path)
     except IOError, e:
         return [symbol, []]
 
@@ -33,7 +30,7 @@ def get_complete_history(symbol):
     return [symbol, all_history]
 
 def get_exsymbol_history():
-    p = Pool(20)
+    p = Pool(10)
     symbols = get_stock_symbols()
     exsymbol_history = {}
 
@@ -42,11 +39,13 @@ def get_exsymbol_history():
         res = p.apply_async(get_complete_history, (symbol,))
         results.append(res)
 
-    for res in results:
+    for i in trange(len(results)):
+        res = results[i]
         data = res.get()
         symbol = data[0]
         exsymbol = symbol_to_exsymbol(symbol)
         exsymbol_history[exsymbol] = data[1]
+        i += 1
     return exsymbol_history
 
 def get_history_by_date(all_history, date):

@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from tqdm import tqdm, trange
 import os.path
 import threading
 from multiprocessing import Pool
@@ -18,7 +19,6 @@ if not os.path.isdir(index_dir):
 def download_stock_history(data):
     try:
         symbol = data["symbol"]
-        print "getting history for %s" % symbol
         is_index = data["is_index"]
         df = ts.get_k_data(symbol, index=is_index)
         path = None
@@ -28,7 +28,8 @@ def download_stock_history(data):
             path = os.path.join(index_dir, symbol)
         df.to_csv(path)
     except Exception, e:
-        print "error getting history due to %s" % str(e)
+        #print "error getting history due to %s" % str(e)
+        pass
 
 if __name__ == "__main__":
     pool = Pool(20)
@@ -42,6 +43,13 @@ if __name__ == "__main__":
 
     for symbol in index_symbols:
         all_symbols.append({"symbol": symbol, "is_index": True})
+   
+    results = []
+    for symbol in all_symbols:
+        res = pool.apply_async(download_stock_history, (symbol, ))
+        results.append(res)
 
-    pool.map(download_stock_history, all_symbols)
+    for i in trange(len(results)):
+        res = results[i]
+        res.wait()
 

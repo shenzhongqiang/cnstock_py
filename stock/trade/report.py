@@ -64,6 +64,15 @@ class ClosedTranx:
     def get_change(self):
         return self.close_price /self.open_price - 1
 
+class Result:
+    def __init__(self, profit, max_drawdown, num_of_trades=None,
+        win_rate=None, comm_total=None):
+        self.profit = profit
+        self.max_drawdown = max_drawdown
+        self.num_of_trades = num_of_trades
+        self.win_rate = win_rate
+        self.comm_total = comm_total
+
 class Report:
     def __init__(self, engine=None):
         if engine == None:
@@ -170,13 +179,13 @@ class Report:
         win_trades = self.__get_win_trades(closed)
         max_drawdown = self.__get_max_drawdown(closed)
         win_rate = float(win_trades) / len(closed)
-        return {
-            "profit": cum_total,
-            "max_drawdown": max_drawdown,
-            "num_of_trades": len(closed),
-            "win_rate": win_rate,
-            "comm_total": comm_total,
-        }
+        return Result(
+            profit=cum_total,
+            max_drawdown=max_drawdown,
+            num_of_trades=len(closed),
+            win_rate=win_rate,
+            comm_total=comm_total,
+        )
 
     def print_report(self):
         closed = self.get_closed_tranx()
