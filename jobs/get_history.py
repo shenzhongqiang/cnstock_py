@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from tqdm import tqdm, trange
 import os.path
-import threading
 from multiprocessing import Pool
 from stock.utils import request
 import stock.utils.symbol_util
@@ -28,9 +27,9 @@ def download_stock_history(data):
             path = os.path.join(stock_dir, symbol)
         else:
             path = os.path.join(index_dir, symbol)
-        df.to_csv(path)
         exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol, is_index)
         stock.marketdata.store.save(exsymbol, df)
+        stock.marketdata.store.save_into_file(exsymbol, df)
     except Exception, e:
         #print "error getting history due to %s" % str(e)
         pass

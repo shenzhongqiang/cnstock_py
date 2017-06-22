@@ -13,6 +13,7 @@ class EmaStrategy(Strategy):
         self.slow = slow
         self.exsymbols = get_exsymbols()
 
+    def rank_stock(self, date):
     def filter_stock(self, date):
         result = []
         for exsymbol in self.exsymbols:
@@ -43,8 +44,6 @@ class EmaStrategy(Strategy):
         dates = dates[(dates >= '2016-06-01') & (dates <= '2017-06-01')]
         for date in dates:
             result = self.filter_stock(date)
-            import time
-            time.sleep(3)
             print "=============================="
 
 if __name__ == "__main__":
