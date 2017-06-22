@@ -5,7 +5,9 @@ import threading
 from multiprocessing import Pool
 from stock.utils import request
 import stock.utils.symbol_util
-from stock.globalvar import *
+from stock.globalvar import HIST_DIR
+from stock.strategy.utils import get_complete_history
+import stock.marketdata.store
 import tushare as ts
 
 # check if directory exists, if not create directory
@@ -27,6 +29,8 @@ def download_stock_history(data):
         else:
             path = os.path.join(index_dir, symbol)
         df.to_csv(path)
+        exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol, is_index)
+        stock.marketdata.store.save(exsymbol, df)
     except Exception, e:
         #print "error getting history due to %s" % str(e)
         pass
@@ -43,10 +47,11 @@ if __name__ == "__main__":
 
     for symbol in index_symbols:
         all_symbols.append({"symbol": symbol, "is_index": True})
-   
+
+    stock.marketdata.store.init()
     results = []
     for symbol in all_symbols:
-        res = pool.apply_async(download_stock_history, (symbol, ))
+        res = pool.apply_async(download_stock_history, (symbol,))
         results.append(res)
 
     for i in trange(len(results)):

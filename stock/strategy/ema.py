@@ -2,46 +2,50 @@ import numpy as np
 import talib
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
 from stock.marketdata import backtestdata
-from stock.strategy.utils import get_exsymbol_history
+from stock.strategy.utils import get_exsymbol_history, get_history_by_date
 from stock.strategy.base import Strategy
+from stock.marketdata.store import get, get_exsymbols, get_trading_dates
 
 class EmaStrategy(Strategy):
-    def __init(self, initial=80000, fast=5, slow=7):
+    def __init__(self, initial=80000, fast=5, slow=7):
         super(EmaStrategy, self).__init__(initial)
         self.fast = fast
         self.slow = slow
+        self.exsymbols = get_exsymbols()
 
-    def filter_stock(self, exsymbol_history, date):
+    def filter_stock(self, date):
         result = []
-        for exsymbol in exsymbol_history.keys():
+        for exsymbol in self.exsymbols:
             history = []
             try:
-                history = get_history_by_date(exsymbol_history[exsymbol], date)
+                all_history = get(exsymbol)
+                if len(all_history) == 0:
+                    continue
+                history = get_history_by_date(all_history, date)
             except Exception, e:
-                print str(e)
+                print "history error: %s %s" % (exsymbol, str(e))
                 continue
-            closes = map(lambda x: x.close, history)
-            ema_slow = talib.EMA(closes, timeperiod=slow)
-            print ema_slow
-            import time
-            time.sleep(5)
-            ema_fast = talib.EMA(closes, timeperiod=fast)
-            ema_slow_prev = talib.EMA(closes[:-1], timeperiod=slow)
-            ema_fast_prev = talib.EMA(closes[:-1], timeperiod=fast)
-            if ema_slow_prev > ema_fast_prev and \
-                ema_slow < ema_fast:
+            closes = history.close.values
+            if len(closes) < self.slow:
+                continue
+            ema_slow = talib.EMA(closes, timeperiod=self.slow)
+            ema_fast = talib.EMA(closes, timeperiod=self.fast)
+            length = len(ema_slow) - 1
+            if ema_slow[length-2] > ema_fast[length-2] and \
+                ema_slow[length-1] < ema_fast[length-1]:
                 result.append({"exsymbol": exsymbol, "history": history})
 
         return result
 
     def run(self):
-        symbols = get_stock_symbols()
         marketdata = backtestdata.BackTestData('2017-06-15')
-        exsymbol_history = get_exsymbol_history()
-        dates = get_archived_trading_dates('2016-06-01', '2017-06-15')
+        dates = get_trading_dates()
+        dates = dates[(dates >= '2016-06-01') & (dates <= '2017-06-01')]
         for date in dates:
-            result = self.filter_stock(exsymbol_history, date)
-            print result
+            result = self.filter_stock(date)
+            import time
+            time.sleep(3)
+            print "=============================="
 
 if __name__ == "__main__":
     strategy = EmaStrategy()

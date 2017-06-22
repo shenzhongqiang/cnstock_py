@@ -22,11 +22,6 @@ def get_index_symbols():
 def get_index_symbol(type):
     return INDEX[type]
 
-def get_trading_dates():
-    index_path = os.path.join(HIST_DIR["index"], "000001")
-    df = load_csv(index_path)
-    return df.date.tolist()
-
 def get_archived_trading_dates(start, end):
     index_path = os.path.join(HIST_DIR["index"], "000001")
     df = load_csv(index_path)
@@ -86,14 +81,17 @@ def is_symbol_sz(symbol):
     else:
         return False
 
-def symbol_to_exsymbol(symbol):
+def symbol_to_exsymbol(symbol, index=False):
     exsymbol = ''
-    if re.search(r'^6', symbol):
-        exsymbol = 'sh' + symbol
-    elif re.search(r'^3', symbol):
-        exsymbol = 'sz' + symbol
-    elif re.search(r'^0', symbol):
-        exsymbol = 'sz' + symbol
+    if index == False:
+        if re.search(r'^6', symbol):
+            exsymbol = 'sh' + symbol
+        elif re.search(r'^3', symbol):
+            exsymbol = 'sz' + symbol
+        elif re.search(r'^0', symbol):
+            exsymbol = 'sz' + symbol
+    else:
+        exsymbol = 'id' + symbol
     return exsymbol
 
 def exsymbol_to_symbol(exsymbol):

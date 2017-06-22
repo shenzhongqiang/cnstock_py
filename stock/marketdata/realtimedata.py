@@ -13,7 +13,6 @@ class CannotExtractExsymbol(Exception):
 class RealTimeData(MarketData):
     def __init__(self, date=None):
         MarketData.__init__(self)
-        self.dt = datetime.datetime.today()
         self.date = self.dt.strftime("%y%m%d")
 
     def get_data(self, exsymbol):

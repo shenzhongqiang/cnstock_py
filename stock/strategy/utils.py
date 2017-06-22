@@ -2,32 +2,19 @@ from tqdm import tqdm, trange
 import datetime
 import os.path
 from multiprocessing import Pool
-from stock.filter.utils import *
+from stock.filter.utils import get_dt_price
 from stock.globalvar import *
-from stock.utils.dt import *
+from stock.utils.dt import parse_datetime
 from stock.utils import fuquan
 from stock.utils.symbol_util import *
 from stock.marketdata.bar import Bar
 from stock.marketdata.utils import load_csv
+from stock.marketdata.store import get
 import pandas as pd
 
-def get_complete_history(symbol):
-    try:
-        path = os.path.join(HIST_DIR["stock"], symbol)
-        df = load_csv(path)
-    except IOError, e:
-        return [symbol, []]
-
-    all_history = []
-    for index, row in df.iloc[::-1].iterrows():
-        dt = datetime.datetime.strptime(row["date"], "%Y-%m-%d")
-        exsymbol = symbol_to_exsymbol(symbol)
-        bar = Bar(exsymbol, date=row["date"], dt=dt, open=float(row["open"]),
-            close=float(row["close"]), high=float(row["high"]), low=float(row["low"]),
-            volume=float(row["volume"]))
-        all_history.append(bar)
-
-    return [symbol, all_history]
+def get_complete_history(exsymbol):
+    history = get(exsymbol)
+    return history
 
 def get_exsymbol_history():
     p = Pool(10)
@@ -48,13 +35,8 @@ def get_exsymbol_history():
         i += 1
     return exsymbol_history
 
-def get_history_by_date(all_history, date):
-    dt = parse_datetime(date)
-    result = []
-    for bar in all_history:
-        if bar.dt <= dt:
-            result.append(bar)
-    return result
+def get_history_by_date(df, date):
+    return df[df.date < date]
 
 def is_zhangting(exsymbol, history, date):
     yest_close = history[1].close
@@ -83,12 +65,3 @@ def get_bar(history, date):
         return history[0]
 
     return None
-
-def get_buyable_exsymbols(exsymbol_history, date):
-    result = {}
-    for exsymbol in exsymbol_history.keys():
-        history = exsymbol_history[exsymbol]
-        if is_buyable(exsymbol, history, date):
-            result[exsymbol] = history
-
-    return result
