@@ -5,8 +5,7 @@ from multiprocessing import Pool
 from stock.utils import request
 import stock.utils.symbol_util
 from stock.globalvar import HIST_DIR
-from stock.strategy.utils import get_complete_history
-import stock.marketdata.store
+from stock.marketdata.storefactore import get_store
 import tushare as ts
 
 # check if directory exists, if not create directory
@@ -28,8 +27,9 @@ def download_stock_history(data):
         else:
             path = os.path.join(index_dir, symbol)
         exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol, is_index)
-        stock.marketdata.store.save(exsymbol, df)
-        stock.marketdata.store.save_into_file(exsymbol, df)
+        store = get_store("redis_store")
+        store.save(exsymbol, df)
+        store.save_into_file(exsymbol, df)
     except Exception, e:
         #print "error getting history due to %s" % str(e)
         pass
@@ -47,7 +47,8 @@ if __name__ == "__main__":
     for symbol in index_symbols:
         all_symbols.append({"symbol": symbol, "is_index": True})
 
-    stock.marketdata.store.init()
+    store = get_store("redis_store")
+    store.flush()
     results = []
     for symbol in all_symbols:
         res = pool.apply_async(download_stock_history, (symbol,))

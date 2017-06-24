@@ -9,11 +9,13 @@ from stock.utils import fuquan
 from stock.utils.symbol_util import *
 from stock.marketdata.bar import Bar
 from stock.marketdata.utils import load_csv
-from stock.marketdata.store import get
+from stock.marketdata.storefactory import get_store
+from config import store_type
 import pandas as pd
 
 def get_complete_history(exsymbol):
-    history = get(exsymbol)
+    store = get_store(store_type)
+    history = store.get(exsymbol)
     return history
 
 def get_exsymbol_history():

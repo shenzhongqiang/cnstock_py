@@ -4,22 +4,26 @@ from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_date
 from stock.marketdata import backtestdata
 from stock.strategy.utils import get_exsymbol_history, get_history_by_date
 from stock.strategy.base import Strategy
-from stock.marketdata.store import get, get_exsymbols, get_trading_dates
+from stock.marketdata.storefactory import get_store
+from config import store_type
 
 class EmaStrategy(Strategy):
     def __init__(self, initial=80000, fast=5, slow=7):
         super(EmaStrategy, self).__init__(initial)
+        self.store = get_store(store_type)
         self.fast = fast
         self.slow = slow
-        self.exsymbols = get_exsymbols()
+        self.exsymbols = self.store.get_exsymbols()
 
     def rank_stock(self, date):
+        pass
+
     def filter_stock(self, date):
         result = []
         for exsymbol in self.exsymbols:
             history = []
             try:
-                all_history = get(exsymbol)
+                all_history = self.store.get(exsymbol)
                 if len(all_history) == 0:
                     continue
                 history = get_history_by_date(all_history, date)
@@ -40,7 +44,7 @@ class EmaStrategy(Strategy):
 
     def run(self):
         marketdata = backtestdata.BackTestData('2017-06-15')
-        dates = get_trading_dates()
+        dates = self.store.get_trading_dates()
         dates = dates[(dates >= '2016-06-01') & (dates <= '2017-06-01')]
         for date in dates:
             result = self.filter_stock(date)

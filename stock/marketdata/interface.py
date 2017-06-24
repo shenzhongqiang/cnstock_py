@@ -5,7 +5,8 @@ from stock.marketdata.bar import Bar
 from stock.utils.symbol_util import exsymbol_to_symbol
 from abc import ABCMeta, abstractmethod
 from stock.marketdata.utils import load_csv
-from stock.marketdata.store import get
+from stock.marketdata.storefactory import get_store
+from config import store_type
 import pandas as pd
 import tushare as ts
 
@@ -27,6 +28,6 @@ class MarketData:
         pass
 
     def get_history_by_date(self, exsymbol):
-        df = get(exsymbol)
+        store = get_store(store_type)
+        df = store.get(exsymbol)
         return df[df.date <= self.date]
-
