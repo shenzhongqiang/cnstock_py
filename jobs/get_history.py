@@ -5,7 +5,7 @@ from multiprocessing import Pool
 from stock.utils import request
 import stock.utils.symbol_util
 from stock.globalvar import HIST_DIR
-from stock.marketdata.storefactore import get_store
+from stock.marketdata.storefactory import get_store
 import tushare as ts
 
 # check if directory exists, if not create directory

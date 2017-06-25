@@ -1,8 +1,12 @@
 #!/usr/bin/python
 from multiprocessing import Pool
 from tqdm import tqdm, trange
-import stock.marketdata.store
+from stock.marketdata.storefactory import get_store
 import stock.utils.symbol_util
+
+def worker(filestore, redisstore, exsymbol):
+    df = filestore.get(exsymbol)
+    redisstore.save(exsymbol, df)
 
 if __name__ == "__main__":
     pool = Pool(20)
@@ -13,11 +17,11 @@ if __name__ == "__main__":
     all_exsymbols = exsymbols
     all_exsymbols.extend(id_exsymbols)
     results = []
-    stock.marketdata.store.init()
+    filestore = get_store("file_store")
+    redisstore = get_store("redis_store")
     for exsymbol in all_exsymbols:
-        res = pool.apply_async(stock.marketdata.store.get_from_file, (exsymbols,))
+        res = pool.apply_async(worker, args=(filestore, redisstore, exsymbol,))
         results.append(res)
     for i in trange(len(results)):
         res = results[i]
         res.wait()
-
