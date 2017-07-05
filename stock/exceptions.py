@@ -1,0 +1,2 @@
+class NoHistoryOnDate(Exception):
+    pass

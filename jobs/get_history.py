@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import pandas as pd
 from tqdm import tqdm, trange
 import os.path
 from multiprocessing import Pool
@@ -21,6 +22,7 @@ def download_stock_history(data):
         symbol = data["symbol"]
         is_index = data["is_index"]
         df = ts.get_k_data(symbol, index=is_index)
+        df.set_index(pd.to_datetime(df.date), inplace=True)
         path = None
         if not is_index:
             path = os.path.join(stock_dir, symbol)

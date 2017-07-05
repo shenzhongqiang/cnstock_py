@@ -15,8 +15,9 @@ class Strategy(object):
             connect_args={'check_same_thread':False})
         Base.metadata.drop_all(engine)
         Base.metadata.create_all(engine)
-        order = Order(engine)
-        order.add_account(initial)
+        self.order = Order(engine)
+        self.order.add_account(initial)
+        self.initial = initial
 
     def run(self):
         raise NotImplemented("subclass must implement this method")

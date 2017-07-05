@@ -2,6 +2,7 @@ from tqdm import tqdm, trange
 import datetime
 import os.path
 from multiprocessing import Pool
+import pandas as pd
 from stock.filter.utils import get_dt_price
 from stock.globalvar import *
 from stock.utils.dt import parse_datetime
@@ -11,7 +12,7 @@ from stock.marketdata.bar import Bar
 from stock.marketdata.utils import load_csv
 from stock.marketdata.storefactory import get_store
 from config import store_type
-import pandas as pd
+from stock.exceptions import NoHistoryOnDate
 
 def get_complete_history(exsymbol):
     store = get_store(store_type)
@@ -39,6 +40,12 @@ def get_exsymbol_history():
 
 def get_history_by_date(df, date):
     return df[df.date < date]
+
+def get_history_on_date(df, date):
+    try:
+        return df.ix[date]
+    except KeyError, e:
+        raise NoHistoryOnDate(date)
 
 def is_zhangting(exsymbol, history, date):
     yest_close = history[1].close

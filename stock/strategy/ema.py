@@ -1,11 +1,15 @@
+import datetime
 import numpy as np
 import talib
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
 from stock.marketdata import backtestdata
-from stock.strategy.utils import get_exsymbol_history, get_history_by_date
+from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date
 from stock.strategy.base import Strategy
 from stock.marketdata.storefactory import get_store
+from stock.trade.order import Order
+from stock.trade.report import Report
 from config import store_type
+from stock.exceptions import NoHistoryOnDate
 
 class EmaStrategy(Strategy):
     def __init__(self, initial=80000, fast=5, slow=7):
@@ -27,10 +31,14 @@ class EmaStrategy(Strategy):
             chg = reduce(lambda x, y: x * y,
                 map(lambda x: 1 + x, s_chg_slow))
             std = np.std(s_chg_slow)
-            scores.append({"exsymbol": exsymbol, "score": chg * std})
+            scores.append({
+                "exsymbol": exsymbol,
+                "score": chg * std,
+                "close": history.iloc[-1].close,
+                "date": history.iloc[-1].date})
         if len(scores) > 0:
             scores.sort(key=lambda x: x["score"])
-            return scores[0]["exsymbol"]
+            return scores[0]
         return None
 
     def filter_stock(self, date):
@@ -61,11 +69,52 @@ class EmaStrategy(Strategy):
         marketdata = backtestdata.BackTestData('2017-06-15')
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= '2016-06-01') & (dates <= '2017-06-01')]
+        state = 0
+        days = 0
+        buy_price = 0.0
+        sell_limit = 0.0
         for date in dates:
-            result = self.filter_stock(date)
-            print self.rank_stock(date, result)
-            print "=============================="
+            if state == 0:
+                exsymbols = self.filter_stock(date)
+                result = self.rank_stock(date, exsymbols)
+                if result == None:
+                    continue
+                exsymbol = result["exsymbol"]
+                date = result["date"]
+                close = result["close"]
+                dt = datetime.datetime.strptime(date, "%Y-%m-%d")
+                balance = self.order.get_account_balance()
+                amount = int(balance / close / 100) * 100
+                self.order.buy(exsymbol, close, dt, amount)
+                buy_price = close
+                sell_limit = buy_price * 1.1
+                state = 1
+                days += 1
+                continue
+
+            if state == 1:
+                pos = self.order.get_positions()[0]
+                all_history = self.store.get(exsymbol)
+                try:
+                    row = get_history_on_date(all_history, date)
+                    dt = datetime.datetime.strptime(date, "%Y-%m-%d")
+                    if row.close > sell_limit:
+                        self.order.sell(pos.exsymbol, sell_limit, dt, pos.amount)
+                        state = 0
+                        days = 0
+                    else:
+                        days += 1
+                        if days == 5:
+                            self.order.sell(pos.exsymbol, row.close, dt, pos.amount)
+                            state = 0
+                            days = 0
+                    continue
+                except NoHistoryOnDate, e:
+                    #print pos.exsymbol, date
+                    pass
 
 if __name__ == "__main__":
     strategy = EmaStrategy()
     strategy.run()
+    report = Report()
+    report.print_report()
