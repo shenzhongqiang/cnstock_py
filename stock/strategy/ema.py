@@ -13,10 +13,25 @@ class EmaStrategy(Strategy):
         self.store = get_store(store_type)
         self.fast = fast
         self.slow = slow
-        self.exsymbols = self.store.get_exsymbols()
+        self.exsymbols = self.store.get_stock_exsymbols()
 
-    def rank_stock(self, date):
-        pass
+    def rank_stock(self, date, exsymbols):
+        scores = []
+        for exsymbol in exsymbols:
+            all_history = self.store.get(exsymbol)
+            if len(all_history) == 0:
+                continue
+            history = get_history_by_date(all_history, date)
+            s_chg = history.close.pct_change().values
+            s_chg_slow = s_chg[-self.slow:]
+            chg = reduce(lambda x, y: x * y,
+                map(lambda x: 1 + x, s_chg_slow))
+            std = np.std(s_chg_slow)
+            scores.append({"exsymbol": exsymbol, "score": chg * std})
+        if len(scores) > 0:
+            scores.sort(key=lambda x: x["score"])
+            return scores[0]["exsymbol"]
+        return None
 
     def filter_stock(self, date):
         result = []
@@ -38,7 +53,7 @@ class EmaStrategy(Strategy):
             length = len(ema_slow) - 1
             if ema_slow[length-2] > ema_fast[length-2] and \
                 ema_slow[length-1] < ema_fast[length-1]:
-                result.append({"exsymbol": exsymbol, "history": history})
+                result.append(exsymbol)
 
         return result
 
@@ -48,6 +63,7 @@ class EmaStrategy(Strategy):
         dates = dates[(dates >= '2016-06-01') & (dates <= '2017-06-01')]
         for date in dates:
             result = self.filter_stock(date)
+            print self.rank_stock(date, result)
             print "=============================="
 
 if __name__ == "__main__":

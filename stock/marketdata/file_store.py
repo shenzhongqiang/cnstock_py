@@ -31,6 +31,12 @@ class Store(object):
         return files
 
     @staticmethod
+    def get_stock_exsymbols():
+        exsymbols = os.listdir(HIST_DIR)
+        result = filter(lambda x: re.search(r'^(?!id)', x), exsymbols)
+        return result
+
+    @staticmethod
     def get_trading_dates():
         history = Store.get('id000001')
         return history.date.values

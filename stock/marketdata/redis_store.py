@@ -1,3 +1,4 @@
+import re
 import os
 import cPickle as pickle
 import redis
@@ -27,6 +28,13 @@ class Store(object):
     def get_exsymbols():
         r = redis.Redis(connection_pool=POOL)
         return r.keys()
+
+    @staticmethod
+    def get_stock_exsymbols():
+        r = redis.Redis(connection_pool=POOL)
+        exsymbols = r.keys()
+        result = filter(lambda x: re.search(r'^(?!id)', x), exsymbols)
+        return result
 
     @staticmethod
     def get_trading_dates():
