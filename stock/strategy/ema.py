@@ -2,7 +2,6 @@ import datetime
 import numpy as np
 import talib
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
-from stock.marketdata import backtestdata
 from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date, is_sellable
 from stock.strategy.base import Strategy
 from stock.marketdata.storefactory import get_store
@@ -12,8 +11,8 @@ from config import store_type
 from stock.exceptions import NoHistoryOnDate
 
 class EmaStrategy(Strategy):
-    def __init__(self, initial=80000, fast=5, slow=7):
-        super(EmaStrategy, self).__init__(initial)
+    def __init__(self, start, end, initial=80000, fast=5, slow=7):
+        super(EmaStrategy, self).__init__(start=start, end=end, initial=initial)
         self.store = get_store(store_type)
         self.fast = fast
         self.slow = slow
@@ -66,9 +65,8 @@ class EmaStrategy(Strategy):
         return result
 
     def run(self):
-        marketdata = backtestdata.BackTestData('2017-06-15')
         dates = self.store.get_trading_dates()
-        dates = dates[(dates >= '2016-06-01') & (dates <= '2017-06-01')]
+        dates = dates[(dates >= self.start) & (dates <= self.end)]
         state = 0
         days = 0
         buy_price = 0.0
@@ -127,7 +125,7 @@ class EmaStrategy(Strategy):
                     days = 0
 
 if __name__ == "__main__":
-    strategy = EmaStrategy()
+    strategy = EmaStrategy(start='2017-01-01', end='2017-02-01')
     strategy.run()
     report = Report()
     report.get_summary()
