@@ -3,7 +3,7 @@ import numpy as np
 import talib
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
 from stock.marketdata import backtestdata
-from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date
+from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date, is_sellable
 from stock.strategy.base import Strategy
 from stock.marketdata.storefactory import get_store
 from stock.trade.order import Order
@@ -95,6 +95,10 @@ class EmaStrategy(Strategy):
             if state == 1:
                 pos = self.order.get_positions()[0]
                 all_history = self.store.get(exsymbol)
+                if not is_sellable(all_history, date):
+                    state = -1
+                    continue
+
                 try:
                     row = get_history_on_date(all_history, date)
                     dt = datetime.datetime.strptime(date, "%Y-%m-%d")
@@ -113,8 +117,17 @@ class EmaStrategy(Strategy):
                     #print pos.exsymbol, date
                     pass
 
+            if state == -1:
+                if is_sellable(all_history, date):
+                    pos = self.order.get_positions()[0]
+                    all_history = self.store.get(exsymbol)
+                    row = get_history_on_date(all_history, date)
+                    self.order.sell(pos.exsymbol, row.open, dt, pos.amount)
+                    state = 0
+                    days = 0
+
 if __name__ == "__main__":
     strategy = EmaStrategy()
     strategy.run()
     report = Report()
-    report.print_report()
+    report.get_summary()

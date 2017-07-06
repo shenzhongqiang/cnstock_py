@@ -12,7 +12,7 @@ from stock.marketdata.bar import Bar
 from stock.marketdata.utils import load_csv
 from stock.marketdata.storefactory import get_store
 from config import store_type
-from stock.exceptions import NoHistoryOnDate
+from stock.exceptions import NoHistoryOnDate, TooFewData
 
 def get_complete_history(exsymbol):
     store = get_store(store_type)
@@ -39,7 +39,7 @@ def get_exsymbol_history():
     return exsymbol_history
 
 def get_history_by_date(df, date):
-    return df[df.date < date]
+    return df[df.date <= date]
 
 def get_history_on_date(df, date):
     try:
@@ -67,6 +67,18 @@ def is_buyable(exsymbol, history, date):
         not is_zhangting(exsymbol, history, date):
         return True
     return False
+
+def is_sellable(df, date):
+    df2 = df[df.date <= date]
+    if not date in df2.index:
+        return False
+    if len(df2.index) < 2:
+        raise TooFewData("there are only 1 day's data")
+    today = df2.iloc[-1].open
+    yest = df2.iloc[-2].close
+    if is_dieting(yest, today):
+        return False
+    return True
 
 def get_bar(history, date):
     dt = parse_datetime(date)
