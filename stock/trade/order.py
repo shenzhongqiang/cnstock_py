@@ -5,9 +5,7 @@ from stock.trade.models import *
 from stock.trade.report import ClosedTranx
 from datetime import datetime
 import logging
-import logging.config
 
-logging.config.fileConfig(LOGCONF)
 logger = logging.getLogger(__name__)
 
 class PositionAlreadyExists(Exception):

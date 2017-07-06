@@ -1,14 +1,19 @@
 import datetime
 import numpy as np
 import talib
+import logging
+import logging.config
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
 from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date, is_sellable
 from stock.strategy.base import Strategy
 from stock.marketdata.storefactory import get_store
 from stock.trade.order import Order
 from stock.trade.report import Report
-from config import store_type
 from stock.exceptions import NoHistoryOnDate
+from stock.globalvar import LOGCONF
+from config import store_type
+
+logger = logging.getLogger(__name__)
 
 class EmaStrategy(Strategy):
     def __init__(self, start, end, initial=80000, fast=5, slow=7):
@@ -65,6 +70,8 @@ class EmaStrategy(Strategy):
         return result
 
     def run(self):
+        logger.info("Running strategy with start=%s end=%s initial=%f fast=%d slow=%d" %(
+            self.start, self.end, self.initial, self.fast, self.slow))
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]
         state = 0
@@ -124,8 +131,16 @@ class EmaStrategy(Strategy):
                     state = 0
                     days = 0
 
+        report = Report()
+        result = report.get_summary()
+        logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f" % (
+            result.profit,
+            result.max_drawdown,
+            result.num_of_trades,
+            result.win_rate,
+            result.comm_total))
+
 if __name__ == "__main__":
-    strategy = EmaStrategy(start='2017-01-01', end='2017-02-01')
+    logging.config.fileConfig(LOGCONF)
+    strategy = EmaStrategy(start='2017-01-01', end='2017-01-09')
     strategy.run()
-    report = Report()
-    report.get_summary()

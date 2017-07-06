@@ -73,6 +73,10 @@ class Result:
         self.win_rate = win_rate
         self.comm_total = comm_total
 
+    def __repr__(self):
+        return "<Result [profit: %f, max_drawdown: %f, num_of_trades: %d, win_rate: %f, comm_total: %f]>" % (
+            self.profit, self.max_drawdown, self.num_of_trades, self.win_rate, self.comm_total)
+
 class Report:
     def __init__(self, engine=None):
         if engine == None:
@@ -178,7 +182,7 @@ class Report:
         comm_total = self.__get_comm_total(closed)
         win_trades = self.__get_win_trades(closed)
         max_drawdown = self.__get_max_drawdown(closed)
-        win_rate = float(win_trades) / len(closed)
+        win_rate = float(win_trades) / len(closed) if len(closed) > 0 else 0.0
         return Result(
             profit=cum_total,
             max_drawdown=max_drawdown,
