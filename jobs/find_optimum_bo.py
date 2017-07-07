@@ -1,8 +1,10 @@
+import logging
 import numpy as np
 from stock.optimize.bayesian_optimisation import gp
 import stock.trade.report
 import stock.strategy.ema
 
+logger = logging.getLogger("jobs.find_optimum_grid")
 start = '2017-01-01'
 end = '2017-01-30'
 def sample_loss(params):
@@ -23,4 +25,4 @@ xp, yp = gp.bayesian_optimisation(n_iters=30,
     n_pre_samples=3,
     random_search=100000)
 
-print xp, yp
+logger.info(xp, yp)
