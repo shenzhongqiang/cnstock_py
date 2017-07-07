@@ -35,7 +35,7 @@ class TestTradeReport(unittest.TestCase):
         self.assertEqual(comm, 298.4)
         self.assertEqual(len(closed), 2)
         summary = self.report.get_summary()
-        self.assertAlmostEqual(summary['profit'], 29630.4)
+        self.assertAlmostEqual(summary.profit, 29630.4)
 
     def test_sell_seperate(self):
         buy_dt = datetime.datetime.strptime('20170601', '%Y%m%d')
@@ -47,7 +47,7 @@ class TestTradeReport(unittest.TestCase):
         closed = self.report.get_closed_tranx()
         self.assertEqual(len(closed), 2)
         summary = self.report.get_summary()
-        self.assertAlmostEqual(summary['profit'], 29839.6)
+        self.assertAlmostEqual(summary.profit, 29839.6)
 
     def test_buy_seperate(self):
         buy_dt = datetime.datetime.strptime('20170601', '%Y%m%d')
@@ -62,7 +62,7 @@ class TestTradeReport(unittest.TestCase):
         closed = self.report.get_closed_tranx()
         self.assertEqual(len(closed), 2)
         summary = self.report.get_summary()
-        self.assertAlmostEqual(summary['profit'], 49724.4)
+        self.assertAlmostEqual(summary.profit, 49724.4)
 
     def test_max_drawdown(self):
         buy_dt1 = datetime.datetime.strptime('20170601', '%Y%m%d')
@@ -87,8 +87,21 @@ class TestTradeReport(unittest.TestCase):
         self.order.sell('sh000001', 100, sell_dt5, 1000)
         closed = self.report.get_closed_tranx()
         summary = self.report.get_summary()
-        self.assertAlmostEqual(summary['profit'], 39402.0)
-        self.assertAlmostEqual(summary['max_drawdown'], 50172.4)
-        self.assertAlmostEqual(summary['comm_total'], 598.0)
-        self.assertAlmostEqual(summary['num_of_trades'], 5)
-        self.assertAlmostEqual(summary['win_rate'], 0.4)
+        self.assertAlmostEqual(summary.profit, 39402.0)
+        self.assertAlmostEqual(summary.max_drawdown, 50172.4)
+        self.assertAlmostEqual(summary.comm_total, 598.0)
+        self.assertAlmostEqual(summary.num_of_trades, 5)
+        self.assertAlmostEqual(summary.win_rate, 0.4)
+
+    def test_max_drawdown(self):
+        buy_dt1 = datetime.datetime.strptime('20170601', '%Y%m%d')
+        sell_dt1 = datetime.datetime.strptime('20170602', '%Y%m%d')
+        self.order.buy('sh000001', 30, buy_dt1, 1000)
+        self.order.sell('sh000001', 20, sell_dt1, 1000)
+        closed = self.report.get_closed_tranx()
+        summary = self.report.get_summary()
+        self.assertAlmostEqual(summary.profit, -10061.2)
+        self.assertAlmostEqual(summary.max_drawdown, 10061.2)
+        self.assertAlmostEqual(summary.comm_total, 61.2)
+        self.assertAlmostEqual(summary.num_of_trades, 1)
+        self.assertAlmostEqual(summary.win_rate, 0.0)

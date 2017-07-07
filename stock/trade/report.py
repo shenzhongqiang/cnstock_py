@@ -149,17 +149,21 @@ class Report:
 
     def __get_max_drawdown(self, closed_tranx):
         cum_total = 0.0
-        profit_series = []
-        for ct in closed_tranx:
-            cum_total += ct.get_profit()
-            profit_series.append(cum_total)
+        ct_profits = map(lambda x: x.get_profit(), closed_tranx)
 
-        if len(profit_series) == 0:
+        if len(ct_profits) == 0:
             return 0.0
-
-        j = np.argmax(np.maximum.accumulate(profit_series) - profit_series)
-        i = np.argmax(profit_series[:j+1])
-        max_drawdown = profit_series[i] - profit_series[j]
+        series = [ct_profits[0]]
+        for i in range(1, len(ct_profits)):
+            prev_min_sum = series[i-1]
+            if prev_min_sum < 0:
+                series.append(prev_min_sum + ct_profits[i])
+            else:
+                series.append(ct_profits[i])
+        min_sum = min(series)
+        if min_sum > 0:
+            return 0.0
+        max_drawdown = -min_sum
         return max_drawdown
 
     def __get_win_trades(self, closed_tranx):
