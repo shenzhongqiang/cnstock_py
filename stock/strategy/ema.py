@@ -30,10 +30,11 @@ class EmaStrategy(Strategy):
             if len(all_history) == 0:
                 continue
             history = get_history_by_date(all_history, date)
+            low = history[-self.slow:].low.min()
+            close = history.iloc[-1].close
+            chg = close / low
             s_chg = history.close.pct_change().values
             s_chg_slow = s_chg[-self.slow:]
-            chg = reduce(lambda x, y: x * y,
-                map(lambda x: 1 + x, s_chg_slow))
             std = np.std(s_chg_slow)
             scores.append({
                 "exsymbol": exsymbol,
@@ -59,6 +60,11 @@ class EmaStrategy(Strategy):
                 continue
             closes = history.close.values
             if len(closes) < self.slow:
+                continue
+            low = history[-self.slow:].low.min()
+            close = history.iloc[-1].close
+            chg = close / low
+            if chg < 1.0:
                 continue
             ema_slow = talib.EMA(closes, timeperiod=self.slow)
             ema_fast = talib.EMA(closes, timeperiod=self.fast)
@@ -142,5 +148,5 @@ class EmaStrategy(Strategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = EmaStrategy(start='2017-01-01', end='2017-01-09')
+    strategy = EmaStrategy(start='2017-01-01', end='2017-03-09')
     strategy.run()
