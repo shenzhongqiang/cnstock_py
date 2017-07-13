@@ -16,11 +16,12 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class EmaStrategy(Strategy):
-    def __init__(self, start, end, initial=80000, fast=5, slow=7):
+    def __init__(self, start, end, initial=80000, fast=5, slow=7, target=1.1):
         super(EmaStrategy, self).__init__(start=start, end=end, initial=initial)
         self.store = get_store(store_type)
         self.fast = fast
         self.slow = slow
+        self.target = target
         self.exsymbols = self.store.get_stock_exsymbols()
 
     def rank_stock(self, date, exsymbols):
@@ -76,8 +77,8 @@ class EmaStrategy(Strategy):
         return result
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f fast=%d slow=%d" %(
-            self.start, self.end, self.initial, self.fast, self.slow))
+        logger.info("Running strategy with start=%s end=%s initial=%f fast=%d slow=%d target=%f" %(
+            self.start, self.end, self.initial, self.fast, self.slow, self.target))
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]
         state = 0
@@ -98,7 +99,7 @@ class EmaStrategy(Strategy):
                 amount = int(balance / close / 100) * 100
                 self.order.buy(exsymbol, close, dt, amount)
                 buy_price = close
-                sell_limit = buy_price * 1.1
+                sell_limit = buy_price * self.target
                 state = 1
                 days += 1
                 continue

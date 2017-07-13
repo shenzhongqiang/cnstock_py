@@ -21,7 +21,8 @@ def sample_loss(param):
 
 slows = range(5, 7, 1)
 fasts = range(3, 5, 1)
-param_grid = {"slow": slows, "fast": fasts}
+targets = np.arange(1, 1.2, 0.01)
+param_grid = {"slow": slows, "fast": fasts, "target": targets}
 result = rs.search(sample_loss=sample_loss,
     param_grid=param_grid)
 result.sort(key=lambda x: x[0], reverse=True)
