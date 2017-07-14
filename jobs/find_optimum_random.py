@@ -21,14 +21,15 @@ def sample_loss(param):
 
 uppers = np.arange(0.3, 0.9, 0.1)
 vol_quants =np.arange(0.85, 0.95, 0.01)
-targets = np.arange(0.5, 0.15, 0.1)
-increase_thrds = np.arange(0.5, 0.10, 0.1)
-param_grid = {"upper": uppers,
+targets = np.arange(0.05, 0.15, 0.1)
+increase_thrds = np.arange(0.05, 0.10, 0.1)
+param_grid = {
+    "upper": uppers,
     "vol_quant": vol_quants,
     "target": targets,
     "increase_thrd": increase_thrds
 }
-
+print param_grid
 result = rs.search(sample_loss=sample_loss,
     param_grid=param_grid)
 result.sort(key=lambda x: x[1], reverse=True)
