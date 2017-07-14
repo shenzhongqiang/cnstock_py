@@ -1,109 +1,160 @@
-import sys
 import datetime
-import math
-from stock.filter.utils import *
-from stock.globalvar import *
-from stock.strategy.utils import *
-from stock.trade.order import *
-from stock.trade.report import *
-from stock.utils.dt import *
-from stock.utils.fuquan import *
-from stock.utils.symbol_util import *
+import numpy as np
+import talib
+import logging
+import logging.config
+from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
+from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date, is_sellable
+from stock.strategy.base import Strategy
+from stock.marketdata.storefactory import get_store
+from stock.trade.order import Order
+from stock.trade.report import Report
+from stock.exceptions import NoHistoryOnDate
+from stock.globalvar import LOGCONF
+from config import store_type
 
-def is_trend_up(history):
-    curr_closes = [ x.close for x in history[0:10] ]
-    prev_closes = [ x.close for x in history[1:11] ]
-    if sum(curr_closes) > sum(prev_closes):
-        return True
+logger = logging.getLogger(__name__)
 
-    return False
+class VolupStrategy(Strategy):
+    def __init__(self, start, end, initial=80000, upper=0.05, vol_quant=0.95, target=0.05, increase_thrd=0.15):
+        super(VolupStrategy, self).__init__(start=start, end=end, initial=initial)
+        self.store = get_store(store_type)
+        self.upper = upper
+        self.vol_quant = vol_quant
+        self.target = target
+        self.increase_thrd = increase_thrd
+        self.exsymbols = self.store.get_stock_exsymbols()
 
-def filter_stock(exsymbol_history, date):
-    result = []
-    for exsymbol in exsymbol_history.keys():
-        history  = []
-        try:
-            history = get_history_by_date(exsymbol_history[exsymbol], date)
-        except:
-            continue
+    def rank_stock(self, date, exsymbols):
+        scores = []
+        for exsymbol in exsymbols:
+            all_history = self.store.get(exsymbol)
+            if len(all_history) == 0:
+                continue
+            history = get_history_by_date(all_history, date)
+            low = history[-5:].low.min()
+            close = history.iloc[-1].close
+            chg = close / low
+            s_chg = history.close.pct_change().values
+            s_chg_slow = s_chg[-5:]
+            std = np.std(s_chg_slow)
+            scores.append({
+                "exsymbol": exsymbol,
+                "score": chg * std,
+                "close": history.iloc[-1].close,
+                "date": history.iloc[-1].date})
+        if len(scores) > 0:
+            scores.sort(key=lambda x: x["score"])
+            return scores[0]
+        return None
 
-        if len(history) < 100:
-            continue
+    def filter_stock(self, date):
+        result = []
+        for exsymbol in self.exsymbols:
+            history = []
+            try:
+                all_history = self.store.get(exsymbol)
+                if len(all_history) == 0:
+                    continue
+                history = get_history_by_date(all_history, date)
+            except Exception, e:
+                print "history error: %s %s" % (exsymbol, str(e))
+                continue
+            closes = history.close.values
+            if len(closes) < 240:
+                continue
+            bar = history.iloc[-1]
+            bar_yest = history.iloc[-2]
+            vol_thrd = history.volume.quantile(self.vol_quant)
+            if bar.volume < vol_thrd:
+                continue
+            if bar.close < bar.open or bar.close < bar_yest.close:
+                continue
+            if (bar.high - bar.close) < bar_yest.close * self.upper:
+                continue
+            history["close5"] = history.close.shift(5)
+            history["profit"] = history.close / history.close5
+            profit_thrd = history["profit"].quantile(0.8)
+            if profit_thrd < self.target:
+                continue
+            low = history[-20:].low.min()
+            if (bar.close - low) > low * self.increase_thrd:
+                continue
+            result.append(exsymbol)
+        return result
 
-        if not is_buyable(exsymbol, history, date):
-            continue
+    def run(self):
+        logger.info("Running strategy with start=%s end=%s initial=%f upper=%f vol_quant=%f target=%f, increase_thrd=%f" %(
+            self.start, self.end, self.initial, self.upper, self.vol_quant, self.target, self.increase_thrd))
+        dates = self.store.get_trading_dates()
+        dates = dates[(dates >= self.start) & (dates <= self.end)]
+        state = 0
+        days = 0
+        buy_price = 0.0
+        sell_limit = 0.0
+        for date in dates:
+            if state == 0:
+                exsymbols = self.filter_stock(date)
+                result = self.rank_stock(date, exsymbols)
+                if result == None:
+                    continue
+                exsymbol = result["exsymbol"]
+                date = result["date"]
+                close = result["close"]
+                dt = datetime.datetime.strptime(date, "%Y-%m-%d")
+                balance = self.order.get_account_balance()
+                amount = int(balance / close / 100) * 100
+                self.order.buy(exsymbol, close, dt, amount)
+                buy_price = close
+                sell_limit = buy_price * (1+self.target)
+                state = 1
+                days += 1
+                continue
 
-        zt_price3 = get_zt_price(history[2].close)
-        if not abs(zt_price3 - history[1].close) < 1e-5:
-            continue
+            if state == 1:
+                pos = self.order.get_positions()[0]
+                all_history = self.store.get(exsymbol)
+                if not is_sellable(all_history, date):
+                    state = -1
+                    continue
 
-        if abs(history[1].open - history[2].close) / history[2].close > 0.03:
-            continue
-        if abs(history[0].close - history[1].close) / history[1].close > 0.07:
-            continue
-        if abs(history[0].close - history[0].open) > history[0].open * 0.02:
-            continue
+                try:
+                    row = get_history_on_date(all_history, date)
+                    dt = datetime.datetime.strptime(date, "%Y-%m-%d")
+                    if row.close > sell_limit:
+                        self.order.sell(pos.exsymbol, sell_limit, dt, pos.amount)
+                        state = 0
+                        days = 0
+                    else:
+                        days += 1
+                        if days == 5:
+                            self.order.sell(pos.exsymbol, row.close, dt, pos.amount)
+                            state = 0
+                            days = 0
+                    continue
+                except NoHistoryOnDate, e:
+                    #print pos.exsymbol, date
+                    pass
 
-        vols = [ x.volume for x in history[2:7] ]
-        highs = [ x.high for x in history[2:7] ]
-        lows = [ x.low for x in history[2:7] ]
-        avg_vol = sum(vols) / len(vols)
-        max_vol = max(vols)
-        max_high = max(highs)
-        min_low = min(lows)
+            if state == -1:
+                if is_sellable(all_history, date):
+                    pos = self.order.get_positions()[0]
+                    all_history = self.store.get(exsymbol)
+                    row = get_history_on_date(all_history, date)
+                    self.order.sell(pos.exsymbol, row.open, dt, pos.amount)
+                    state = 0
+                    days = 0
 
-        if max_high / min_low > 1.15:
-            continue
+        report = Report()
+        result = report.get_summary()
+        logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f" % (
+            result.profit,
+            result.max_drawdown,
+            result.num_of_trades,
+            result.win_rate,
+            result.comm_total))
 
-        closes = [ x.close for x in history[1:7] ]
-        min_close = min(closes)
-        chg = history[0].close / min_close - 1
-        result.append({"exsymbol": exsymbol, "history": history, "chg": chg})
-
-    result.sort(key=lambda x: x["chg"])
-    num = min(len(result), 1)
-    return result[0:num]
-
-
-engine = create_engine('sqlite:///' + DBFILE, echo=False, \
-    connect_args={'check_same_thread':False})
-Base.metadata.drop_all(engine)
-Base.metadata.create_all(engine)
-order = Order(engine)
-order.add_account(80000)
-
-if len(sys.argv) < 3:
-    print "Usage: %s <start> <end>" % (sys.argv[0])
-    sys.exit(1)
-start = sys.argv[1]
-end = sys.argv[2]
-dates = get_archived_trading_dates(start, end)
-dates_asc = dates[::-1]
-exsymbol_history = get_exsymbol_history()
-for date in dates_asc:
-    dt = parse_datetime(date)
-    result = filter_stock(exsymbol_history, date)
-
-    positions = order.get_positions()
-    for pos in positions:
-        history = exsymbol_history[pos.exsymbol]
-        history = get_history_by_date(history, date)
-        bar = get_bar(history, date)
-        if bar != None:
-            order.sell(pos.exsymbol, bar.close, dt, pos.amount)
-            print "sell %d %s at %f on %s" % (
-                pos.amount, pos.exsymbol, bar.close, date)
-
-    for data in result:
-        exsymbol = data["exsymbol"]
-        history = data["history"]
-        bar = get_bar(history, date)
-        amount = math.floor(100/bar.close) * 100
-        if amount > 0:
-            order.buy(exsymbol, bar.close, dt, amount)
-            print "buy %d %s at %f on %s" % (
-                amount, exsymbol, bar.close, date)
-
-report = Report(engine)
-report.print_report()
-
+if __name__ == "__main__":
+    logging.config.fileConfig(LOGCONF)
+    strategy = VolupStrategy(start='2017-01-01', end='2017-07-09')
+    strategy.run()

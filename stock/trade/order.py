@@ -68,7 +68,7 @@ class Order:
             amount=amount, closed=0, profit=0, type='buy')
         self.session.add(tranx)
         self.session.commit()
-        logger.info("bought: symbol: %s, amount: %d, price: %f, date: %s" %
+        logger.info("buy: symbol: %s, amount: %d, price: %f, date: %s" %
             (exsymbol, amount, price, buy_date_str))
 
     def sell(self, exsymbol, price, sell_date, amount):
@@ -127,7 +127,7 @@ class Order:
             amount=amount, type='sell')
         self.session.add(tranx)
         self.session.commit()
-        logger.info("sold: symbol: %s, amount: %d, price: %f, date: %s" %
+        logger.info("sell: symbol: %s, amount: %d, price: %f, date: %s" %
             (exsymbol, amount, price, sell_date_str))
 
     def get_positions(self):

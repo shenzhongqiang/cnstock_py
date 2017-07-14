@@ -31,11 +31,11 @@ class EmaStrategy(Strategy):
             if len(all_history) == 0:
                 continue
             history = get_history_by_date(all_history, date)
-            low = history[-self.slow:].low.min()
+            low = history[-self.slow*3:].low.min()
             close = history.iloc[-1].close
             chg = close / low
             s_chg = history.close.pct_change().values
-            s_chg_slow = s_chg[-self.slow:]
+            s_chg_slow = s_chg[-self.slow*3:]
             std = np.std(s_chg_slow)
             scores.append({
                 "exsymbol": exsymbol,
@@ -60,9 +60,9 @@ class EmaStrategy(Strategy):
                 print "history error: %s %s" % (exsymbol, str(e))
                 continue
             closes = history.close.values
-            if len(closes) < self.slow:
+            if len(closes) < self.slow * 3:
                 continue
-            low = history[-self.slow:].low.min()
+            low = history[-self.slow*3:].low.min()
             close = history.iloc[-1].close
             chg = close / low
             if chg < 1.0:
