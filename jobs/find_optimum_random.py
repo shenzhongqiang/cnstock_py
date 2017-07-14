@@ -2,14 +2,14 @@ import logging
 import numpy as np
 from stock.optimize.random_search import rs
 import stock.trade.report
-import stock.strategy.ema
+import stock.strategy.volup
 
 logger = logging.getLogger("jobs.find_optimum_grid")
 
 start = '2016-07-01'
 end = '2017-06-30'
 def sample_loss(param):
-    strategy = stock.strategy.ema.EmaStrategy(start, end,
+    strategy = stock.strategy.volup.VolupStrategy(start, end,
         **param)
     strategy.run()
     report = stock.trade.report.Report()
@@ -19,11 +19,17 @@ def sample_loss(param):
     else:
         return result.profit / result.max_drawdown
 
-slows = range(5, 7, 1)
-fasts = range(3, 5, 1)
-targets = np.arange(1, 1.2, 0.01)
-param_grid = {"slow": slows, "fast": fasts, "target": targets}
+uppers = np.arange(0.3, 0.9, 0.1)
+vol_quants =np.arange(0.85, 0.95, 0.01)
+targets = np.arange(0.5, 0.15, 0.1)
+increase_thrds = np.arange(0.5, 0.10, 0.1)
+param_grid = {"upper": uppers,
+    "vol_quant": vol_quants,
+    "target": targets,
+    "increase_thrd": increase_thrds
+}
+
 result = rs.search(sample_loss=sample_loss,
     param_grid=param_grid)
-result.sort(key=lambda x: x[0], reverse=True)
+result.sort(key=lambda x: x[1], reverse=True)
 logger.info(result)

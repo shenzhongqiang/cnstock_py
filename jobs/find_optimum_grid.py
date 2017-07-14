@@ -24,5 +24,5 @@ fasts = range(3, 12, 1)
 param_grid = {"slow": slows, "fast": fasts}
 result = gs.search(sample_loss=sample_loss,
     param_grid=param_grid)
-result.sort(key=lambda x: x[0], reverse=True)
+result.sort(key=lambda x: x[1], reverse=True)
 logger.info(result)
