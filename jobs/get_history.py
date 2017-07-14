@@ -22,16 +22,14 @@ def download_stock_history(data):
         symbol = data["symbol"]
         is_index = data["is_index"]
         df = ts.get_k_data(symbol, index=is_index)
-        df.set_index(pd.to_datetime(df.date), inplace=True)
-        path = None
-        if not is_index:
-            path = os.path.join(stock_dir, symbol)
-        else:
-            path = os.path.join(index_dir, symbol)
+        if df.empty:
+            return
+        path = os.path.join(stock_dir, symbol)
         exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol, is_index)
-        store = get_store("redis_store")
-        store.save(exsymbol, df)
-        store.save_into_file(exsymbol, df)
+        redis_store = get_store("redis_store")
+        file_store = get_store("file_store")
+        redis_store.save(exsymbol, df)
+        file_store.save(exsymbol, df)
     except Exception, e:
         #print "error getting history due to %s" % str(e)
         pass

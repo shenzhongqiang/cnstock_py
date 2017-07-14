@@ -1,5 +1,5 @@
 import os
-import cPickle as pickle
+import pandas as pd
 from stock.globalvar import HIST_DIR
 
 class Store(object):
@@ -8,15 +8,18 @@ class Store(object):
         stock_dir = HIST_DIR['stock']
         path = os.path.join(stock_dir, exsymbol)
         with open(path, "wb") as f:
-            pickle.dump(df, f)
+            f.write(df.to_csv())
 
     @staticmethod
     def get(exsymbol):
         stock_dir = HIST_DIR['stock']
         path = os.path.join(stock_dir, exsymbol)
+        df = None
         with open(path, "rb") as f:
-            df = pickle.load(f)
-            return df
+            df = pd.read_csv(f)
+            index = pd.to_datetime(df.date, format="%Y-%m-%d")
+            df.set_index(index, inplace=True)
+        return df
 
     @staticmethod
     def flush():
