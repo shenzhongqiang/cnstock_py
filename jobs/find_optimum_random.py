@@ -21,8 +21,8 @@ def sample_loss(param):
 
 uppers = np.arange(0.03, 0.09, 0.01)
 vol_quants =np.arange(0.85, 0.95, 0.01)
-targets = np.arange(0.05, 0.15, 0.1)
-increase_thrds = np.arange(0.05, 0.10, 0.1)
+targets = np.arange(0.05, 0.15, 0.01)
+increase_thrds = np.arange(0.05, 0.10, 0.01)
 param_grid = {
     "upper": uppers,
     "vol_quant": vol_quants,
