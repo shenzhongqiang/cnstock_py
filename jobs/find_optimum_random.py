@@ -29,7 +29,6 @@ param_grid = {
     "target": targets,
     "increase_thrd": increase_thrds
 }
-print param_grid
 result = rs.search(sample_loss=sample_loss,
     param_grid=param_grid)
 result.sort(key=lambda x: x[1], reverse=True)

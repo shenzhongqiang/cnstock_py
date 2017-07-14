@@ -16,7 +16,7 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class VolupStrategy(Strategy):
-    def __init__(self, start, end, initial=80000, upper=0.05, vol_quant=0.95, target=0.05, increase_thrd=0.15):
+    def __init__(self, start, end, initial=80000, upper=0.05, vol_quant=0.88, target=0.14, increase_thrd=0.15):
         super(VolupStrategy, self).__init__(start=start, end=end, initial=initial)
         self.store = get_store(store_type)
         self.upper = upper
@@ -74,9 +74,6 @@ class VolupStrategy(Strategy):
                 continue
             history["close5"] = history.close.shift(5)
             history["profit"] = history.close / history.close5
-            profit_thrd = history["profit"].quantile(0.8)
-            if profit_thrd < self.target:
-                continue
             low = history[-20:].low.min()
             if (bar.close - low) > low * self.increase_thrd:
                 continue
