@@ -78,15 +78,16 @@ class Result:
             self.profit, self.max_drawdown, self.num_of_trades, self.win_rate, self.comm_total)
 
 class Report:
-    def __init__(self, engine=None):
+    def __init__(self, account_id, engine=None):
         if engine == None:
             engine = create_engine('sqlite:///' + DBFILE, echo=False)
         self.Session = sessionmaker(bind=engine)
+        self.account_id = account_id
 
     def get_closed_tranx(self):
         Session = self.Session
         session = Session()
-        tranx_rows = session.query(Tranx).order_by(Tranx.date).all()
+        tranx_rows = session.query(Tranx).filter_by(account_id=self.account_id).order_by(Tranx.date).all()
         exsymbol_tranx = {}
         closed_tranx = []
 

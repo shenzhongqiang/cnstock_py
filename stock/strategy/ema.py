@@ -98,6 +98,7 @@ class EmaStrategy(Strategy):
                 balance = self.order.get_account_balance()
                 amount = int(balance / close / 100) * 100
                 self.order.buy(exsymbol, close, dt, amount)
+                pos = self.order.get_positions()
                 buy_price = close
                 sell_limit = buy_price * self.target
                 state = 1
@@ -138,7 +139,8 @@ class EmaStrategy(Strategy):
                     state = 0
                     days = 0
 
-        report = Report()
+        account_id = self.order.get_account_id()
+        report = Report(account_id)
         result = report.get_summary()
         logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f" % (
             result.profit,
@@ -149,5 +151,5 @@ class EmaStrategy(Strategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = EmaStrategy(start='2017-01-01', end='2017-03-09')
+    strategy = EmaStrategy(start='2017-01-01', end='2017-01-15')
     strategy.run()

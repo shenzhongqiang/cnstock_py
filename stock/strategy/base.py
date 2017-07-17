@@ -13,8 +13,8 @@ class Strategy(object):
         self.result = None
         engine = create_engine('sqlite:///' + DBFILE, echo=False, \
             connect_args={'check_same_thread':False})
-        Base.metadata.drop_all(engine)
-        Base.metadata.create_all(engine)
+        #Base.metadata.drop_all(engine)
+        #Base.metadata.create_all(engine)
         self.start = start
         self.end = end
         self.order = Order(engine)

@@ -37,19 +37,17 @@ class Order:
         account = Account(initial=initial, profit=0)
         self.session.add(account)
         self.session.commit()
+        self.account = account
 
-    def get_account(self):
-        accounts = self.session.query(Account).all()
-        if len(accounts) != 1:
-            raise IllegalNumOfAccounts()
-        return accounts[0]
+    def get_account_id(self):
+        return self.account.id
 
     def get_account_balance(self):
-        account = self.get_account()
+        account = self.account
         return account.initial + account.profit
 
     def buy(self, exsymbol, price, buy_date, amount):
-        pos = self.session.query(Position).filter_by(exsymbol=exsymbol).first()
+        pos = self.session.query(Position).filter_by(exsymbol=exsymbol, account_id=self.account.id).first()
 
         buy_date_str = buy_date.strftime('%Y-%m-%d %H:%M:%S')
         balance = self.get_account_balance()
@@ -62,17 +60,18 @@ class Order:
         if pos != None:
             pos.amount += amount
         else:
-            pos = Position(exsymbol=exsymbol, amount=amount)
+            pos = Position(exsymbol=exsymbol, amount=amount, account_id=self.account.id)
             self.session.add(pos)
         tranx = Tranx(exsymbol=exsymbol, price=price, date=buy_date, \
-            amount=amount, closed=0, profit=0, type='buy')
+            amount=amount, closed=0, profit=0, type='buy',
+            account_id=self.account.id)
         self.session.add(tranx)
         self.session.commit()
         logger.info("buy: symbol: %s, amount: %d, price: %f, date: %s" %
             (exsymbol, amount, price, buy_date_str))
 
     def sell(self, exsymbol, price, sell_date, amount):
-        positions = self.session.query(Position).filter_by(exsymbol=exsymbol).all()
+        positions = self.session.query(Position).filter_by(exsymbol=exsymbol, account_id=self.account.id).all()
         if len(positions) > 1:
             raise MultiplePositionsForSameSymbol(exsymbol)
         if len(positions) == 0:
@@ -91,10 +90,11 @@ class Order:
 
         # close existing open transactions
         sell_date_str = sell_date.strftime('%Y-%m-%d %H:%M:%S')
-        account = self.get_account()
+        account = self.account
 
         tranx_rows = self.session.query(Tranx).filter(text(
-            'exsymbol=:exsymbol and closed < amount')).params(exsymbol=exsymbol).order_by(Tranx.date).all()
+            'exsymbol=:exsymbol and account_id=:account_id and closed < amount')).params(
+            exsymbol=exsymbol, account_id=self.account.id).order_by(Tranx.date).all()
         remain_to_close = amount
         for open_tranx_row in tranx_rows:
             open_amount = open_tranx_row.amount - open_tranx_row.closed
@@ -124,18 +124,18 @@ class Order:
                 remain_to_close = remain_to_close - open_amount
 
         tranx = Tranx(exsymbol=exsymbol, price=price, date=sell_date, \
-            amount=amount, type='sell')
+            amount=amount, type='sell', account_id=self.account.id)
         self.session.add(tranx)
         self.session.commit()
         logger.info("sell: symbol: %s, amount: %d, price: %f, date: %s" %
             (exsymbol, amount, price, sell_date_str))
 
     def get_positions(self):
-        positions = self.session.query(Position).all()
+        positions = self.session.query(Position).filter_by(account_id=self.account.id).all()
         return positions
 
     def has_position(self, exsymbol):
-        exsymbol = self.session.query(Position).filter_by(exsymbol=exsymbol).first()
+        exsymbol = self.session.query(Position).filter_by(exsymbol=exsymbol, account_id=self.account.id).first()
         if exsymbol == None:
             return False
         else:
