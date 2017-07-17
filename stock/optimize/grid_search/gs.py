@@ -3,6 +3,7 @@ from sklearn.model_selection import ParameterGrid
 
 def search(sample_loss, param_grid):
     params = ParameterGrid(param_grid)
+    print "Total combinations: %d" % (len(params))
     pool = Pool(20)
     result = []
     async_res = []

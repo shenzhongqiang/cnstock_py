@@ -19,9 +19,16 @@ def sample_loss(param):
     else:
         return result.profit / result.max_drawdown
 
-slows = range(5, 16, 1)
-fasts = range(3, 12, 1)
-param_grid = {"slow": slows, "fast": fasts}
+uppers = np.arange(0.03, 0.09, 0.03)
+vol_quants =np.arange(0.85, 0.95, 0.03)
+targets = np.arange(0.05, 0.15, 0.03)
+increase_thrds = np.arange(0.05, 0.10, 0.02)
+param_grid = {
+    "upper": uppers,
+    "vol_quant": vol_quants,
+    "target": targets,
+    "increase_thrd": increase_thrds
+}
 result = gs.search(sample_loss=sample_loss,
     param_grid=param_grid)
 result.sort(key=lambda x: x[1], reverse=True)
