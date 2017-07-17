@@ -9,6 +9,7 @@ def search(sample_loss, param_grid, percent=0.3):
 
     pool = Pool(20)
     rand_ids = np.random.randint(num, size=size)
+    print "Total combinations: %d" % (len(rand_ids))
     async_res = []
     for i in rand_ids:
         param = params[i]
