@@ -19,10 +19,10 @@ def sample_loss(param):
     else:
         return result.profit / result.max_drawdown
 
-uppers = np.arange(0.03, 0.09, 0.01)
-vol_quants =np.arange(0.85, 0.95, 0.01)
-targets = np.arange(0.05, 0.15, 0.01)
-increase_thrds = np.arange(0.05, 0.10, 0.01)
+uppers = np.arange(0.03, 0.09, 0.02)
+vol_quants =np.arange(0.85, 0.95, 0.03)
+targets = np.arange(0.05, 0.15, 0.03)
+increase_thrds = np.arange(0.05, 0.10, 0.02)
 param_grid = {
     "upper": uppers,
     "vol_quant": vol_quants,
