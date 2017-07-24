@@ -151,6 +151,7 @@ class VolupStrategy(Strategy):
             result.num_of_trades,
             result.win_rate,
             result.comm_total))
+        return result
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)

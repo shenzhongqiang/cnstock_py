@@ -8,14 +8,12 @@ import stock.strategy.volup
 logger = logging.getLogger("jobs.find_optimum_grid")
 
 start = '2016-07-01'
-end = '2017-06-30'
+end = '2016-07-30'
 def sample_loss(param):
     try:
         strategy = stock.strategy.volup.VolupStrategy(start, end,
             **param)
-        strategy.run()
-        report = stock.trade.report.Report()
-        result = report.get_summary()
+        result = strategy.run()
         if result.max_drawdown == 0.0:
             return 0.0
         else:

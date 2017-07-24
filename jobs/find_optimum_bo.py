@@ -13,9 +13,7 @@ def sample_loss(params):
         strategy = stock.strategy.volup.VolupStrategy(start, end,
             upper=params[0], vol_quant=params[1],
             target=params[2], increase_thrd=params[3])
-        strategy.run()
-        report = stock.trade.report.Report()
-        result = report.get_summary()
+        result = strategy.run()
         if result.max_drawdown == 0.0:
             return 0.0
         else:
