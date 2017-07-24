@@ -1,3 +1,4 @@
+import traceback
 import logging
 import numpy as np
 from stock.optimize.random_search import rs
@@ -9,15 +10,19 @@ logger = logging.getLogger("jobs.find_optimum_grid")
 start = '2016-07-01'
 end = '2017-06-30'
 def sample_loss(param):
-    strategy = stock.strategy.volup.VolupStrategy(start, end,
-        **param)
-    strategy.run()
-    report = stock.trade.report.Report()
-    result = report.get_summary()
-    if result.max_drawdown == 0.0:
-        return 0.0
-    else:
-        return result.profit / result.max_drawdown
+    try:
+        strategy = stock.strategy.volup.VolupStrategy(start, end,
+            **param)
+        strategy.run()
+        report = stock.trade.report.Report()
+        result = report.get_summary()
+        if result.max_drawdown == 0.0:
+            return 0.0
+        else:
+            return result.profit / result.max_drawdown
+    except Exception, e:
+        print str(e)
+        traceback.print_exc()
 
 uppers = np.arange(0.03, 0.09, 0.03)
 vol_quants =np.arange(0.85, 0.95, 0.03)

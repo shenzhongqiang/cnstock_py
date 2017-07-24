@@ -142,7 +142,8 @@ class VolupStrategy(Strategy):
                     state = 0
                     days = 0
 
-        report = Report()
+        account_id = self.order.get_account_id()
+        report = Report(account_id)
         result = report.get_summary()
         logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f" % (
             result.profit,
