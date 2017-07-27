@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 class EmaStrategy(Strategy):
     def __init__(self, start, end, initial=80000, fast=5, slow=7, target=1.1):
         super(EmaStrategy, self).__init__(start=start, end=end, initial=initial)
+        self.order.set_params({
+            "fast": fast,
+            "slow": slow,
+            "target": target})
         self.store = get_store(store_type)
         self.fast = fast
         self.slow = slow
@@ -142,12 +146,13 @@ class EmaStrategy(Strategy):
         account_id = self.order.get_account_id()
         report = Report(account_id)
         result = report.get_summary()
-        logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f" % (
+        logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f, params=%s" % (
             result.profit,
             result.max_drawdown,
             result.num_of_trades,
             result.win_rate,
-            result.comm_total))
+            result.comm_total,
+            result.params))
         return result
 
 if __name__ == "__main__":

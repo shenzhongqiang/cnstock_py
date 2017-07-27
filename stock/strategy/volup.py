@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 class VolupStrategy(Strategy):
     def __init__(self, start, end, initial=80000, upper=0.05, vol_quant=0.88, target=0.14, increase_thrd=0.15):
         super(VolupStrategy, self).__init__(start=start, end=end, initial=initial)
+        self.order.set_params({"upper": upper,
+            "vol_quant": vol_quant,
+            "target": target,
+            "increase_thrd": increase_thrd})
         self.store = get_store(store_type)
         self.upper = upper
         self.vol_quant = vol_quant
@@ -145,15 +149,16 @@ class VolupStrategy(Strategy):
         account_id = self.order.get_account_id()
         report = Report(account_id)
         result = report.get_summary()
-        logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f" % (
+        logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f, params=%s" % (
             result.profit,
             result.max_drawdown,
             result.num_of_trades,
             result.win_rate,
-            result.comm_total))
+            result.comm_total,
+            result.params))
         return result
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = VolupStrategy(start='2017-01-01', end='2017-07-09')
+    strategy = VolupStrategy(start='2017-01-01', end='2017-02-09')
     strategy.run()

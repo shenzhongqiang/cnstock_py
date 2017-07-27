@@ -66,16 +66,22 @@ class ClosedTranx:
 
 class Result:
     def __init__(self, profit, max_drawdown, num_of_trades=None,
-        win_rate=None, comm_total=None):
+        win_rate=None, comm_total=None, params=None):
         self.profit = profit
         self.max_drawdown = max_drawdown
         self.num_of_trades = num_of_trades
         self.win_rate = win_rate
         self.comm_total = comm_total
+        self.params = params
 
     def __repr__(self):
-        return "<Result [profit: %f, max_drawdown: %f, num_of_trades: %d, win_rate: %f, comm_total: %f]>" % (
-            self.profit, self.max_drawdown, self.num_of_trades, self.win_rate, self.comm_total)
+        return "<Result [profit: %f, max_drawdown: %f, num_of_trades: %d, win_rate: %f, comm_total: %f, params: %s]>" % (
+            self.profit,
+            self.max_drawdown,
+            self.num_of_trades,
+            self.win_rate,
+            self.comm_total,
+            self.params)
 
 class Report:
     def __init__(self, account_id, engine=None):
@@ -182,6 +188,10 @@ class Report:
         return comm_total
 
     def get_summary(self):
+        Session = self.Session
+        session = Session()
+        account = session.query(Account).get(self.account_id)
+        params = account.params
         closed = self.get_closed_tranx()
         cum_total = self.__get_profit_loss(closed)
         comm_total = self.__get_comm_total(closed)
@@ -194,6 +204,7 @@ class Report:
             num_of_trades=len(closed),
             win_rate=win_rate,
             comm_total=comm_total,
+            params=params,
         )
 
     def print_report(self):

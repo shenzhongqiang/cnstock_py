@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, create_engine, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, create_engine, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from stock.globalvar import DBFILE
 
@@ -10,7 +10,8 @@ class Account(Base):
     initial = Column(Float)
     profit = Column(Float)
     positions = relationship("Position")
-    Transactions = relationship("Tranx")
+    transactions = relationship("Tranx")
+    params = Column(Text)
 
     def __repr__(self):
         return "<Account(initial='%f', profit='%f')>" % (

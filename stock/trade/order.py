@@ -1,3 +1,4 @@
+import json
 from sqlalchemy import create_engine, text, and_
 from sqlalchemy.orm import sessionmaker
 from stock.globalvar import *
@@ -38,6 +39,11 @@ class Order:
         self.session.add(account)
         self.session.commit()
         self.account = account
+
+    def set_params(self, params=None):
+        self.account.params = json.dumps(params)
+        self.session.add(self.account)
+        self.session.commit()
 
     def get_account_id(self):
         return self.account.id
