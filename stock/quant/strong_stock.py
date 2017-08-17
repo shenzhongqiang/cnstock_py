@@ -1,3 +1,4 @@
+import os
 import cPickle as pickle
 import scipy
 import re
@@ -34,7 +35,7 @@ def plot_upper_shadow_mean(df):
     plt.scatter(X, y)
 
 def plot_scatter_matrix(df):
-    attributes = ["minus_index", "today_up", "next_day_up", "next_week_high", "open_gap", "body", "upper_shadow", "index_slope", "stock_slope", "vol_increase"]
+    attributes = ["minus_index", "today_up", "next_day_up", "next_week_high", "open_gap", "next_open_gap", "body", "upper_shadow", "index_slope", "stock_slope", "vol_increase", "price", "trade_vol", "chg_std"]
     scatter_matrix(df[attributes], alpha=0.2, figsize=(12, 8))
 
 store = get_store(store_type)
@@ -42,11 +43,11 @@ exsymbols = store.get_stock_exsymbols()
 df_index = store.get('id000001')
 dates_len = len(df_index.date)
 start_date = df_index.index[0]
-columns = ['exsymbol', 'date', 'minus_index', 'today_up', 'next_day_up', 'next_week_high', 'open_gap', 'body', 'upper_shadow', 'index_slope', 'stock_slope', 'vol_increase']
+columns = ['exsymbol', 'date', 'minus_index', 'today_up', 'next_day_up', 'next_week_high', 'open_gap', 'next_open_gap', 'body', 'upper_shadow', 'index_slope', 'stock_slope', 'vol_increase', 'price', 'trade_vol', 'chg_std']
 df = pd.DataFrame(columns=columns)
 index_history = store.get('id000001')
 index_history['chg'] = index_history.close.pct_change()
-for date in index_history.loc[:'2016-03-30'].index:
+for date in index_history.loc[:'2017-08-14'].index:
     print date
     if len(index_history[:date].index) < 250:
         continue
@@ -73,31 +74,39 @@ for date in index_history.loc[:'2016-03-30'].index:
         minus_index = today_bar.chg - index_bar.chg
         today_up = today_bar.chg
         idx = all_history.index.get_loc(date)
+        if today_up > 0.090:
+            continue
         if len(all_history.index) < idx + 10:
             continue
         last_bar = all_history.iloc[idx-1]
         next_bar = all_history.iloc[idx+1]
         next_day_up = next_bar.close / today_bar.close - 1
-        next_week_bar = all_history.iloc[idx+5]
-        next_week_high = next_week_bar.high / today_bar.close - 1
+        next_week_high = all_history.high.iloc[idx+1:idx+6].max()
+        next_week_high = next_week_high / today_bar.close - 1
         open_gap = today_bar.open / last_bar.close - 1
+        next_open_gap = next_bar.open / today_bar.close - 1
         body = (today_bar.close - today_bar.open) / last_bar.close
         upper_body = max(today_bar.open, today_bar.close)
         upper_shadow = (today_bar.high - upper_body) / last_bar.close
+        trade_vol = today_bar.close * today_bar.volume
+        price = today_bar.close
         #if minus_index > 0.05:
         #    continue
         #if today_up > 0.03 and upper_shadow > 0.02:
         #    continue
         stock_closes = all_history.iloc[idx-10:idx].close / all_history.iloc[idx-10].close
+        chg_std = np.std(all_history.chg.iloc[idx-10:idx])
         stock_X = range(10)
         stock_slope = get_slope(stock_X, stock_closes)
         vols = all_history.iloc[idx-240:idx].volume
         vol_increase = scipy.stats.percentileofscore(vols, today_bar.volume)
-        df.loc[len(df)] = [exsymbol, date, minus_index, today_up, next_day_up, next_week_high, open_gap, body, upper_shadow, index_slope, stock_slope, vol_increase]
+        df.loc[len(df)] = [exsymbol, date, minus_index, today_up, next_day_up, next_week_high, open_gap, next_open_gap, body, upper_shadow, index_slope, stock_slope, vol_increase, price, trade_vol, chg_std]
 
-with open("output", "wb") as f:
+folder = os.path.dirname(__file__)
+outfile = os.path.join(folder, "output")
+with open(outfile, "wb") as f:
     pickle.dump(df, f)
 #plot_today_up_mean(df)
 #plot_upper_shadow_mean(df)
-plot_scatter_matrix(df)
-plt.show()
+#plot_scatter_matrix(df)
+#plt.show()
