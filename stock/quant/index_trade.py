@@ -30,15 +30,19 @@ def get_slope(array):
 pd.set_option('display.max_rows', None)
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
-start = '2017-01-01'
+start = '2007-01-01'
 df = store.get('id000001').loc[start:]
 df["chg"] = df.low.pct_change()
 df["extra"] = (df.close - df.high.shift(1)) / df.high.shift(1)
 df["body"] = (df.close -df.open) /df.close
 df["prev_body"] = df.body.shift(1)
+df["ma"] = df.close.rolling(window=20).mean()
+df["bias"] = (df.close - df.ma)/df.ma
 df["max_profit"] = df["close"].rolling(window=10).apply(np.max).shift(-10) / df["close"] - 1
 df["min_profit"] = df["close"].rolling(window=10).apply(np.min).shift(-10) / df["close"] - 1
 
-print df[df.prev_body < 0][df.extra > 0]
-#plt.plot(df.index, df.slope_one_fast, c='b')
-#plt.show()
+df = df.iloc[20:]
+std = StandardScaler()
+plt.plot(df.index, std.fit_transform(df.bias), c='b')
+plt.plot(df.index, std.fit_transform(df.close), c='r')
+plt.show()

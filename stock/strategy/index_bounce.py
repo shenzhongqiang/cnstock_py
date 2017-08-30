@@ -18,11 +18,11 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, sl_ratio=0.01, tp_ratio=0.01):
+    def __init__(self, start, end, initial=1e6, sl_ratio=0.016, tp_ratio=0.023):
         super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
         self.order.set_params({
-            sl_ratio: sl_ratio,
-            tp_ratio: tp_ratio,
+            "sl_ratio": sl_ratio,
+            "tp_ratio": tp_ratio,
         })
         self.store = get_store(store_type)
         self.sl_ratio = sl_ratio
@@ -31,6 +31,8 @@ class IndexStrategy(Strategy):
 
 
     def run(self):
+        logger.info("Running strategy with start=%s end=%s initial=%f sl_ratio=%f tp_ratio=%f" %(
+            self.start, self.end, self.initial, self.sl_ratio, self.tp_ratio))
         df = self.store.get(self.exsymbol)
         df["chg"] = df.low.pct_change()
         df["extra"] = (df.close - df.high.shift(1)) / df.high.shift(1)
@@ -58,9 +60,8 @@ class IndexStrategy(Strategy):
                 self.order.buy(self.exsymbol, today_bar.close, dt, amount)
                 pos = self.order.get_positions()
                 buy_price = today_bar.close
-                sell_limit = 1.01 * today_bar.close
-                stop_loss = 0.99 * today_bar.close
-                print sell_limit, stop_loss
+                sell_limit = (1+self.tp_ratio) * today_bar.close
+                stop_loss = (1-self.sl_ratio) * today_bar.close
                 state = 1
                 days += 1
                 continue
@@ -94,7 +95,7 @@ class IndexStrategy(Strategy):
 
         account_id = self.order.get_account_id()
         report = Report(account_id)
-        report.print_report()
+        #report.print_report()
         result = report.get_summary()
         logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f, params=%s" % (
             result.profit,
@@ -107,6 +108,6 @@ class IndexStrategy(Strategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = IndexStrategy(start='2016-07-01', end='2017-07-01')
+    strategy = IndexStrategy(start='2010-01-01', end='2017-07-01')
     strategy.run()
 
