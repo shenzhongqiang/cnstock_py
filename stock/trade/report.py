@@ -12,8 +12,8 @@ class NotEnoughSharesToSell(Exception):
     pass
 
 def get_commission(open_price, close_price, amount):
-    return 8e-4 * open_price * amount + \
-        8e-4 * close_price * amount + \
+    return 3e-4 * open_price * amount + \
+        3e-4 * close_price * amount + \
         6e-4 * amount * 2 + \
         1e-3 * close_price * amount
 
