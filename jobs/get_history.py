@@ -21,7 +21,7 @@ def download_stock_history(data):
     try:
         symbol = data["symbol"]
         is_index = data["is_index"]
-        df = ts.get_k_data(symbol, index=is_index)
+        df = ts.get_k_data(symbol, index=is_index, start="2000-01-01")
         if df.empty:
             return
         path = os.path.join(stock_dir, symbol)

@@ -76,18 +76,22 @@ for i in xrange(len(df_stock) - 6):
 df_stock["min_profit"] = pd.concat(min_profits) / df_stock.open - 1
 
 slopes = []
-for i in xrange(5, len(df_stock)):
-    lows = df_stock.iloc[i-5:i].low / df_stock.iloc[i-5].low
-    slope = get_slope(range(5), lows)
+for i in xrange(20, len(df_stock)):
+    lows = df_stock.iloc[i-20:i].low / df_stock.iloc[i-20].low
+    slope = get_slope(range(20), lows)
     s = pd.Series(slope, index=[df_stock.index[i]])
     slopes.append(s)
 df_stock["slope"] = pd.concat(slopes)
-high_thrd = df_stock.slope.quantile(0.9)
-low_thrd = df_stock.slope.quantile(0.1)
-high_df = df_stock[df_stock.slope >= high_thrd]
-low_df = df_stock[df_stock.slope <= low_thrd]
-plt.scatter(high_df["slope"], high_df["max_profit"], alpha=0.1, c='red')
-plt.scatter(low_df["slope"], low_df["max_profit"], alpha=0.1, c='green')
+df_stock = df_stock[df_stock.slope <= 0]
+
+high_thrd = df_stock.open_gap.quantile(0.9)
+low_thrd = df_stock.open_gap.quantile(0.1)
+high_df = df_stock[df_stock.open_gap >= high_thrd]
+low_df = df_stock[df_stock.open_gap <= low_thrd]
+
+print high_thrd, low_thrd
+plt.scatter(high_df["open_gap"], high_df["max_profit"], alpha=0.1, c='green')
+plt.scatter(low_df["open_gap"], low_df["max_profit"], alpha=0.1, c='red')
 plt.show()
 #plot_corr(df_stock)
 #test_model(df_stock)

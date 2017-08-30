@@ -3,15 +3,15 @@ import logging
 import numpy as np
 from stock.optimize.grid_search import gs
 import stock.trade.report
-import stock.strategy.volup
+import stock.strategy.gap_thrd
 
 logger = logging.getLogger("jobs.find_optimum_grid")
 
 start = '2016-07-01'
-end = '2016-07-30'
+end = '2017-07-01'
 def sample_loss(param):
     try:
-        strategy = stock.strategy.volup.VolupStrategy(start, end,
+        strategy = stock.strategy.gap_thrd.GapStrategy(start, end,
             **param)
         result = strategy.run()
         if result.max_drawdown == 0.0:
@@ -22,15 +22,11 @@ def sample_loss(param):
         print str(e)
         traceback.print_exc()
 
-uppers = np.arange(0.03, 0.09, 0.03)
-vol_quants =np.arange(0.85, 0.95, 0.03)
-targets = np.arange(0.05, 0.15, 0.03)
-increase_thrds = np.arange(0.05, 0.10, 0.02)
+thrd = np.arange(0.001, 0.006, 0.001)
+pred_thrd = np.arange(0.01, 0.05, 0.005)
 param_grid = {
-    "upper": uppers,
-    "vol_quant": vol_quants,
-    "target": targets,
-    "increase_thrd": increase_thrds
+    "thrd": thrd,
+    "pred_thrd": pred_thrd
 }
 result = gs.search(sample_loss=sample_loss,
     param_grid=param_grid)
