@@ -18,7 +18,7 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, sl_ratio=0.016, tp_ratio=0.023):
+    def __init__(self, start, end, initial=1e6, sl_ratio=0.049, tp_ratio=0.021):
         super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
         self.order.set_params({
             "sl_ratio": sl_ratio,
@@ -95,7 +95,7 @@ class IndexStrategy(Strategy):
 
         account_id = self.order.get_account_id()
         report = Report(account_id)
-        #report.print_report()
+        report.print_report()
         result = report.get_summary()
         logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f, params=%s" % (
             result.profit,
