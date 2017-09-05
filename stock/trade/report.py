@@ -104,6 +104,22 @@ class Report:
         self.Session = sessionmaker(bind=engine)
         self.account_id = account_id
 
+    def get_closed_tranx_df(self):
+        closed_tranx = self.get_closed_tranx()
+        df = pd.DataFrame(columns=[
+            "exsymbol",
+            "open_date",
+            "close_date",
+            "open_price",
+            "close_price",
+            "amount",
+            "comm",
+            "pl"])
+        for i in range(len(closed_tranx)):
+            ct = closed_tranx[i]
+            df.loc[i] = ct.to_series()
+        return df
+
     def get_closed_tranx(self):
         Session = self.Session
         session = Session()

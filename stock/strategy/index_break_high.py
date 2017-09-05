@@ -7,7 +7,7 @@ import logging
 import logging.config
 from sklearn import linear_model
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
-from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date, is_sellable
+from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date, is_sellable, is_buyable
 from stock.strategy.base import Strategy
 from stock.marketdata.storefactory import get_store
 from stock.trade.order import Order
@@ -19,26 +19,24 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, upper=0.00, lower=-0.01):
+    def __init__(self, start, end, initial=1e6, high_days=10, low_days=10):
         super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
         self.order.set_params({
-            "upper": upper,
-            "lower": lower,
+            "high_days": high_days,
+            "low_days": low_days,
         })
         self.store = get_store(store_type)
-        self.upper = upper
-        self.lower = lower
-        self.exsymbol = 'id000001'
+        self.high_days = high_days
+        self.low_days = low_days
+        self.exsymbol = 'sh600208'
 
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f upper=%f lower=%f" %(
-            self.start, self.end, self.initial, self.upper, self.lower))
+        logger.info("Running strategy with start=%s end=%s initial=%f high_days=%d low_days=%d" %(
+            self.start, self.end, self.initial, self.high_days, self.low_days))
         df = self.store.get(self.exsymbol)
-        df["ma"] = df.close.rolling(window=20).mean()
-        df["bias"] = (df.close - df.ma)/df.ma
-        df["diff_min"] = df.close / df.close.rolling(window=90).min() - 1
-        df["std_close"] = df.close.rolling(window=10).std() / df.close
+        df["high10"] = df.high.rolling(window=self.high_days).max().shift(1)
+        df["low10"] = df.low.rolling(window=self.low_days).min().shift(1)
         df_test = df.loc[self.start:self.end]
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]
@@ -47,15 +45,18 @@ class IndexStrategy(Strategy):
         buy_price = 0.0
         sell_limit = 0.0
         stop_loss = 0.0
-        open_env = pd.DataFrame(columns=["open_date", "diff_min", "std_close"])
         for date in dates:
             dt = datetime.datetime.strptime(date, "%Y-%m-%d")
             if date not in df_test.index:
                 continue
             if state == 0:
-                today_bar = df.loc[date]
-                if today_bar.bias > self.upper:# and today_bar.diff_min < 0.20 and today_bar.std_close > 0.01:
-                    open_env.loc[len(open_env)] = [dt, today_bar.diff_min, today_bar.std_close]
+                today_bar = df_test.loc[date]
+                if len(df_test.loc[:date]) < 2:
+                    continue
+                if not is_buyable(df_test, date):
+                    continue
+
+                if today_bar.close > today_bar.high10:
                     balance = self.order.get_account_balance()
                     amount = int(balance / today_bar.close / 100) * 100
                     self.order.buy(self.exsymbol, today_bar.close, dt, amount)
@@ -72,7 +73,7 @@ class IndexStrategy(Strategy):
 
                 today_bar = df.loc[date]
                 dt = datetime.datetime.strptime(date, "%Y-%m-%d")
-                if today_bar.bias < self.lower:
+                if today_bar.close < today_bar.low10:
                     self.order.sell(pos.exsymbol, today_bar.close, dt, pos.amount)
                     state = 0
                     days = 0
@@ -88,28 +89,7 @@ class IndexStrategy(Strategy):
 
         account_id = self.order.get_account_id()
         report = Report(account_id)
-        df_rep = report.get_closed_tranx_df()
-        df_result = pd.merge(open_env, df_rep, on="open_date")
-        pd.set_option('display.max_rows', None)
-        diff_thrd = df_result.diff_min.quantile(0.95)
-        std_thrd = df_result.std_close.quantile(0.1)
-        print diff_thrd, std_thrd
-        print df_result.groupby(pd.cut(df_result['diff_min'], np.linspace(np.min(df_result.diff_min), np.max(df_result.diff_min), 10))).mean()
-        #fig = plt.figure()
-        #ax1 = fig.add_subplot(411)
-        #ax2 = fig.add_subplot(412)
-        #ax3 = fig.add_subplot(413)
-        #ax4 = fig.add_subplot(414)
-        #ax1.scatter(df_result.diff_min, df_result.pl, c='b')
-        #ax1.set_title("diff_min")
-        #ax2.scatter(df_result.std_close, df_result.pl, c='b')
-        #ax2.set_title("std_close")
-        #ax3.hist(df_result.diff_min, bins=8)
-        #ax3.set_title("diff_min")
-        #ax4.hist(df_result.std_close, bins=8)
-        #ax4.set_title("std_close")
-        #plt.show()
-        report.print_report()
+        #report.print_report()
         result = report.get_summary()
         logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f, params=%s" % (
             result.profit,

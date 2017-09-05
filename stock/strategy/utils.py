@@ -3,7 +3,7 @@ import datetime
 import os.path
 from multiprocessing import Pool
 import pandas as pd
-from stock.filter.utils import get_dt_price
+from stock.filter.utils import get_dt_price, get_zt_price
 from stock.globalvar import *
 from stock.utils.dt import parse_datetime
 from stock.utils import fuquan
@@ -47,11 +47,9 @@ def get_history_on_date(df, date):
     except KeyError, e:
         raise NoHistoryOnDate(date)
 
-def is_zhangting(exsymbol, history, date):
-    yest_close = history[1].close
-    today_close = history[0].close
-    zt_price = get_zt_price(yest_close)
-    if abs(zt_price - today_close) < 1e-5:
+def is_zhangting(yest, today):
+    zt_price = get_zt_price(yest)
+    if abs(zt_price - today) < 1e-5:
         return True
     return False
 
@@ -61,12 +59,17 @@ def is_dieting(yest, today):
         return True
     return False
 
-def is_buyable(exsymbol, history, date):
-    dt = parse_datetime(date)
-    if history[0].dt == dt and \
-        not is_zhangting(exsymbol, history, date):
-        return True
-    return False
+def is_buyable(df, date):
+    df2 = df[df.date <= date]
+    if not date in df2.index:
+        return False
+    if len(df2.index) < 2:
+        raise TooFewData("there are only 1 day's data")
+    today = df2.iloc[-1].close
+    yest = df2.iloc[-2].close
+    if is_zhangting(yest, today):
+        return False
+    return True
 
 def is_sellable(df, date):
     df2 = df[df.date <= date]
@@ -74,7 +77,7 @@ def is_sellable(df, date):
         return False
     if len(df2.index) < 2:
         raise TooFewData("there are only 1 day's data")
-    today = df2.iloc[-1].open
+    today = df2.iloc[-1].close
     yest = df2.iloc[-2].close
     if is_dieting(yest, today):
         return False
