@@ -45,10 +45,10 @@ dates_len = len(df_index.date)
 start_date = df_index.index[0]
 index_history = store.get('id000001')
 index_history['chg'] = index_history.close.pct_change()
-columns = ['date', 'exsymbol', 'chg']
+columns = ['date', 'index_chg', 'thrd']
 result = pd.DataFrame(columns=columns)
 for date in index_history.loc['2017-01-01':'2017-08-18'].index:
-    if index_history.loc[date].chg > -0.01:
+    if index_history.loc[date].chg > -0.007:
         continue
 
     df_date = pd.DataFrame(columns=columns)
@@ -62,9 +62,9 @@ for date in index_history.loc['2017-01-01':'2017-08-18'].index:
             continue
         df['chg'] = df.close.pct_change()
         chg = df.loc[date].chg
-        df_date.loc[len(df_date)] = [date, exsymbol, chg]
-    thrd = df_date.chg.quantile(0.95)
-    result = pd.concat([result, df_date[df_date.chg >= thrd]])
+        df_date.loc[len(df_date)] = [date, index_history.loc[date].chg, chg]
+    thrd = df_date.thrd.quantile(0.9)
+    result.loc[len(result)] = [date, index_history.loc[date].chg, thrd]
 
 pd.set_option('display.max_rows', None)
 print result

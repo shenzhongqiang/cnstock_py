@@ -34,32 +34,28 @@ def load_ipo_data():
 
 
 pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)
+#pd.set_option('display.max_rows', None)
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
-columns = ["exsymbol", "ipo_date", "free_date", "high", "low", "free_open", "free_close", "free_body"]
+columns = ["exsymbol", "std_close", "std_body", "std_range", "std_chg", "std_gap", "std_upper"]
 result = pd.DataFrame(columns=columns)
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
-    if len(df) >= 400 or len(df) < 10:
+    if len(df) < 250:
         continue
 
     df["chg"] = df.close.pct_change()
-    df["open_gap"] = df.open / df.close.shift(1) - 1
     df["body"] = (df.close - df.open) / df.close.shift(1)
-    i = 1
-    for i in range(1, len(df.index)):
-        row = df.ix[i]
-        if abs(row.close - row.open) > 1e-3 or row.chg < 0.095:
-            break
-    max_close = df.iloc[i+1:i+30].close.max()
-    ipo_date = df.index[0]
-    free_date = df.ix[i].date
-    high = max_close / df.ix[i].high - 1
-    low = df.iloc[i+1:i+10].low.min() / df.ix[i].high - 1
-    free_open = df.ix[i].open_gap
-    free_close = df.ix[i].chg
-    free_body = df.ix[i].body
-    result.loc[len(result)] = [exsymbol, ipo_date, free_date, high, low, free_open, free_close, free_body]
+    df["range"] = (df.high - df.low) / df.close.shift(1)
+    df["gap"] = (df.open - df.close.shift(1)) / df.close.shift(1)
+    df["upper"] = df[["open","close"]].max(axis=1)
+    df["upshad"] = (df.high -df.upper)/df.close.shift(1)
+    std_close = np.std(df.iloc[-20:].close/df.iloc[-20].close)
+    std_body = np.std(df.iloc[-20:].body)
+    std_range = np.std(df.iloc[-20:].range)
+    std_chg = np.std(df.iloc[-20:].chg)
+    std_gap = np.std(df.iloc[-20:].gap)
+    std_upper = np.std(df.iloc[-20:].upshad)
+    result.loc[len(result)] = [exsymbol, std_close, std_body, std_range, std_chg, std_gap, std_upper]
 
-
+print result.sort_values(["std_gap"], ascending=True)

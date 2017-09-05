@@ -17,25 +17,27 @@ from config import store_type
 
 logger = logging.getLogger(__name__)
 
-class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, upper=0.14, lower=-0.07):
-        super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
+class SubnewStrategy(Strategy):
+    def __init__(self, start, end, initial=1e6, sl_ratio=0.049, tp_ratio=0.021):
+        super(SubnewStrategy, self).__init__(start=start, end=end, initial=initial)
         self.order.set_params({
-            "upper": upper,
-            "lower": lower,
+            "sl_ratio": sl_ratio,
+            "tp_ratio": tp_ratio,
         })
         self.store = get_store(store_type)
-        self.upper = upper
-        self.lower = lower
-        self.exsymbol = 'sz000428'
+        self.sl_ratio = sl_ratio
+        self.tp_ratio = tp_ratio
+        self.exsymbol = 'id000001'
 
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f upper=%f lower=%f" %(
-            self.start, self.end, self.initial, self.upper, self.lower))
+        logger.info("Running strategy with start=%s end=%s initial=%f sl_ratio=%f tp_ratio=%f" %(
+            self.start, self.end, self.initial, self.sl_ratio, self.tp_ratio))
         df = self.store.get(self.exsymbol)
-        df["ma"] = df.close.rolling(window=20).mean()
-        df["bias"] = (df.close - df.ma)/df.ma
+        df["chg"] = df.low.pct_change()
+        df["extra"] = (df.close - df.high.shift(1)) / df.high.shift(1)
+        df["body"] = (df.close -df.open) /df.close
+        df["prev_body"] = df.body.shift(1)
         df_test = df.loc[self.start:self.end]
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]
@@ -46,18 +48,23 @@ class IndexStrategy(Strategy):
         stop_loss = 0.0
         for date in dates:
             dt = datetime.datetime.strptime(date, "%Y-%m-%d")
+            start_id = df.index.get_loc(date)
             if date not in df_test.index:
                 continue
             if state == 0:
                 today_bar = df.loc[date]
-                if today_bar.bias > self.upper:
-                    balance = self.order.get_account_balance()
-                    amount = int(balance / today_bar.close / 100) * 100
-                    self.order.buy(self.exsymbol, today_bar.close, dt, amount)
-                    pos = self.order.get_positions()
-                    state = 1
-                    days += 1
+                if not (today_bar.prev_body < 0 and today_bar.extra > 0):
                     continue
+                balance = self.order.get_account_balance()
+                amount = int(balance / today_bar.close / 100) * 100
+                self.order.buy(self.exsymbol, today_bar.close, dt, amount)
+                pos = self.order.get_positions()
+                buy_price = today_bar.close
+                sell_limit = (1+self.tp_ratio) * today_bar.close
+                stop_loss = (1-self.sl_ratio) * today_bar.close
+                state = 1
+                days += 1
+                continue
 
             if state == 1:
                 pos = self.order.get_positions()[0]
@@ -67,11 +74,16 @@ class IndexStrategy(Strategy):
 
                 today_bar = df.loc[date]
                 dt = datetime.datetime.strptime(date, "%Y-%m-%d")
-                if today_bar.bias < self.lower:
-                    self.order.sell(pos.exsymbol, today_bar.close, dt, pos.amount)
+                if today_bar.low <= stop_loss:
+                    self.order.sell(pos.exsymbol, stop_loss, dt, pos.amount)
                     state = 0
                     days = 0
                     continue
+
+                if today_bar.high > sell_limit:
+                    self.order.sell(pos.exsymbol, sell_limit, dt, pos.amount)
+                    state = 0
+                    days = 0
 
             if state == -1:
                 if is_sellable(df_test, date):
@@ -96,7 +108,7 @@ class IndexStrategy(Strategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = IndexStrategy(start='2011-01-01', end='2017-07-01')
+    strategy = SubnewStrategy(start='2010-01-01', end='2017-07-01')
     strategy.run()
 
 
