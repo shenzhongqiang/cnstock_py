@@ -22,8 +22,8 @@ def sample_loss(param):
         print str(e)
         traceback.print_exc()
 
-upper = np.arange(0.01, 0.05, 0.01)
-lower = np.arange(-0.00, -0.05, -0.01)
+upper = np.arange(-0.02, 0.03, 0.01)
+lower = np.arange(+0.02, -0.03, -0.01)
 param_grid = {
     "upper": upper,
     "lower": lower,

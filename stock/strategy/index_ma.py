@@ -18,7 +18,7 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, upper=0.14, lower=-0.07):
+    def __init__(self, start, end, initial=1e6, upper=-0.01, lower=+0.01):
         super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
         self.order.set_params({
             "upper": upper,
@@ -96,7 +96,7 @@ class IndexStrategy(Strategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = IndexStrategy(start='2011-01-01', end='2017-07-01')
+    strategy = IndexStrategy(start='2017-01-01', end='2017-07-01')
     strategy.run()
 
 

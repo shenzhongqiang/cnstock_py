@@ -1,6 +1,7 @@
 import datetime
 import copy
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import date2num, DateFormatter
 from sqlalchemy import create_engine
@@ -63,6 +64,19 @@ class ClosedTranx:
 
     def get_change(self):
         return self.close_price /self.open_price - 1
+
+    def to_series(self):
+        s = pd.Series({
+            "exsymbol": self.exsymbol,
+            "open_date": self.open_date,
+            "close_date": self.close_date,
+            "open_price": self.open_price,
+            "close_price": self.close_price,
+            "amount": self.amount,
+            "comm": self.comm,
+            "pl": self.pl
+        })
+        return s
 
 class Result:
     def __init__(self, profit, max_drawdown, num_of_trades=None,
