@@ -13,7 +13,7 @@ from stock.marketdata.storefactory import get_store
 from stock.filter.utils import get_zt_price
 from sklearn import linear_model
 import matplotlib.pyplot as plt
-from stock.lib.compare_stocks import plot_compare_graph
+from stock.lib.candlestick import plot_compare_graph
 from config import store_type
 
 def get_slope(x, y):

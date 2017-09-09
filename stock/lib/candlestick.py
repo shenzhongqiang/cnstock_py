@@ -1,16 +1,35 @@
 import matplotlib.pyplot as plt
-import matplotlib.finance
+import pandas as pd
 
-def plot_compare_graph(df1, df2, name1, name2):
+def plot_compare_graph(df_index, df_stock, name_index, name_stock, show_marker=False):
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     ax2 = ax1.twinx()
-    matplotlib.finance.candlestick2_ochl(
-        ax1, df1.open, df1.close, df1.high, df1.low, width=0.5, colorup="r", colordown="g", alpha=0.8)
-    matplotlib.finance.candlestick2_ochl(
-        ax2, df2.open, df2.close, df2.high, df2.low, width=0.5, colorup="b", colordown="k", alpha=0.2)
+    ax1.plot(df_index.index, df_index.close, c='b')
+    ax2.plot(df_stock.index, df_stock.close, c='r')
     ax1.set_xlabel('date')
-    ax1.set_ylabel(name1)
-    ax2.set_ylabel(name2)
+    ax1.set_ylabel(name_index)
+    ax2.set_ylabel(name_stock)
+
+    df_index["chg"] = df_index.close.pct_change()
+    df_stock["chg"] = df_stock.close.pct_change()
+    idxs = df_stock[df_index.chg < -0.01][df_stock.chg > 0].index
+    for idx in idxs:
+        ax1.axvline(x=idx, linewidth=1, c='k')
+    fig.autofmt_xdate()
     plt.show()
 
+def plot_candlestick(df, name):
+    xdate = pd.to_datetime(df.index)
+    def mydate(x, pos):
+        try:
+            return xdate[x]
+        except IndexError:
+            return ''
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    ax1.plot(df.index, df.close, c='b')
+    ax1.set_ylabel(name)
+    fig.autofmt_xdate()
+    plt.show()
