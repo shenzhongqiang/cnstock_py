@@ -15,6 +15,7 @@ from sklearn import linear_model
 import matplotlib.pyplot as plt
 from stock.lib.candlestick import plot_compare_graph
 from config import store_type
+import tushare as ts
 
 def get_slope(x, y):
     reg = linear_model.LinearRegression()

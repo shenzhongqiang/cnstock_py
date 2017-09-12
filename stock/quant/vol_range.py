@@ -19,18 +19,52 @@ from sklearn.svm import SVR
 import matplotlib.pyplot as plt
 import tushare as ts
 from config import store_type
+from stock.lib.candlestick import plot_price_volume_inday
 
-def compute_vol_score(array):
-    #score = scipy.stats.percentileofscore(array, array[-1])
-    mean = np.mean(array)
-    score = array[-1] / mean
-    return score
+def get_slope(array):
+    y = np.copy(array) / array[0]
+    x = range(len(y))
+    reg = linear_model.LinearRegression()
+    X = np.array(x).reshape(-1,1)
+    reg.fit(X=X, y=y)
+    return reg.coef_[0]
+
+def compute_vol_tvalue(array, past_len, recent_len):
+    past = array[0:past_len]
+    recent = array[past_len:past_len+recent_len]
+    [tvalue, pvalue] = scipy.stats.ttest_ind(past, recent)
+    return tvalue
+
+def compute_vol_pvalue(array, past_len, recent_len):
+    past = array[0:past_len]
+    recent = array[past_len:past_len+recent_len]
+    [tvalue, pvalue] = scipy.stats.ttest_ind(past, recent)
+    return pvalue
+
+def value_down(array):
+    for i in range(len(array)-1):
+        if array[i+1] > array[i]:
+            return False
+    return True
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 store = get_store(store_type)
-df = store.get('sh600208')
+df = store.get('sh600507')
 df["range"] = df.high / df.low - 1
-df["vol_score"] = df.volume.rolling(window=20).apply(compute_vol_score)
-df_test = df.loc["2013-01-01":]
-print df_test[df_test.close >= df_test.open][df_test.vol_score > 1][df_test.range < 0.03].sort_values(["vol_score"])
+df["vol_tvalue"] = df.volume.rolling(window=30).apply(compute_vol_tvalue, (20, 10))
+df["vol_pvalue"] = df.volume.rolling(window=30).apply(compute_vol_pvalue, (20, 10))
+df["min30"] = df.close.rolling(window=30).min()
+df["already_up"] = df.close / df.min30 - 1
+df["price_slope"] = df.close.rolling(window=30).apply(get_slope)
+df["tvalue_down"] = df.vol_tvalue.rolling(window=5).apply(value_down)
+df_test = df.loc["2016-01-01":]
+df_test["vol_chg"] = df_test.volume.pct_change()
+df_test.vol_chg.hist()
+plt.show()
+print df_test[df_test.vol_pvalue < 0.01][df_test.tvalue_down == True][df_test.price_slope>0].sort_values(["already_up"], ascending=False)
+#fig = plt.figure()
+#ax = fig.add_subplot(111)
+#ax.plot(df_test.index, df_test.vol_tvalue)
+#ax.axhline(-3, c='r')
+#plt.show()
