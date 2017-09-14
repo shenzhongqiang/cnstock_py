@@ -18,6 +18,7 @@ from sklearn.svm import SVR
 import matplotlib.pyplot as plt
 import tushare as ts
 from config import store_type
+from stock.lib.candlestick import compare_stock
 
 def dump_ipo_data():
     df = ts.new_stocks()
@@ -40,7 +41,7 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
-columns = ["exsymbol", "ipo_date", "free_date", "break_date", "down_days", "high_date", "max_profit", "market_cap"]
+columns = ["exsymbol", "ipo_date", "free_date", "break_date", "down_days", "high_date", "max_profit", "min_profit", "downward", "market_cap"]
 result = pd.DataFrame(columns=columns)
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
@@ -63,7 +64,9 @@ for exsymbol in exsymbols:
     break_idx = df.index.get_loc(break_date)
     if len(df) < break_idx+31:
         continue
+    downward = df.iloc[i+1:break_idx].close.min() / df.iloc[i+1].close - 1
     max_profit = df.iloc[break_idx+1:break_idx+31].close.max() / df.iloc[break_idx+1].open - 1
+    min_profit = df.iloc[break_idx+1:break_idx+31].close.min() / df.iloc[break_idx+1].open - 1
     down_days = break_idx - i
 
     if len(df) < i+30:
@@ -82,7 +85,12 @@ for exsymbol in exsymbols:
     free_open = df.ix[i].open_gap
     free_close = df.ix[i].chg
     free_body = df.ix[i].body
-    result.loc[len(result)] = [exsymbol, ipo_date, free_date, break_date, down_days, high_date, max_profit, market_cap]
+    result.loc[len(result)] = [exsymbol, ipo_date, free_date, break_date, down_days, high_date, max_profit, min_profit, downward, market_cap]
 
-print result.sort_values(["max_profit"], ascending=True)
+print result[result.down_days>1].sort_values(["min_profit"])
 
+#date_a = result[result.exsymbol == "sz002836"].iloc[0].break_date
+#date_b =  result[result.exsymbol == "sz002787"].iloc[0].break_date
+#df_a = store.get("sz002811")
+#df_b = store.get("sz002787")
+#print compare_stock(df_a, df_b, date_a, date_b, 30, show_plot=True)

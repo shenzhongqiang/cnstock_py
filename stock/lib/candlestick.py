@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.stats
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates
@@ -52,3 +53,24 @@ def plot_price_volume_inday(times, prices, volumes):
     ax1.set_ylabel('close')
     ax2.set_ylabel('volume')
     plt.show()
+
+def compare_stock(df_a, df_b, date_a, date_b, length, show_plot=False):
+    if date_a not in df_a.index:
+        raise Exception("%s not in stock a index" % date_a)
+    if date_b not in df_b.index:
+        raise Exception("%s not in stock b index" % date_b)
+    df_a_filled = df_a.fillna(method="pad")
+    df_b_filled = df_b.fillna(method="pad")
+    idx_a = df_a_filled.index.get_loc(date_a)
+    idx_b = df_b_filled.index.get_loc(date_b)
+    piece_a = df_a_filled.iloc[idx_a:idx_a+length]
+    piece_b = df_b_filled.iloc[idx_b:idx_b+length]
+    norm_a = piece_a.close / piece_a.iloc[0].close
+    norm_b = piece_b.close / piece_b.iloc[0].close
+    [tvalue, pvalue] = scipy.stats.ttest_ind(norm_a, norm_b)
+    if show_plot:
+        plt.plot(range(length), norm_a, c='k', label="a")
+        plt.plot(range(length), norm_b, c='r', label="b")
+        plt.legend()
+        plt.show()
+    return [tvalue, pvalue]
