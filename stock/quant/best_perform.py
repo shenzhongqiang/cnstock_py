@@ -39,7 +39,7 @@ exsymbols = store.get_stock_exsymbols()
 df_index = store.get('id000001')
 dates_len = len(df_index.date)
 start_date = df_index.index[0]
-columns = ["exsymbol", "date", "profit"]
+columns = ["exsymbol", "profit"]
 result = pd.DataFrame(columns=columns)
 date = "2016-01-03"
 index_history = store.get('id000001').loc[date:]
@@ -47,20 +47,14 @@ stock_history = store.get('sh601016').loc[date:]
 index_history["value"] = index_history.close / index_history.iloc[0].close
 dates = index_history.index
 
-plot_compare_graph(index_history, stock_history, "id000001", "sh601016")
-
-for i in range(0, len(dates), 22):
-    dt = dates[i]
-    df_date = pd.DataFrame(columns=columns)
-    for exsymbol in exsymbols:
-        df = store.get(exsymbol)
-        if len(df.loc[:dt]) < 100:
-            continue
-        if not dt in df.index:
-            continue
-        df["profit"] = df.close / df.close.shift(70)
-        profit = df.loc[dt].profit
-        df_date.loc[len(df_date)] = [exsymbol, dt, profit]
-    df_date.dropna(how="any", inplace=True)
-    df_top = df_date.sort_values(["profit"]).tail(10)
-    print df_top
+df_date = pd.DataFrame(columns=columns)
+for exsymbol in exsymbols:
+    df = store.get(exsymbol)
+    if len(df) < 400:
+        continue
+    df["profit"] = df.close / df.close.shift(70)
+    profit = df.iloc[-300].profit
+    df_date.loc[len(df_date)] = [exsymbol, profit]
+df_date.dropna(how="any", inplace=True)
+df_top = df_date.sort_values(["profit"]).tail(10)
+print df_top
