@@ -39,8 +39,10 @@ def get_lrb_data(exsymbol):
             parsed = map(lambda x: _parse_cell(x, float), cells[1:])
             array.extend(parsed)
 
-    df = pd.DataFrame(data=data, index=index).dropna(how="all")
-    return df
+    df = pd.DataFrame(data=data, index=index).fillna(0.0)
+    df = df[pd.notnull(df.index)]
+    df.set_index(pd.to_datetime(df.index, format="%Y-%m-%d"), inplace=True)
+    return df.iloc[::-1]
 
 def get_zcfzb_data(exsymbol):
     filename = "%s_zcfzb" % exsymbol
@@ -65,10 +67,11 @@ def get_zcfzb_data(exsymbol):
             array = data.setdefault(en, [])
             parsed = map(lambda x: _parse_cell(x, float), cells[1:])
             array.extend(parsed)
-            print en, len(array)
 
-    df = pd.DataFrame(data=data, index=index).dropna(how="all")
-    return df
+    df = pd.DataFrame(data=data, index=index).fillna(0.0)
+    df = df[pd.notnull(df.index)]
+    df.set_index(pd.to_datetime(df.index, format="%Y-%m-%d"), inplace=True)
+    return df.iloc[::-1]
 
 def get_xjllb_data(exsymbol):
     filename = "%s_xjllb" % exsymbol
@@ -93,7 +96,8 @@ def get_xjllb_data(exsymbol):
             array = data.setdefault(en, [])
             parsed = map(lambda x: _parse_cell(x, float), cells[1:])
             array.extend(parsed)
-            print en, len(array)
 
-    df = pd.DataFrame(data=data, index=index).dropna(how="all")
-    return df
+    df = pd.DataFrame(data=data, index=index).fillna(0.0)
+    df = df[pd.notnull(df.index)]
+    df.set_index(pd.to_datetime(df.index, format="%Y-%m-%d"), inplace=True)
+    return df.iloc[::-1]

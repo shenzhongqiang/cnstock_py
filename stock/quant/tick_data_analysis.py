@@ -16,46 +16,23 @@ from stock.filter.utils import get_zt_price
 from sklearn import linear_model
 import matplotlib.pyplot as plt
 from stock.lib.candlestick import plot_price_volume_inday
+from stock.lib.tick_analysis import get_pulse_in_range
 from config import store_type
 import tushare as ts
 
-if len(sys.argv) == 1:
-    print "Usage: %s <date>" % (sys.argv[0])
+if len(sys.argv) < 2:
+    print "Usage: %s <symbol> <start> [<end>]" % (sys.argv[0])
     sys.exit(1)
 
-def get_pulse_info(df, idx):
-    num = 100
-    df_train = df.iloc[idx-num: idx]
-    diffs = (df_train.price - df_train.shift(1).price).tolist()[1:]
-    min_indice = []
-    max_ranges = []
-    for i in range(len(diffs)):
-        if i == 0:
-            max_ranges.append(diffs[i])
-            min_indice.append(i)
-            continue
-
-        if max_ranges[-1]+diffs[i] > diffs[i]:
-            max_ranges.append(max_ranges[-1]+diffs[i])
-            min_indice.append(min_indice[-1])
-        else:
-            max_ranges.append(diffs[i])
-            min_indice.append(i)
-
-    idx = np.argmax(max_ranges)
-    end_idx = idx + 1
-    start_idx = min_indice[idx]
-    pulse_range = df_train.iloc[end_idx].price - df_train.iloc[start_idx].price
-    pulse_vol = df_train.iloc[start_idx:end_idx+1].volume.sum()
-    return [pulse_range, pulse_vol]
-
-date = sys.argv[1]
+symbol = sys.argv[1]
+start = sys.argv[2]
 store = get_store(store_type)
-symbol = "300109"
 exsymbol = symbol_to_exsymbol(symbol)
 df = store.get(exsymbol)
 pd.set_option('display.max_rows', None)
-for date in df.loc[date:].index:
+df_result = pd.DataFrame(columns=["close", "pulse", "pulse_vol"])
+
+for date in df.loc[start:].index:
     day_bar = df.loc[date]
     #if day_bar.close > day_bar.open:
     #    continue
@@ -65,19 +42,19 @@ for date in df.loc[date:].index:
     df_dd.set_index(times, inplace=True)
     df_dd = df_dd.iloc[::-1]
     df_dd["min_chg"] = df_dd.price / df_dd.price.shift(100) - 1
-    hilo_range = day_bar.high = day_bar.low
+    hilo_range = day_bar.high - day_bar.low
     vol_sum = df_dd.volume.sum()
     for i in range(len(df_dd)):
         idx = df_dd.index[i]
         if i < 100:
             continue
-        [pulse, pulse_vol] = get_pulse_info(df_dd, i)
+        [pulse, pulse_vol] = get_pulse_in_range(df_dd, i)
         df_dd2 = df_dd.copy()
         df_dd2["price"] = df_dd2.price * -1.0
-        [valey, valey_vol] = get_pulse_info(df_dd2, i)
-        df_dd.loc[idx, "pulse"] = pulse / hilo_range
+        [valey, valey_vol] = get_pulse_in_range(df_dd2, i)
+        df_dd.loc[idx, "pulse"] = pulse / day_bar.close
         df_dd.loc[idx, "pulse_vol"] = pulse_vol * 1.0 / vol_sum
-        df_dd.loc[idx, "valey"] = valey / hilo_range
+        df_dd.loc[idx, "valey"] = valey / day_bar.close
         df_dd.loc[idx, "valey_vol"] = valey_vol * 1.0 / vol_sum
 
     avg_price = df_dd.amount.sum() / 100.0 / df_dd.volume.sum()
@@ -93,5 +70,12 @@ for date in df.loc[date:].index:
     valey_idx = df_dd.sort_values(["valey", "valey_vol"]).dropna().index[-1]
     valey_row = df_dd.loc[valey_idx]
     print pulse_row.pulse, pulse_row.pulse_vol, valey_row.valey, valey_row.valey_vol
+    df_result.loc[date] = [day_bar.close, pulse_row.pulse, pulse_row.pulse_vol]
     #time.sleep(2)
     plot_price_volume_inday(df_dd.index, df_dd.price, df_dd.volume)
+
+print df_result
+plt.plot(df_result.index, df_result.close, c='b')
+plt.plot(df_result.index, df_result.pulse, c='g')
+plt.plot(df_result.index, df_result.pulse_vol, c='r')
+plt.show()

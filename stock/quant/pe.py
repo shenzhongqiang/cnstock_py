@@ -10,45 +10,40 @@ import seaborn as sns
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates, exsymbol_to_symbol
 from stock.marketdata.storefactory import get_store
 from stock.filter.utils import get_zt_price
+from stock.lib.finance import get_lrb_data
 from sklearn import linear_model
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 import matplotlib.pyplot as plt
-import tushare as ts
 from config import store_type
 
-def dump_data():
-    folder = os.path.dirname(__file__)
-    filepath = os.path.join(folder, "pedata")
-    df_basic = ts.get_stock_basics()
-    df_report = ts.get_report_data(2017, 2)
-    df_report.drop_duplicates(inplace=True)
-    df_report.set_index('code', inplace=True)
-    df_result = pd.concat([df_report, df_basic], axis=1, join="inner")
-    df_result.to_csv(filepath, encoding="utf-8")
+def get_quarter_profit(df):
+    for i in range(len(df)):
+        date = df.index[i]
+        if i == 0:
+            df.loc[date, "profit"] = np.nan
 
-def load_data():
-    folder = os.path.dirname(__file__)
-    filepath = os.path.join(folder, "pedata")
-    df = pd.read_csv(filepath, encoding="utf-8", dtype=str)
+        dt = date.to_datetime()
+        if dt.month > 3:
+            df.loc[date, "profit"] = df.iloc[i].yylr - df.iloc[i-1].yylr
+        else:
+            df.loc[date, "profit"] = df.iloc[i].yylr
+
     return df
-
-pd.set_option('display.max_columns', None)
-#pd.set_option('display.max_rows', None)
-dump_data()
-df = load_data()
 
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
-df_close = pd.DataFrame(columns=["code", "close"])
+df_res = pd.DataFrame(columns=["exsymbol", "h2_incr", "h1_incr"])
 for exsymbol in exsymbols:
-    symbol = exsymbol_to_symbol(exsymbol)
-    df_stock = store.get(exsymbol)
-    close = df_stock.iloc[-1].close
-    df_close.loc[len(df_close)] = [symbol, close]
+    df_lrb = get_lrb_data(exsymbol)
+    if len(df_lrb) < 6:
+        continue
+    get_quarter_profit(df_lrb)
+    df_res.loc[len(df_res)] = [exsymbol, df_lrb.iloc[-1].profit / df_lrb.iloc[-5].profit, df_lrb.iloc[-2].profit / df_lrb.iloc[-6].profit]
+    #plt.plot(df_lrb.index, df_lrb["profit"])
+    #plt.axhline(y=0.0, c='r')
+    #plt.show()
 
-df_result = pd.merge(df, df_close, on="code")
-df_result["real_pe"] = df_result.close * df_result.totals.astype(float) * 10000 / df_result.net_profits.astype(float) / 4.0
-print df_result[df_result.real_pe > 0].sort_values(["real_pe"], ascending=False)
+print df_res.sort_values(["h2_incr"]).tail(10)

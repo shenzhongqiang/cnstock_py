@@ -53,7 +53,7 @@ for exsymbol in exsymbols:
     if len(df) < 400:
         continue
     df["profit"] = df.close / df.close.shift(70)
-    profit = df.iloc[-300].profit
+    profit = df.iloc[-1].profit
     df_date.loc[len(df_date)] = [exsymbol, profit]
 df_date.dropna(how="any", inplace=True)
 df_top = df_date.sort_values(["profit"]).tail(10)
