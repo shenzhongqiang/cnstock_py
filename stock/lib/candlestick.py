@@ -74,3 +74,4 @@ def compare_stock(df_a, df_b, date_a, date_b, length, show_plot=False):
         plt.legend()
         plt.show()
     return [tvalue, pvalue]
+

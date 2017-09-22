@@ -2,7 +2,7 @@
 import os
 import numpy as np
 import pandas as pd
-from stock.globalvar import FINANCE_DIR, LRB_CH2EN, XJLLB_CH2EN, ZCFZB_CH2EN
+from stock.globalvar import FINANCE_DIR, BASIC_DIR, LRB_CH2EN, XJLLB_CH2EN, ZCFZB_CH2EN
 
 
 def _parse_cell(string, parser=None):
@@ -101,3 +101,8 @@ def get_xjllb_data(exsymbol):
     df = df[pd.notnull(df.index)]
     df.set_index(pd.to_datetime(df.index, format="%Y-%m-%d"), inplace=True)
     return df.iloc[::-1]
+
+def load_stock_basics():
+    filepath = os.path.join(BASIC_DIR, "basics")
+    df = pd.read_csv(filepath, encoding="utf-8", dtype={"code": str, "pe": np.float64})
+    return df

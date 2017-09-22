@@ -1,3 +1,4 @@
+import sys
 import os
 import cPickle as pickle
 import scipy
@@ -47,24 +48,25 @@ def value_down(array):
             return False
     return True
 
+
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 store = get_store(store_type)
-df = store.get('sh600507')
+df = store.get('sh600516')
 df["range"] = df.high / df.low - 1
-df["vol_tvalue"] = df.volume.rolling(window=30).apply(compute_vol_tvalue, (20, 10))
-df["vol_pvalue"] = df.volume.rolling(window=30).apply(compute_vol_pvalue, (20, 10))
-df["min30"] = df.close.rolling(window=30).min()
-df["already_up"] = df.close / df.min30 - 1
-df["price_slope"] = df.close.rolling(window=30).apply(get_slope)
+df["vol_tvalue"] = df.volume.rolling(window=44).apply(compute_vol_tvalue, (22, 22))
+df["vol_pvalue"] = df.volume.rolling(window=44).apply(compute_vol_pvalue, (22, 22))
+df["min_price"] = df.close.rolling(window=44).min()
+df["already_up"] = df.close / df.min_price - 1
+df["price_slope"] = df.close.rolling(window=22).apply(get_slope)
 df["tvalue_down"] = df.vol_tvalue.rolling(window=5).apply(value_down)
-df_test = df.loc["2016-01-01":]
+df_test = df.loc["2017-01-01":]
 df_test["vol_chg"] = df_test.volume.pct_change()
-df_test.vol_chg.hist()
-plt.show()
 print df_test[df_test.vol_pvalue < 0.01][df_test.tvalue_down == True][df_test.price_slope>0].sort_values(["already_up"], ascending=False)
-#fig = plt.figure()
-#ax = fig.add_subplot(111)
-#ax.plot(df_test.index, df_test.vol_tvalue)
-#ax.axhline(-3, c='r')
-#plt.show()
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+ax2 = ax1.twinx()
+ax1.bar(df_test.index, df_test.volume, color='grey', alpha=0.8)
+ax2.plot(df_test.index, df_test.vol_tvalue, c='r')
+ax2.axhline(-3, c='r')
+plt.show()

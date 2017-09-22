@@ -15,6 +15,7 @@ HIST_DIR = {
 FINANCE_DIR = {
     'stock': os.path.join(ROOTDIR, 'data/finance/stock')
 }
+BASIC_DIR = os.path.join(ROOTDIR, 'data/basics')
 
 REAL_DIR = {
     'stock': os.path.join(ROOTDIR, 'data/realtime/stock'),

@@ -6,8 +6,9 @@ import os.path
 from multiprocessing import Pool
 from stock.utils import request
 import stock.utils.symbol_util
-from stock.globalvar import FINANCE_DIR
+from stock.globalvar import FINANCE_DIR, BASIC_DIR
 from stock.marketdata.storefactory import get_store
+import tushare as ts
 
 ZCFZB_URL = "http://quotes.money.163.com/service/zcfzb_%s.html"
 LRB_URL = "http://quotes.money.163.com/service/lrb_%s.html"
@@ -17,6 +18,8 @@ XJLLB_URL = "http://quotes.money.163.com/service/xjllb_%s.html"
 stock_dir = FINANCE_DIR['stock']
 if not os.path.isdir(stock_dir):
     os.makedirs(stock_dir)
+if not os.path.isdir(BASIC_DIR):
+    os.makedirs(BASIC_DIR)
 
 def download_zcfzb(symbol):
     try:
@@ -65,8 +68,16 @@ def download_stock_finance(data):
     download_lrb(data["symbol"])
     download_xjllb(data["symbol"])
 
+def dump_basics_data():
+    df = ts.get_stock_basics()
+    filepath = os.path.join(BASIC_DIR, "basics")
+    df.to_csv(filepath, encoding="utf-8")
+
 if __name__ == "__main__":
     pool = Pool(20)
+
+    # download stock basics
+    dump_basics_data()
 
     # download stock symbols
     symbols = stock.utils.symbol_util.get_stock_symbols()

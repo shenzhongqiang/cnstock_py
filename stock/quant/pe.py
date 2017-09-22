@@ -33,6 +33,12 @@ def get_quarter_profit(df):
 
     return df
 
+def plot_profit(exsymbol):
+    df_lrb = get_lrb_data(exsymbol)
+    get_quarter_profit(df_lrb)
+    plt.plot(df_lrb.index, df_lrb["profit"])
+    plt.show()
+
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
 df_res = pd.DataFrame(columns=["exsymbol", "h2_incr", "h1_incr"])
