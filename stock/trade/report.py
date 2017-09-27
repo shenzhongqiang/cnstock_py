@@ -262,23 +262,26 @@ class Report:
                 chg))
 
         max_drawdown = self.__get_max_drawdown(closed)
-        win_rate = float(win_trades) / len(closed)
+        win_rate = 0.0
+        if len(closed) > 0.0:
+            win_rate = float(win_trades) / len(closed)
         print "Profit: %f" % (cum_total)
         print "Max Drawdown: %f" % (max_drawdown)
         print "Num of Trades: %d" % (len(closed))
         print "Win Rate: %f" % win_rate
         print "Comm Cost: %f" % comm_total
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.xaxis.set_major_formatter(DateFormatter("%Y%m%d"))
-        dates = [ x.open_date for x in closed ]
-        min_dt = dates[0]
-        max_dt = dates[-1]
-        delta = datetime.timedelta(days=2)
-        ax.set_xlim(min_dt - delta, max_dt + delta)
-        ax.xaxis_date()
-        ax.autoscale_view()
-        plt.setp(plt.gca().get_xticklabels(), rotation=90, horizontalalignment='right')
-        plt.plot(dates, series)
-        plt.show()
+        if len(closed) > 0:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.xaxis.set_major_formatter(DateFormatter("%Y%m%d"))
+            dates = [ x.open_date for x in closed ]
+            min_dt = dates[0]
+            max_dt = dates[-1]
+            delta = datetime.timedelta(days=2)
+            ax.set_xlim(min_dt - delta, max_dt + delta)
+            ax.xaxis_date()
+            ax.autoscale_view()
+            plt.setp(plt.gca().get_xticklabels(), rotation=90, horizontalalignment='right')
+            plt.plot(dates, series)
+            plt.show()

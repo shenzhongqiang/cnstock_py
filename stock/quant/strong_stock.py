@@ -55,7 +55,6 @@ def get_up_ratio(df):
 
 def get_tvalue(array_a, array_b):
     [tvalue, pvalue] = scipy.stats.ttest_ind(array_a, array_b)
-    print tvalue, pvalue
     return tvalue
 
 def get_strong_tvalue(df_index, df_stock):
@@ -85,7 +84,7 @@ df_index = store.get('id000001').loc[:date]
 dates_len = len(df_index.date)
 index_history = store.get('id000001')
 index_history['chg'] = index_history.close.pct_change()
-columns = ['exsymbol', 'price_slope', 'vol_slope', 'vol_tvalue', 'up_ratio', 'strong_tvalue', 'tick_pulse', 'market_profit_tvalue']
+columns = ['exsymbol', 'price_slope', 'vol_slope', 'vol_tvalue', 'up_ratio', 'strong_tvalue', 'tick_pulse', 'market_profit_tvalue', "composite_tvalue"]
 result = pd.DataFrame(columns=columns)
 
 for exsymbol in exsymbols:
@@ -99,11 +98,12 @@ for exsymbol in exsymbols:
         continue
     price_slope = get_slope(df.iloc[-22:].low) / df.iloc[-22].low
     vol_slope = get_slope(df.iloc[-22:].volume) / df.iloc[-22].volume
-    vol_tvalue = get_vol_tvalue(df)
+    vol_tvalue = get_vol_tvalue(df) * -1
     up_ratio = get_up_ratio(df)
-    strong_tvalue = get_strong_tvalue(df_index, df)
-    if price_slope > 0.0 and vol_tvalue < 0 and up_ratio > 0 and strong_tvalue < 0:
-        print exsymbol, price_slope, vol_slope, vol_tvalue, up_ratio, strong_tvalue
-        result.loc[len(result)] = [exsymbol, price_slope, vol_slope, vol_tvalue, up_ratio, strong_tvalue, 0, 0]
+    strong_tvalue = get_strong_tvalue(df_index, df) * -1
+    if price_slope > 0.0 and vol_tvalue > 0 and up_ratio > 0 and strong_tvalue > 0:
+        com_tvalue = scipy.stats.hmean([vol_tvalue, strong_tvalue])
+        print exsymbol, price_slope, vol_slope, vol_tvalue, up_ratio, strong_tvalue, com_tvalue
+        result.loc[len(result)] = [exsymbol, price_slope, vol_slope, vol_tvalue, up_ratio, strong_tvalue, 0, 0, com_tvalue]
 
-print result.sort_values(["vol_tvalue"], ascending=False)
+print result.sort_values(["composite_tvalue"], ascending=True)

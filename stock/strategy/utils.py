@@ -59,6 +59,18 @@ def is_dieting(yest, today):
         return True
     return False
 
+def is_open_buyable(df, date):
+    df2 = df[df.date <= date]
+    if not date in df2.index:
+        return False
+    if len(df2.index) < 2:
+        raise TooFewData("there are only 1 day's data")
+    today = df2.iloc[-1].open
+    yest = df2.iloc[-2].close
+    if is_zhangting(yest, today):
+        return False
+    return True
+
 def is_buyable(df, date):
     df2 = df[df.date <= date]
     if not date in df2.index:

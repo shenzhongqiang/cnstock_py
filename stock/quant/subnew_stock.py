@@ -64,7 +64,7 @@ columns = ["exsymbol", "ipo_date", "free_date", "break_date", "down_days", "high
 result = pd.DataFrame(columns=columns)
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
-    if len(df) >= 400 or len(df) < 10:
+    if len(df) >= 400 or len(df) < 20:
         continue
 
     df["chg"] = df.close.pct_change()
