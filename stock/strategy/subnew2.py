@@ -1,3 +1,4 @@
+import json
 import datetime
 import numpy as np
 import pandas as pd
@@ -18,21 +19,15 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class SubnewStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6,
-        sl_ratio=0.049,
-        tp_ratio=0.10,
-        open_gap=0.02,
-        ):
+    def __init__(self, start, end, initial=1e6, params={
+            "sl_ratio": 0.049,
+            "tp_ratio": 0.10,
+            "open_gap": 0.02,
+        }):
         super(SubnewStrategy, self).__init__(start=start, end=end, initial=initial)
-        self.order.set_params({
-            "sl_ratio": sl_ratio,
-            "tp_ratio": tp_ratio,
-            "open_gap": open_gap,
-        })
+        self.order.set_params(params)
         self.store = get_store(store_type)
-        self.sl_ratio = sl_ratio
-        self.tp_ratio = tp_ratio
-        self.open_gap = open_gap
+        self.params = params
         self.exsymbols = self.store.get_stock_exsymbols()
 
     def filter_stock(self, date):
@@ -67,16 +62,13 @@ class SubnewStrategy(Strategy):
             prev_chg = yest_row.chg
             chg = row.chg
             if yest_row.volume > yest_row.max_vol and yest_row.body > 0 and \
-                yest_row.chg > 0.095 and row.open_gap < self.open_gap:
+                yest_row.chg > 0.095 and row.open_gap < self.params["open_gap"]:
                 result.append(exsymbol)
         return result
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f sl_ratio=%f tp_ratio=%f open_gap=%f" %(
-            self.start, self.end, self.initial,
-            self.sl_ratio,
-            self.tp_ratio,
-            self.open_gap))
+        logger.info("Running strategy with start=%s end=%s initial=%f %s" %(
+            self.start, self.end, self.initial, json.dumps(self.params)))
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]
         state = 0
@@ -95,15 +87,15 @@ class SubnewStrategy(Strategy):
                 if not is_open_buyable(df, date):
                     continue
                 price = df.loc[date].open
-                close = df.loc[date].close
+                high = df.loc[date].high
                 balance = self.order.get_account_balance()
                 amount = int(balance / price / 100) * 100
                 self.order.buy(exsymbol, price, dt, amount)
                 buy_price = price
-                if close > price:
-                    stop_price = (1-self.sl_ratio) * close
+                if high > price:
+                    stop_price = (1-self.params["sl_ratio"]) * high
                 else:
-                    stop_price = (1-self.sl_ratio) * price
+                    stop_price = (1-self.params["sl_ratio"]) * price
                 state = 1
                 days += 1
                 continue
@@ -131,8 +123,8 @@ class SubnewStrategy(Strategy):
                     days = 0
                     continue
 
-                if today_bar.close > buy_price:
-                    stop_price = (1-self.sl_ratio) * today_bar.close
+                if today_bar.high > buy_price:
+                    stop_price = (1-self.params["sl_ratio"]) * today_bar.high
                 days += 1
 
             if state == 2:
