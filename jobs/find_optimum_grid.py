@@ -7,8 +7,8 @@ import stock.strategy.subnew2
 
 logger = logging.getLogger("jobs.find_optimum_grid")
 
-start = '2010-01-01'
-end = '2017-07-01'
+start = '2017-01-01'
+end = '2017-09-15'
 def sample_loss(param):
     try:
         strategy = stock.strategy.subnew2.SubnewStrategy(start, end, params=param)
