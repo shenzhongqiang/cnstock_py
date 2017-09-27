@@ -1,3 +1,4 @@
+import json
 import datetime
 import numpy as np
 import pandas as pd
@@ -19,21 +20,19 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, upper=0.00, lower=-0.01):
+    def __init__(self, start, end, initial=1e6, params={
+            "upper": 0.00,
+            "lower": -0.01}):
         super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
-        self.order.set_params({
-            "upper": upper,
-            "lower": lower,
-        })
+        self.order.set_params(params)
         self.store = get_store(store_type)
-        self.upper = upper
-        self.lower = lower
+        self.params = params
         self.exsymbol = 'id000001'
 
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f upper=%f lower=%f" %(
-            self.start, self.end, self.initial, self.upper, self.lower))
+        logger.info("Running strategy with start=%s end=%s initial=%f %s" %(
+            self.start, self.end, self.initial, json.dumps(self.params)))
         df = self.store.get(self.exsymbol)
         df["ma"] = df.close.rolling(window=20).mean()
         df["bias"] = (df.close - df.ma)/df.ma
@@ -54,7 +53,7 @@ class IndexStrategy(Strategy):
                 continue
             if state == 0:
                 today_bar = df.loc[date]
-                if today_bar.bias > self.upper:# and today_bar.diff_min < 0.20 and today_bar.std_close > 0.01:
+                if today_bar.bias > self.params["upper"]:# and today_bar.diff_min < 0.20 and today_bar.std_close > 0.01:
                     open_env.loc[len(open_env)] = [dt, today_bar.diff_min, today_bar.std_close]
                     balance = self.order.get_account_balance()
                     amount = int(balance / today_bar.close / 100) * 100
@@ -72,7 +71,7 @@ class IndexStrategy(Strategy):
 
                 today_bar = df.loc[date]
                 dt = datetime.datetime.strptime(date, "%Y-%m-%d")
-                if today_bar.bias < self.lower:
+                if today_bar.bias < self.params["lower"]:
                     self.order.sell(pos.exsymbol, today_bar.close, dt, pos.amount)
                     state = 0
                     days = 0

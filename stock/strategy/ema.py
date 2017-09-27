@@ -1,3 +1,4 @@
+import json
 import datetime
 import numpy as np
 import talib
@@ -16,16 +17,14 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class EmaStrategy(Strategy):
-    def __init__(self, start, end, initial=80000, fast=5, slow=7, target=1.1):
+    def __init__(self, start, end, initial=80000, params={
+            "fast": 5,
+            "slow": 7,
+            "target": 1.1}):
         super(EmaStrategy, self).__init__(start=start, end=end, initial=initial)
-        self.order.set_params({
-            "fast": fast,
-            "slow": slow,
-            "target": target})
+        self.order.set_params(params)
         self.store = get_store(store_type)
-        self.fast = fast
-        self.slow = slow
-        self.target = target
+        self.params = params
         self.exsymbols = self.store.get_stock_exsymbols()
 
     def rank_stock(self, date, exsymbols):
@@ -35,11 +34,11 @@ class EmaStrategy(Strategy):
             if len(all_history) == 0:
                 continue
             history = get_history_by_date(all_history, date)
-            low = history[-self.slow*3:].low.min()
+            low = history[-self.params["slow"]*3:].low.min()
             close = history.iloc[-1].close
             chg = close / low
             s_chg = history.close.pct_change().values
-            s_chg_slow = s_chg[-self.slow*3:]
+            s_chg_slow = s_chg[-self.params["slow"]*3:]
             std = np.std(s_chg_slow)
             scores.append({
                 "exsymbol": exsymbol,
@@ -64,15 +63,15 @@ class EmaStrategy(Strategy):
                 print "history error: %s %s" % (exsymbol, str(e))
                 continue
             closes = history.close.values
-            if len(closes) < self.slow * 3:
+            if len(closes) < self.params["slow"] * 3:
                 continue
-            low = history[-self.slow*3:].low.min()
+            low = history[-self.params["slow"]*3:].low.min()
             close = history.iloc[-1].close
             chg = close / low
             if chg < 1.0:
                 continue
-            ema_slow = talib.EMA(closes, timeperiod=self.slow)
-            ema_fast = talib.EMA(closes, timeperiod=self.fast)
+            ema_slow = talib.EMA(closes, timeperiod=self.params["slow"])
+            ema_fast = talib.EMA(closes, timeperiod=self.params["fast"])
             length = len(ema_slow) - 1
             if ema_slow[length-2] > ema_fast[length-2] and \
                 ema_slow[length-1] < ema_fast[length-1]:
@@ -81,8 +80,8 @@ class EmaStrategy(Strategy):
         return result
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f fast=%d slow=%d target=%f" %(
-            self.start, self.end, self.initial, self.fast, self.slow, self.target))
+        logger.info("Running strategy with start=%s end=%s initial=%f %s" %(
+            self.start, self.end, self.initial, json.dumps(self.params)))
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]
         state = 0
@@ -104,7 +103,7 @@ class EmaStrategy(Strategy):
                 self.order.buy(exsymbol, close, dt, amount)
                 pos = self.order.get_positions()
                 buy_price = close
-                sell_limit = buy_price * self.target
+                sell_limit = buy_price * self.params["target"]
                 state = 1
                 days += 1
                 continue

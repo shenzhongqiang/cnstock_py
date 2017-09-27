@@ -1,3 +1,4 @@
+import json
 import datetime
 import numpy as np
 import pandas as pd
@@ -18,21 +19,19 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, sl_ratio=0.049, tp_ratio=0.021):
+    def __init__(self, start, end, initial=1e6, params={
+            "sl_ratio": 0.049,
+            "tp_ratio": 0.021}):
         super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
-        self.order.set_params({
-            "sl_ratio": sl_ratio,
-            "tp_ratio": tp_ratio,
-        })
+        self.order.set_params(params)
         self.store = get_store(store_type)
-        self.sl_ratio = sl_ratio
-        self.tp_ratio = tp_ratio
+        self.params = params
         self.exsymbol = 'id000001'
 
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f sl_ratio=%f tp_ratio=%f" %(
-            self.start, self.end, self.initial, self.sl_ratio, self.tp_ratio))
+        logger.info("Running strategy with start=%s end=%s initial=%f %s" %(
+            self.start, self.end, self.initial, json.dumps(self.params)))
         df = self.store.get(self.exsymbol)
         df["chg"] = df.low.pct_change()
         df["extra"] = (df.close - df.high.shift(1)) / df.high.shift(1)
@@ -60,8 +59,8 @@ class IndexStrategy(Strategy):
                 self.order.buy(self.exsymbol, today_bar.close, dt, amount)
                 pos = self.order.get_positions()
                 buy_price = today_bar.close
-                sell_limit = (1+self.tp_ratio) * today_bar.close
-                stop_loss = (1-self.sl_ratio) * today_bar.close
+                sell_limit = (1+self.params["tp_ratio"]) * today_bar.close
+                stop_loss = (1-self.params["sl_ratio"]) * today_bar.close
                 state = 1
                 days += 1
                 continue

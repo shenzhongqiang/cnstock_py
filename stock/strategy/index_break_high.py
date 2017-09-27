@@ -1,3 +1,4 @@
+import json
 import datetime
 import numpy as np
 import pandas as pd
@@ -19,24 +20,22 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class IndexStrategy(Strategy):
-    def __init__(self, start, end, initial=1e6, high_days=10, low_days=10):
+    def __init__(self, start, end, initial=1e6, params={
+            "high_days": 10,
+            "low_days": 10}):
         super(IndexStrategy, self).__init__(start=start, end=end, initial=initial)
-        self.order.set_params({
-            "high_days": high_days,
-            "low_days": low_days,
-        })
+        self.order.set_params(params)
         self.store = get_store(store_type)
-        self.high_days = high_days
-        self.low_days = low_days
+        self.params = params
         self.exsymbol = 'sh600208'
 
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f high_days=%d low_days=%d" %(
-            self.start, self.end, self.initial, self.high_days, self.low_days))
+        logger.info("Running strategy with start=%s end=%s initial=%f %s" %(
+            self.start, self.end, self.initial, json.dumps(self.params)))
         df = self.store.get(self.exsymbol)
-        df["high10"] = df.high.rolling(window=self.high_days).max().shift(1)
-        df["low10"] = df.low.rolling(window=self.low_days).min().shift(1)
+        df["high10"] = df.high.rolling(window=self.params["high_days"]).max().shift(1)
+        df["low10"] = df.low.rolling(window=self.params["low_days"]).min().shift(1)
         df_test = df.loc[self.start:self.end]
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]

@@ -1,3 +1,4 @@
+import json
 import datetime
 import numpy as np
 import talib
@@ -16,17 +17,15 @@ from config import store_type
 logger = logging.getLogger(__name__)
 
 class VolupStrategy(Strategy):
-    def __init__(self, start, end, initial=80000, upper=0.05, vol_quant=0.88, target=0.14, increase_thrd=0.15):
+    def __init__(self, start, end, initial=80000, params={
+            "upper": 0.05,
+            "vol_quant": 0.88,
+            "target": 0.14,
+            "increase_thrd": 0.15}):
         super(VolupStrategy, self).__init__(start=start, end=end, initial=initial)
-        self.order.set_params({"upper": upper,
-            "vol_quant": vol_quant,
-            "target": target,
-            "increase_thrd": increase_thrd})
+        self.order.set_params(params)
         self.store = get_store(store_type)
-        self.upper = upper
-        self.vol_quant = vol_quant
-        self.target = target
-        self.increase_thrd = increase_thrd
+        self.params = params
         self.exsymbols = self.store.get_stock_exsymbols()
 
     def rank_stock(self, date, exsymbols):
@@ -69,24 +68,24 @@ class VolupStrategy(Strategy):
                 continue
             bar = history.iloc[-1]
             bar_yest = history.iloc[-2]
-            vol_thrd = history.volume.quantile(self.vol_quant)
+            vol_thrd = history.volume.quantile(self.params["vol_quant"])
             if bar.volume < vol_thrd:
                 continue
             if bar.close < bar.open or bar.close < bar_yest.close:
                 continue
-            if (bar.high - bar.close) < bar_yest.close * self.upper:
+            if (bar.high - bar.close) < bar_yest.close * self.params["upper"]:
                 continue
             history["close5"] = history.close.shift(5)
             history["profit"] = history.close / history.close5
             low = history[-20:].low.min()
-            if (bar.close - low) > low * self.increase_thrd:
+            if (bar.close - low) > low * self.params["increase_thrd"]:
                 continue
             result.append(exsymbol)
         return result
 
     def run(self):
-        logger.info("Running strategy with start=%s end=%s initial=%f upper=%f vol_quant=%f target=%f, increase_thrd=%f" %(
-            self.start, self.end, self.initial, self.upper, self.vol_quant, self.target, self.increase_thrd))
+        logger.info("Running strategy with start=%s end=%s initial=%f %s" %(
+            self.start, self.end, self.initial, json.dumps(self.params)))
         dates = self.store.get_trading_dates()
         dates = dates[(dates >= self.start) & (dates <= self.end)]
         state = 0
@@ -107,7 +106,7 @@ class VolupStrategy(Strategy):
                 amount = int(balance / close / 100) * 100
                 self.order.buy(exsymbol, close, dt, amount)
                 buy_price = close
-                sell_limit = buy_price * (1+self.target)
+                sell_limit = buy_price * (1+self.params["target"])
                 state = 1
                 days += 1
                 continue
