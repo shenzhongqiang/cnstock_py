@@ -66,7 +66,7 @@ class SubnewStrategy(Strategy):
             chg = row.chg
             if yest_row.chg > 0.099 and \
                 row.open_gap < self.params["open_gap"] and \
-                row.drawdown < -0.35 and \
+                drawdown < -0.35 and \
                 row.recent_up_ratio < 0.6:
                 result.append(exsymbol)
         return result
