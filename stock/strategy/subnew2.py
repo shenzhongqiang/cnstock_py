@@ -44,6 +44,8 @@ class SubnewStrategy(Strategy):
             df["max_vol"] = df.volume.shift(1).rolling(window=20).max()
             df["open_gap"] = df.open / df.close.shift(1) -1
             df["body"] = df.close - df.open
+            df["close_std"] = df.close.shift(2).rolling(window=20).std() / df.close.shift(2)
+            df["recent_up_ratio"] = df.close.shift(1) /  df.close.shift(2).rolling(window=20).min() -1
             decrease = False
             i = 1
             for i in range(1, len(df.index)):
@@ -60,9 +62,12 @@ class SubnewStrategy(Strategy):
             row = df.iloc[idx]
             yest_row = df.iloc[idx-1]
             prev_chg = yest_row.chg
+            drawdown = df.iloc[i:idx].close.min() / df.iloc[i-1].high - 1
             chg = row.chg
-            if yest_row.volume > yest_row.max_vol and yest_row.body > 0 and \
-                yest_row.chg > 0.095 and row.open_gap < self.params["open_gap"]:
+            if yest_row.chg > 0.099 and \
+                row.open_gap < self.params["open_gap"] and \
+                row.drawdown < -0.35 and \
+                row.recent_up_ratio < 0.6:
                 result.append(exsymbol)
         return result
 
@@ -117,7 +122,7 @@ class SubnewStrategy(Strategy):
                     days = 0
                     continue
 
-                if days == 10:
+                if days == 20:
                     self.order.sell(pos.exsymbol, today_bar.close, dt, pos.amount)
                     state = 0
                     days = 0
@@ -168,7 +173,7 @@ class SubnewStrategy(Strategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = SubnewStrategy(start='2017-09-01', end='2017-09-19')
+    strategy = SubnewStrategy(start='2017-09-08', end='2017-09-19')
     strategy.run()
 
 

@@ -59,14 +59,14 @@ def load_ipo_data():
     return df
 
 def get_profit(df, idx, stop_loss):
-    num = 11
+    num = 22
     if len(df) - idx < num:
         return np.nan
 
-    for i in range(idx+1, len(df)):
+    for i in range(idx+2, idx+num):
         if df.ix[i].low <= df.ix[idx].close * (1-stop_loss):
             break
-    profit = df.iloc[idx+1:i].close.max() / df.iloc[idx].close - 1
+    profit = df.iloc[idx+2:i].close.max() / df.iloc[idx+1].open - 1
     return profit
 
 def generate_middle():
@@ -74,7 +74,7 @@ def generate_middle():
     exsymbols = store.get_stock_exsymbols()
     columns = [
         "exsymbol",
-        "break_date",
+        "open_date",
         "profit",
         "chg",
         "prev_chg",
@@ -93,9 +93,10 @@ def generate_middle():
     df_basics = load_stock_basics()
     for exsymbol in exsymbols:
         df = store.get(exsymbol)
-        if len(df) >= 240 or len(df) < 22:
+        if len(df) >= 1000 or len(df) < 22:
             continue
 
+        df = df.iloc[:500]
         total_shares = df_basics.loc[exsymbol, "totals"] * 1e6
 
         df["chg"] = df.close.pct_change()
@@ -114,7 +115,8 @@ def generate_middle():
             row_yest = df.ix[i-1]
             if row.high < row_yest.high:
                 break
-        for j in range(i, len(df.index)):
+
+        for j in range(i, len(df.index), 22):
             if j < 20:
                 continue
             row = df.ix[j]
@@ -124,12 +126,13 @@ def generate_middle():
             up_ratio = df.ix[j].close / min_close - 1
             vol_ratio = row.volume / total_shares
             drawdown = min_close / df.ix[i-1].high - 1
-            if vol_ratio > row.max_vol and row.body > 0: # and chg > -0.03 and prev_chg > -0.03 and row.up_ratio < 0.2:
+            #if vol_ratio > row.max_vol and row.body > 0:
+            if chg > 0.099:
                 profit = get_profit(df, j, 0.05)
-                break_date = df.index[j]
+                open_date = df.index[j]
                 result.loc[len(result)] = [
                     exsymbol,
-                    break_date,
+                    open_date,
                     profit,
                     chg,
                     prev_chg,
@@ -144,7 +147,7 @@ def generate_middle():
                     row.next_body,
                     row.next_chg
                 ]
-        #result.loc[len(result)] = [exsymbol, ipo_date, free_date, break_date, down_days, high_date, high_ratio, max_profit, min_profit, downward, market_cap]
+        #result.loc[len(result)] = [exsymbol, ipo_date, free_date, open_date, down_days, high_date, high_ratio, max_profit, min_profit, downward, market_cap]
 
     result.dropna(how="any",inplace=True)
     print "===== zhangting ====="
@@ -155,11 +158,23 @@ def generate_middle():
 def parse_middle(filepath="/tmp/subnew2.csv"):
     pd.set_option('display.max_rows', None)
     df = pd.read_csv(filepath, encoding="utf-8", dtype={"exsymbol": str})
-    zt = df[df.chg > 0.099][df.next_opengap < 0.05]
-    print zt[zt.next_opengap < -.015].sort_values(["next_opengap"], ascending=False)
-    #print zt.sort_values(["profit"])
+    print df[df.next_opengap < 0.05].drop(["exsymbol", "open_date"], axis=1).corr()["profit"]
+    test = df[df.next_opengap<0.05][df.drawdown<-0.35][df.recent_up_ratio < 0.60]
+    print len(test), 1.0*len(test[test.profit>0.2])/len(test), test.profit.median()
+    print test.profit.sum() - 0.05*len(test)
+    x = np.linspace(0, 0.80, 100)
+    y = []
+    #for i in x:
+    #    zt = df[df.recent_up_ratio < i]
+    #    result = zt.profit
+    #    print len(result), i, result.median()
+    #    y.append(result.median())
+
+    #plt.plot(x, y)
+    #plt.show()
+    #print df.sort_values(["profit"])
 
 
 if __name__ == "__main__":
-    generate_middle()
+    #generate_middle()
     parse_middle()
