@@ -75,10 +75,12 @@ class SubnewStrategy(Strategy):
         days = 0
         buy_price = 0.0
         stop_price = 0.0
+        record_high = 0.0
         for date in dates:
             dt = datetime.datetime.strptime(date, "%Y-%m-%d")
             if state == 0:
                 exsymbols = self.filter_stock(date)
+                print exsymbols
                 if len(exsymbols) == 0:
                     continue
                 idx = np.random.randint(len(exsymbols))
@@ -92,10 +94,8 @@ class SubnewStrategy(Strategy):
                 amount = int(balance / price / 100) * 100
                 self.order.buy(exsymbol, price, dt, amount)
                 buy_price = price
-                if high > price:
-                    stop_price = (1-self.params["sl_ratio"]) * high
-                else:
-                    stop_price = (1-self.params["sl_ratio"]) * price
+                record_high = buy_price
+                stop_price = (1-self.params["sl_ratio"]) * price
                 state = 1
                 days += 1
                 continue
@@ -123,8 +123,9 @@ class SubnewStrategy(Strategy):
                     days = 0
                     continue
 
-                if today_bar.high > buy_price:
-                    stop_price = (1-self.params["sl_ratio"]) * today_bar.high
+                if today_bar.close > record_high:
+                    stop_price = (1-self.params["sl_ratio"]) * today_bar.close
+                    record_high = today_bar.close
                 days += 1
 
             if state == 2:

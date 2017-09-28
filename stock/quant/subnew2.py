@@ -63,7 +63,7 @@ def get_profit(df, idx, stop_loss):
     if len(df) - idx < num:
         return np.nan
 
-    for i in range(idx+1, idx+num):
+    for i in range(idx+1, len(df)):
         if df.ix[i].low <= df.ix[idx].close * (1-stop_loss):
             break
     profit = df.iloc[idx+1:i].close.max() / df.iloc[idx].close - 1
@@ -72,7 +72,23 @@ def get_profit(df, idx, stop_loss):
 def generate_middle():
     store = get_store(store_type)
     exsymbols = store.get_stock_exsymbols()
-    columns = ["exsymbol", "break_date", "profit", "chg", "prev_chg", "up_ratio", "close_std", "vol_ratio", "mean_vol", "recent_up_ratio", "drawdown", "opengap"]
+    columns = [
+        "exsymbol",
+        "break_date",
+        "profit",
+        "chg",
+        "prev_chg",
+        "up_ratio",
+        "close_std",
+        "vol_ratio",
+        "mean_vol",
+        "recent_up_ratio",
+        "drawdown",
+        "opengap",
+        "next_opengap",
+        "next_body",
+        "next_chg"
+    ]
     result = pd.DataFrame(columns=columns)
     df_basics = load_stock_basics()
     for exsymbol in exsymbols:
@@ -89,6 +105,9 @@ def generate_middle():
         df["close_std"] = df.close.shift(1).rolling(window=20).std() / df.close.shift(1)
         df["recent_up_ratio"] = df.close /  df.close.shift(1).rolling(window=20).min() -1
         df["opengap"] = df.open / df.close.shift(1) - 1
+        df["next_opengap"] = df.open.shift(-1) / df.close - 1
+        df["next_body"] = df.close.shift(-1) / df.open.shift(-1) - 1
+        df["next_chg"] = df.chg.shift(-1)
         i = 1
         for i in range(1, len(df.index)):
             row = df.ix[i]
@@ -108,7 +127,23 @@ def generate_middle():
             if vol_ratio > row.max_vol and row.body > 0: # and chg > -0.03 and prev_chg > -0.03 and row.up_ratio < 0.2:
                 profit = get_profit(df, j, 0.05)
                 break_date = df.index[j]
-                result.loc[len(result)] = [exsymbol, break_date, profit, chg, prev_chg, up_ratio, row.close_std, vol_ratio, row.mean_vol, row.recent_up_ratio, drawdown, row.opengap]
+                result.loc[len(result)] = [
+                    exsymbol,
+                    break_date,
+                    profit,
+                    chg,
+                    prev_chg,
+                    up_ratio,
+                    row.close_std,
+                    vol_ratio,
+                    row.mean_vol,
+                    row.recent_up_ratio,
+                    drawdown,
+                    row.opengap,
+                    row.next_opengap,
+                    row.next_body,
+                    row.next_chg
+                ]
         #result.loc[len(result)] = [exsymbol, ipo_date, free_date, break_date, down_days, high_date, high_ratio, max_profit, min_profit, downward, market_cap]
 
     result.dropna(how="any",inplace=True)
@@ -120,8 +155,9 @@ def generate_middle():
 def parse_middle(filepath="/tmp/subnew2.csv"):
     pd.set_option('display.max_rows', None)
     df = pd.read_csv(filepath, encoding="utf-8", dtype={"exsymbol": str})
-    zt = df[df.chg > 0.095].drop(["prev_chg"], axis=1)
-    print zt.sort_values(["profit"])
+    zt = df[df.chg > 0.099][df.next_opengap < 0.05]
+    print zt[zt.next_opengap < -.015].sort_values(["next_opengap"], ascending=False)
+    #print zt.sort_values(["profit"])
 
 
 if __name__ == "__main__":
