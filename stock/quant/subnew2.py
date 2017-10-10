@@ -1,3 +1,4 @@
+import time
 import os
 import cPickle as pickle
 import scipy
@@ -58,6 +59,100 @@ def load_ipo_data():
     df.drop_duplicates(subset=["code"], inplace=True)
     return df
 
+def get_trade(exsymbol, df, break_idx, start_idx, sl_ratio=0.05, result=None):
+    if start_idx >= len(df):
+        return
+    state = 0
+    buy_price = 0.0
+    sl_price = 0.0
+    record_high = 0.0
+    buy_idx = 0
+    sell_idx = 0
+    chg = 0.0
+    prev_chg = 0.0
+    vol_ratio = 0.0
+    days = 0
+    for i in range(start_idx, len(df)):
+        row = df.iloc[i]
+        if state == 0 and row.prev_chg > 0.099:
+            open_date = df.index[i]
+            buy_price = row.open
+            sl_price = buy_price * (1-sl_ratio)
+            record_high = buy_price
+            chg = row.chg
+            prev_chg = row.prev_chg
+            prevprev_chg = row.prevprev_chg
+            ppprev_chg = row.ppprev_chg
+            vol_ratio = row.vol_ratio
+            min_close = df.iloc[break_idx:i].close.min()
+            up_ratio = row.close / min_close - 1
+            drawdown = min_close / df.ix[break_idx-1].high - 1
+            mcap = row.total_shares * buy_price
+            buy_idx = i
+            state = 1
+            days += 1
+            continue
+        if state == 1:
+            if not is_sellable(df, df.index[i]):
+                state = -1
+                continue
+
+            if row.open <= sl_price:
+                sell_price = row.open
+                sell_idx = i
+                close_date = df.index[i]
+                profit = sell_price / buy_price - 1
+                result.loc[len(result)] = [exsymbol, row.total_shares, row.ipo_date, mcap, open_date, close_date,
+                    profit, chg, prev_chg, prevprev_chg, ppprev_chg, up_ratio, row.close_std, vol_ratio, row.mean_vol, row.recent_up_ratio,
+                    drawdown, row.opengap, row.next_opengap, row.next_body, row.next_chg
+                ]
+                days = 0
+                state = 0
+                return get_trade(exsymbol, df, break_idx, sell_idx+1, sl_ratio, result)
+            elif row.low <= sl_price:
+                sell_price = sl_price
+                sell_idx = i
+                close_date = df.index[i]
+                profit = sell_price / buy_price - 1
+                result.loc[len(result)] = [exsymbol, row.total_shares, row.ipo_date, mcap, open_date, close_date,
+                    profit, chg, prev_chg, prevprev_chg, ppprev_chg, up_ratio, row.close_std, vol_ratio, row.mean_vol, row.recent_up_ratio,
+                    drawdown, row.opengap, row.next_opengap, row.next_body, row.next_chg
+                ]
+                days = 0
+                state = 0
+                return get_trade(exsymbol, df, break_idx, sell_idx+1, sl_ratio, result)
+            elif days == 22:
+                sell_price = row.close
+                sell_idx = i
+                close_date = df.index[i]
+                profit = sell_price / buy_price - 1
+                result.loc[len(result)] = [exsymbol, row.total_shares, row.ipo_date, mcap, open_date, close_date,
+                    profit, chg, prev_chg, prevprev_chg, ppprev_chg, up_ratio, row.close_std, vol_ratio, row.mean_vol, row.recent_up_ratio,
+                    drawdown, row.opengap, row.next_opengap, row.next_body, row.next_chg
+                ]
+                days = 0
+                state = 0
+                return get_trade(exsymbol, df, break_idx, sell_idx+1, sl_ratio, result)
+            elif row.close > record_high:
+                record_high = row.close
+                sl_price = record_high * (1-sl_ratio)
+                days += 1
+            continue
+        if state == -1:
+            if is_sellable(df, df.index[i]):
+                sell_price = row.open
+                sell_idx = i
+                close_date = df.index[i]
+                profit = sell_price / buy_price - 1
+                result.loc[len(result)] = [exsymbol, row.total_shares, row.ipo_date, mcap, open_date, close_date,
+                    profit, chg, prev_chg, prevprev_chg, ppprev_chg, up_ratio, row.close_std, vol_ratio, row.mean_vol, row.recent_up_ratio,
+                    drawdown, row.opengap, row.next_opengap, row.next_body, row.next_chg
+                ]
+                days = 0
+                state = 0
+                return get_trade(exsymbol, df, break_idx, sell_idx+1, sl_ratio, result)
+
+
 def get_profit(df, idx, stop_loss):
     num = 22
     if len(df) - idx < num:
@@ -74,10 +169,16 @@ def generate_middle():
     exsymbols = store.get_stock_exsymbols()
     columns = [
         "exsymbol",
+        "total_shares",
+        "ipo_date",
+        "mcap",
         "open_date",
+        "close_date",
         "profit",
         "chg",
         "prev_chg",
+        "prevprev_chg",
+        "ppprev_chg",
         "up_ratio",
         "close_std",
         "vol_ratio",
@@ -96,10 +197,15 @@ def generate_middle():
         if len(df) >= 1000 or len(df) < 22:
             continue
 
-        df = df.iloc[:500]
+        df = df.iloc[:250]
         total_shares = df_basics.loc[exsymbol, "totals"] * 1e6
 
+        df["total_shares"] = total_shares
+        df["ipo_date"] = df.index[0]
         df["chg"] = df.close.pct_change()
+        df["prev_chg"] = df.chg.shift(1)
+        df["prevprev_chg"] = df.chg.shift(2)
+        df["ppprev_chg"] = df.chg.shift(3)
         df["body"] = df.close - df.open
         df["max_vol"] = df.volume.shift(1).rolling(window=20).max() / total_shares
         df["mean_vol"] = df.volume.shift(1).rolling(window=20).mean() / total_shares
@@ -109,69 +215,36 @@ def generate_middle():
         df["next_opengap"] = df.open.shift(-1) / df.close - 1
         df["next_body"] = df.close.shift(-1) / df.open.shift(-1) - 1
         df["next_chg"] = df.chg.shift(-1)
+        df["vol_ratio"] = df.volume / total_shares
         i = 1
         for i in range(1, len(df.index)):
             row = df.ix[i]
             row_yest = df.ix[i-1]
             if row.high < row_yest.high:
                 break
-
-        for j in range(i, len(df.index), 22):
-            if j < 20:
-                continue
-            row = df.ix[j]
-            prev_chg = df.ix[j-1].chg
-            chg = df.ix[j].chg
-            min_close = df.iloc[i:j].close.min()
-            up_ratio = df.ix[j].close / min_close - 1
-            vol_ratio = row.volume / total_shares
-            drawdown = min_close / df.ix[i-1].high - 1
-            #if vol_ratio > row.max_vol and row.body > 0:
-            if chg > 0.099:
-                profit = get_profit(df, j, 0.05)
-                open_date = df.index[j]
-                result.loc[len(result)] = [
-                    exsymbol,
-                    open_date,
-                    profit,
-                    chg,
-                    prev_chg,
-                    up_ratio,
-                    row.close_std,
-                    vol_ratio,
-                    row.mean_vol,
-                    row.recent_up_ratio,
-                    drawdown,
-                    row.opengap,
-                    row.next_opengap,
-                    row.next_body,
-                    row.next_chg
-                ]
-        #result.loc[len(result)] = [exsymbol, ipo_date, free_date, open_date, down_days, high_date, high_ratio, max_profit, min_profit, downward, market_cap]
-
+        break_idx = i
+        get_trade(exsymbol, df, break_idx, break_idx+1, sl_ratio=0.05, result=result)
     result.dropna(how="any",inplace=True)
-    print "===== zhangting ====="
-    zt = result[result.chg > 0.095][result.mean_vol < 0.03]
-    print zt
+    zt = result[result.prev_chg > 0.095][result.mean_vol < 0.03]
     result.to_csv("/tmp/subnew2.csv")
 
 def parse_middle(filepath="/tmp/subnew2.csv"):
     pd.set_option('display.max_rows', None)
     df = pd.read_csv(filepath, encoding="utf-8", dtype={"exsymbol": str})
-    print df[df.next_opengap < 0.05].drop(["exsymbol", "open_date"], axis=1).corr()["profit"]
-    test = df[df.next_opengap<0.05][df.drawdown<-0.35][df.recent_up_ratio < 0.60]
-    print len(test), 1.0*len(test[test.profit>0.2])/len(test), test.profit.median()
-    print test.profit.sum() - 0.05*len(test)
-    x = np.linspace(0, 0.80, 100)
+    df = df[df.open_date > "2015-10-01"][df.open_date<"2016-10-01"][df.opengap < 0.05][df.opengap > -0.05]
+    print df.drop(["exsymbol", "ipo_date", "open_date", "close_date"], axis=1).corr()["profit"]
+    test = df[df.recent_up_ratio > 0.2][df.vol_ratio < 0.01][df.close_std > 0.10]
+    print len(test), test.profit.median(), test.profit.mean(), (test.profit+1).prod()
+    #print test[["exsymbol", "open_date", "close_date", "profit"]].sort_values(["open_date"])
+    x = np.linspace(-0.10, 0.1, 1000)
     y = []
-    #for i in x:
-    #    zt = df[df.recent_up_ratio < i]
-    #    result = zt.profit
-    #    print len(result), i, result.median()
-    #    y.append(result.median())
+    for i in x:
+        zt = df[df.opengap > i]
+        result = zt.profit
+        y.append(result.median())
 
-    #plt.plot(x, y)
-    #plt.show()
+    plt.plot(x, y)
+    plt.show()
     #print df.sort_values(["profit"])
 
 

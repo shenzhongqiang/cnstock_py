@@ -173,7 +173,7 @@ class SubnewStrategy(Strategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = SubnewStrategy(start='2017-09-08', end='2017-09-19')
+    strategy = SubnewStrategy(start='2017-01-01', end='2017-09-19')
     strategy.run()
 
 

@@ -84,7 +84,7 @@ def is_buyable(df, date):
     return True
 
 def is_sellable(df, date):
-    df2 = df[df.date <= date]
+    df2 = df.loc[:date]
     if not date in df2.index:
         return False
     if len(df2.index) < 2:
