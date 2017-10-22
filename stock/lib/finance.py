@@ -30,6 +30,9 @@ def _parse_cell(string, parser=None):
 def get_lrb_data(exsymbol):
     filename = "%s_lrb" % exsymbol
     path = os.path.join(FINANCE_DIR["stock"], filename)
+    if not os.path.isfile(path):
+        msg = "%s has no lrb data" % exsymbol
+        raise Exception(msg)
     content = None
     with open(path, "rb") as f:
         content = f.read()
@@ -60,6 +63,9 @@ def get_lrb_data(exsymbol):
 def get_zcfzb_data(exsymbol):
     filename = "%s_zcfzb" % exsymbol
     path = os.path.join(FINANCE_DIR["stock"], filename)
+    if not os.path.isfile(path):
+        msg = "%s has no zcfzb data" % exsymbol
+        raise Exception(msg)
     content = None
     with open(path, "rb") as f:
         content = f.read()
@@ -90,6 +96,9 @@ def get_zcfzb_data(exsymbol):
 def get_xjllb_data(exsymbol):
     filename = "%s_xjllb" % exsymbol
     path = os.path.join(FINANCE_DIR["stock"], filename)
+    if not os.path.isfile(path):
+        msg = "%s has no xjllb data" % exsymbol
+        raise Exception(msg)
     content = None
     with open(path, "rb") as f:
         content = f.read()

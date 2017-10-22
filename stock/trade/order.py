@@ -140,6 +140,12 @@ class Order:
         positions = self.session.query(Position).filter_by(account_id=self.account.id).all()
         return positions
 
+    def get_position(self, exsymbol):
+        position = self.session.query(Position).filter_by(exsymbol=exsymbol).first()
+        if position == None:
+            raise Exception("position %s does not exist" % exsymbol)
+        return position
+
     def has_position(self, exsymbol):
         exsymbol = self.session.query(Position).filter_by(exsymbol=exsymbol, account_id=self.account.id).first()
         if exsymbol == None:

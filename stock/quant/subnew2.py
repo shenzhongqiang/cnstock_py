@@ -269,6 +269,7 @@ def parse_middle(filepath="/tmp/subnew2.csv"):
     test = df[df.opengap < 0.05][df.pprev_chg < -0.03][df.ppprev_chg < -0.03][df.vol_incr < 1].sort_values(["open_date"])
     print len(test), test.profit.median(), test.profit.mean(), (test.profit+1).prod()
     test["cumprod"] = (test.profit+1).cumprod()
+    #print test[["exsymbol", "ipo_date", "open_date", "close_date", "profit"]]
     plt.plot(range(len(test)), test["cumprod"])
     plt.show()
     #print test[["exsymbol", "open_date", "close_date", "profit", "opengap"]].sort_values(["open_date"])

@@ -1,3 +1,4 @@
+import re
 import os
 import pandas as pd
 from stock.globalvar import HIST_DIR
@@ -23,19 +24,19 @@ class Store(object):
 
     @staticmethod
     def flush():
-        files = os.listdir(HIST_DIR)
-        filepaths = map(lambda x: os.path.join(HIST_DIR, x), files)
+        files = os.listdir(HIST_DIR["stock"])
+        filepaths = map(lambda x: os.path.join(HIST_DIR["stock"], x), files)
         for path in filepaths:
             os.remove(path)
 
     @staticmethod
     def get_exsymbols():
-        files = os.listdir(HIST_DIR)
+        files = os.listdir(HIST_DIR["stock"])
         return files
 
     @staticmethod
     def get_stock_exsymbols():
-        exsymbols = os.listdir(HIST_DIR)
+        exsymbols = os.listdir(HIST_DIR["stock"])
         result = filter(lambda x: re.search(r'^(?!id)', x), exsymbols)
         return result
 

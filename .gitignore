@@ -44,3 +44,4 @@ nosetests.xml
 db.sqlite3
 data
 cnstock.db
+middleout

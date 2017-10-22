@@ -1,1 +1,1 @@
-store_type = "redis_store"
+store_type = "file_store"
