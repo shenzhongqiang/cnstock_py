@@ -102,31 +102,40 @@ class SubnewStrategy(StockSimpleStrategy):
         max_pos = self.params["max_pos"]
         for date in self.trading_dates:
             print date, len(positions)
+            print positions
             dt = datetime.datetime.strptime(date, "%Y-%m-%d")
             for i in range(len(positions)):
                 pos = positions[i]
                 if pos["state"] == 1:
                     pos_row = self.order.get_position(pos["exsymbol"])
                     df = self.get_exsymbol_history(pos_row.exsymbol)
+                    if date not in df.index:
+                        pos["state"] = -1
+                        continue
                     idx = df.index.get_loc(date)
                     yest_bar = df.iloc[idx-1]
                     today_bar = df.iloc[idx]
                     dt = datetime.datetime.strptime(date, "%Y-%m-%d")
                     pos["days"] += 1
-                    if not is_sellable(df, date):
-                        pos["state"] = -1
-                    elif today_bar.open <= pos["sl_price"]:
-                        self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
-                        closed_exsymbols.append(pos["exsymbol"])
-                    elif today_bar.low <= pos["sl_price"]:
-                        self.order.sell(pos_row.exsymbol, pos["sl_price"], dt, pos_row.amount)
-                        closed_exsymbols.append(pos["exsymbol"])
-                    elif days == 22:
-                        self.order.sell(pos.exsymbol, today_bar.close, dt, pos_row.amount)
-                        closed_exsymbols.append(pos["exsymbol"])
-                    elif today_bar.close > pos["record_high"]:
-                        pos["record_high"] = today_bar.close
-                        pos["sl_price"] = (1-self.params["sl_ratio"]) * pos["record_high"]
+                    if pos["state"] == 1:
+                        if not is_sellable(df, date):
+                            pos["state"] = -1
+                        elif today_bar.open <= pos["sl_price"]:
+                            self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
+                            closed_exsymbols.append(pos["exsymbol"])
+                        elif today_bar.low <= pos["sl_price"]:
+                            self.order.sell(pos_row.exsymbol, pos["sl_price"], dt, pos_row.amount)
+                            closed_exsymbols.append(pos["exsymbol"])
+                        elif days == 22:
+                            self.order.sell(pos.exsymbol, today_bar.close, dt, pos_row.amount)
+                            closed_exsymbols.append(pos["exsymbol"])
+                        elif today_bar.close > pos["record_high"]:
+                            pos["record_high"] = today_bar.close
+                            pos["sl_price"] = (1-self.params["sl_ratio"]) * pos["record_high"]
+                    elif pos["state"] == -1:
+                        if is_sellable(df, date):
+                            self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
+                            closed_exsymbols.append(pos["exsymbol"])
 
             positions = filter(lambda x: x["exsymbol"] not in closed_exsymbols, positions)
             if len(positions) < max_pos:
@@ -173,7 +182,7 @@ class SubnewStrategy(StockSimpleStrategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = SubnewStrategy(start='2016-12-05', end='2017-09-30')
+    strategy = SubnewStrategy(start='2016-09-30', end='2017-09-30')
     strategy.run()
 
 

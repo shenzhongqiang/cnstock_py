@@ -21,13 +21,9 @@ def sample_loss(param):
         print str(e)
         traceback.print_exc()
 
-a = np.arange(0.05, 0.15, 0.05)
-b = np.arange(0.1, 0.2, 0.1)
-c = np.arange(0.01, 0.02, 0.01)
+c = range(1, 11)
 param_grid = {
-    "sl_ratio": a,
-    "tp_ratio": b,
-    "open_gap": c
+    "max_pos": c
 }
 result = gs.search(sample_loss=sample_loss,
     param_grid=param_grid, n_jobs=1)
