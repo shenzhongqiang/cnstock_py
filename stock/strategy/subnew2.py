@@ -49,6 +49,7 @@ class SubnewStrategy(StockSimpleStrategy):
         for res in async_res:
             [exsymbol, df] = res.get()
             self.set_exsymbol_history(exsymbol, df)
+        pool.terminate()
 
         for exsymbol, df in self.history.iteritems():
             break_idx = np.nan
@@ -106,10 +107,10 @@ class SubnewStrategy(StockSimpleStrategy):
             dt = datetime.datetime.strptime(date, "%Y-%m-%d")
             for i in range(len(positions)):
                 pos = positions[i]
+                pos_row = self.order.get_position(pos["exsymbol"])
                 if pos["state"] == 1:
-                    pos_row = self.order.get_position(pos["exsymbol"])
                     df = self.get_exsymbol_history(pos_row.exsymbol)
-                    if date not in df.index:
+                    if not is_sellable(df, date):
                         pos["state"] = -1
                         continue
                     idx = df.index.get_loc(date)
@@ -117,25 +118,22 @@ class SubnewStrategy(StockSimpleStrategy):
                     today_bar = df.iloc[idx]
                     dt = datetime.datetime.strptime(date, "%Y-%m-%d")
                     pos["days"] += 1
-                    if pos["state"] == 1:
-                        if not is_sellable(df, date):
-                            pos["state"] = -1
-                        elif today_bar.open <= pos["sl_price"]:
-                            self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
-                            closed_exsymbols.append(pos["exsymbol"])
-                        elif today_bar.low <= pos["sl_price"]:
-                            self.order.sell(pos_row.exsymbol, pos["sl_price"], dt, pos_row.amount)
-                            closed_exsymbols.append(pos["exsymbol"])
-                        elif days == 22:
-                            self.order.sell(pos.exsymbol, today_bar.close, dt, pos_row.amount)
-                            closed_exsymbols.append(pos["exsymbol"])
-                        elif today_bar.close > pos["record_high"]:
-                            pos["record_high"] = today_bar.close
-                            pos["sl_price"] = (1-self.params["sl_ratio"]) * pos["record_high"]
-                    elif pos["state"] == -1:
-                        if is_sellable(df, date):
-                            self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
-                            closed_exsymbols.append(pos["exsymbol"])
+                    if today_bar.open <= pos["sl_price"]:
+                        self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
+                        closed_exsymbols.append(pos["exsymbol"])
+                    elif today_bar.low <= pos["sl_price"]:
+                        self.order.sell(pos_row.exsymbol, pos["sl_price"], dt, pos_row.amount)
+                        closed_exsymbols.append(pos["exsymbol"])
+                    elif days == 22:
+                        self.order.sell(pos.exsymbol, today_bar.close, dt, pos_row.amount)
+                        closed_exsymbols.append(pos["exsymbol"])
+                    elif today_bar.close > pos["record_high"]:
+                        pos["record_high"] = today_bar.close
+                        pos["sl_price"] = (1-self.params["sl_ratio"]) * pos["record_high"]
+                elif pos["state"] == -1:
+                    if is_sellable(df, date):
+                        self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
+                        closed_exsymbols.append(pos["exsymbol"])
 
             positions = filter(lambda x: x["exsymbol"] not in closed_exsymbols, positions)
             if len(positions) < max_pos:
@@ -169,7 +167,7 @@ class SubnewStrategy(StockSimpleStrategy):
 
         account_id = self.order.get_account_id()
         report = Report(account_id)
-        report.print_report()
+        #report.print_report()
         result = report.get_summary()
         logger.info("profit=%f, max_drawdown=%f, num_of_trades=%d, win_rate=%f, comm_total=%f, params=%s" % (
             result.profit,
@@ -182,7 +180,7 @@ class SubnewStrategy(StockSimpleStrategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = SubnewStrategy(start='2016-09-30', end='2017-09-30')
+    strategy = SubnewStrategy(start='2015-06-09', end='2017-09-30')
     strategy.run()
 
 
