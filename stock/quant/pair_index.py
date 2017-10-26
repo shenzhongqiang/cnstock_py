@@ -23,16 +23,20 @@ from config import store_type
 pd.set_option('display.max_rows', None)
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
-start = '2015-01-01'
-df_a = store.get('id000001').loc[start:]
-df_a["norm"] = df_a.close / df_a.ix[0].close
-df_b = store.get('id000016').loc[start:]
-df_b["norm"] = df_b.close / df_b.ix[0].close
-result = df_a.norm - df_b.norm
-
+start = '2010-01-01'
+end = '2017-09-30'
+df_a = store.get('id000001').loc[start:end]
+df_b = store.get('id000016').loc[start:end]
+print np.corrcoef([df_a.close, df_b.close])
+clf = linear_model.LinearRegression()
+X = df_a.close.values.reshape(-1,1)
+y = df_b.close.values
+clf.fit(X, y)
+y_pred = clf.predict(X)
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
-ax2 = ax1.twinx()
-ax1.plot(df_b.norm, c='r')
-ax2.plot(df_a.norm, c='k')
+ax1.plot(range(len(y)), y-y_pred, color='k')
+#ax2 = ax1.twinx()
+#ax1.plot(df_b.close, c='r')
+#ax2.plot(df_a.close, c='k')
 plt.show()

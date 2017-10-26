@@ -1,3 +1,5 @@
+import timeit
+from functools import partial
 import multiprocessing
 import traceback
 import json
@@ -62,28 +64,30 @@ class SubnewStrategy(StockSimpleStrategy):
 
     def filter_stock(self, date):
         result = []
-        for exsymbol in self.exsymbols:
-            df = self.get_exsymbol_history(exsymbol)[:date]
-            if date not in df.index:
-                continue
+        i = 0
+        while i < len(self.exsymbols):
+           exsymbol = self.exsymbols[i]
+           df = self.get_exsymbol_history(exsymbol)[:date]
+           if date not in df.index:
+               continue
 
-            if len(df) >= 250 or len(df) < 22:
-                continue
+           if len(df) >= 250 or len(df) < 22:
+               continue
 
-            break_idx = self.stock_data.loc[exsymbol].break_idx
-            if break_idx == np.nan:
-                continue
-            idx = df.index.get_loc(date)
-            if break_idx >= idx:
-                continue
-            row = df.iloc[idx]
-            drawdown = df.iloc[break_idx:idx].close.min() / df.iloc[break_idx-1].high - 1
-            if row.prev_chg > 0.099 and \
-                row.opengap < self.params["open_gap"] and \
-                row.pprev_chg < -0.03 and \
-                row.ppprev_chg < -0.03 and \
-                row.vol_incr < 1:
-                result.append([exsymbol, row])
+           # break_idx = self.stock_data.loc[exsymbol].break_idx
+           # if break_idx == np.nan:
+           #     continue
+           # idx = df.index.get_loc(date)
+           # if break_idx >= idx:
+           #     continue
+           # row = df.iloc[idx]
+           # if row.prev_chg > 0.099 and \
+           #     row.opengap < self.params["open_gap"] and \
+           #     row.pprev_chg < -0.03 and \
+           #     row.ppprev_chg < -0.03 and \
+           #     row.vol_incr < 1:
+           #     result.append([exsymbol, row])
+           i += 1
         result.sort(key=lambda x: x[1].close_std, reverse=True)
         max_pos = self.params["max_pos"]
         result = map(lambda x: x[0], result)[:max_pos]
@@ -139,6 +143,9 @@ class SubnewStrategy(StockSimpleStrategy):
 
             positions = filter(lambda x: x["exsymbol"] not in closed_exsymbols, positions)
             if len(positions) < max_pos:
+                print timeit.Timer(partial(self.filter_stock, date)).repeat(1, 1)
+                import sys
+                sys.exit(1)
                 exsymbols = self.filter_stock(date)
                 if len(exsymbols) == 0:
                     continue
