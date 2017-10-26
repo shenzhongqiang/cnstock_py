@@ -125,7 +125,7 @@ class SubnewStrategy(StockSimpleStrategy):
                         self.order.sell(pos_row.exsymbol, pos["sl_price"], dt, pos_row.amount)
                         closed_exsymbols.append(pos["exsymbol"])
                     elif days == 22:
-                        self.order.sell(pos.exsymbol, today_bar.close, dt, pos_row.amount)
+                        self.order.sell(pos_row.exsymbol, today_bar.close, dt, pos_row.amount)
                         closed_exsymbols.append(pos["exsymbol"])
                     elif today_bar.close > pos["record_high"]:
                         pos["record_high"] = today_bar.close
@@ -180,7 +180,7 @@ class SubnewStrategy(StockSimpleStrategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = SubnewStrategy(start='2015-06-09', end='2017-09-30')
+    strategy = SubnewStrategy(start='2011-09-30', end='2017-09-30')
     strategy.run()
 
 
