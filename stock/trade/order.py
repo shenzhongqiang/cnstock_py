@@ -141,7 +141,7 @@ class Order:
         return positions
 
     def get_position(self, exsymbol):
-        position = self.session.query(Position).filter_by(exsymbol=exsymbol).first()
+        position = self.session.query(Position).filter_by(exsymbol=exsymbol, account_id=self.account.id).first()
         if position == None:
             raise Exception("position %s does not exist" % exsymbol)
         return position
