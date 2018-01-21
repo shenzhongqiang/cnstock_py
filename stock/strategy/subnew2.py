@@ -1,5 +1,3 @@
-import timeit
-from functools import partial
 import multiprocessing
 import traceback
 import json
@@ -11,6 +9,7 @@ import logging
 import logging.config
 from sklearn import linear_model
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
+from stock.utils.decorators import timeit
 from stock.strategy.utils import get_exsymbol_history, get_history_by_date, get_history_on_date, is_open_buyable, is_sellable, is_zhangting
 from stock.strategy.stock_simple_base import StockSimpleStrategy
 from stock.trade.order import Order
@@ -26,13 +25,14 @@ def pre_calc(exsymbol, df):
     df["prev_chg"] = df.chg.shift(1)
     df["pprev_chg"] = df.chg.shift(2)
     df["ppprev_chg"] = df.chg.shift(3)
-    df["vol_incr"] = df.volume.shift(1) / df.volume.shift(2).rolling(window=20).mean()
+    df["vol_incr"] = df.volume.shift(2) / df.volume.shift(2).rolling(window=20).mean()
     df["opengap"] = df.open / df.close.shift(1) -1
     df["close_std"] = df.close.shift(2).rolling(window=20).std() / df.close.shift(2)
     df["recent_up_ratio"] = df.close.shift(1) /  df.close.shift(2).rolling(window=20).min() -1
     return (exsymbol, df)
 
 class SubnewStrategy(StockSimpleStrategy):
+    @timeit
     def __init__(self, start, end, initial=1e6, params={
             "sl_ratio": 0.05,
             "open_gap": 0.05,
@@ -63,11 +63,11 @@ class SubnewStrategy(StockSimpleStrategy):
                     break
             self.stock_data.loc[exsymbol] = break_idx
 
+    @timeit
     def filter_stock(self, date):
         result = []
         i = 0
-        while i < len(self.exsymbols):
-           exsymbol = self.exsymbols[i]
+        for exsymbol in self.exsymbols:
            df = self.get_exsymbol_history(exsymbol)[:date]
            if date not in df.index:
                continue
@@ -75,21 +75,27 @@ class SubnewStrategy(StockSimpleStrategy):
            if len(df) >= 250 or len(df) < 22:
                continue
 
-           # break_idx = self.stock_data.loc[exsymbol].break_idx
-           # if break_idx == np.nan:
-           #     continue
-           # idx = df.index.get_loc(date)
-           # if break_idx >= idx:
-           #     continue
-           # row = df.iloc[idx]
-           # if row.prev_chg > 0.099 and \
-           #     row.opengap < self.params["open_gap"] and \
-           #     row.pprev_chg < -0.03 and \
-           #     row.ppprev_chg < -0.03 and \
-           #     row.vol_incr < 1:
-           #     result.append([exsymbol, row])
-           i += 1
-        result.sort(key=lambda x: x[1].close_std, reverse=True)
+           break_idx = self.stock_data.get_value(exsymbol, "break_idx")
+           if break_idx == np.nan:
+               continue
+           if len(df)-1 < break_idx:
+               continue
+           break_date = df.index[break_idx]
+           if break_date >= date:
+               continue
+           prev_chg = df.get_value(date, "prev_chg")
+           opengap = df.get_value(date, "opengap")
+           pprev_chg = df.get_value(date, "pprev_chg")
+           ppprev_chg = df.get_value(date, "ppprev_chg")
+           vol_incr = df.get_value(date, "vol_incr")
+           close_std = df.get_value(date, "close_std")
+           if prev_chg > 0.099 and \
+               opengap < self.params["open_gap"] and \
+               pprev_chg < -0.03 and \
+               ppprev_chg < -0.03 and \
+               vol_incr < 1:
+               result.append([exsymbol, close_std])
+        result.sort(key=lambda x: x[1], reverse=True)
         max_pos = self.params["max_pos"]
         result = map(lambda x: x[0], result)[:max_pos]
         return result
@@ -108,7 +114,7 @@ class SubnewStrategy(StockSimpleStrategy):
         for date in self.trading_dates:
             print date, len(positions)
             print positions
-            dt = datetime.datetime.strptime(date, "%Y-%m-%d")
+            dt = date
             for i in range(len(positions)):
                 pos = positions[i]
                 pos_row = self.order.get_position(pos["exsymbol"])
@@ -120,7 +126,6 @@ class SubnewStrategy(StockSimpleStrategy):
                     idx = df.index.get_loc(date)
                     yest_bar = df.iloc[idx-1]
                     today_bar = df.iloc[idx]
-                    dt = datetime.datetime.strptime(date, "%Y-%m-%d")
                     pos["days"] += 1
                     if today_bar.open <= pos["sl_price"]:
                         self.order.sell(pos_row.exsymbol, today_bar.open, dt, pos_row.amount)
@@ -141,9 +146,6 @@ class SubnewStrategy(StockSimpleStrategy):
 
             positions = filter(lambda x: x["exsymbol"] not in closed_exsymbols, positions)
             if len(positions) < max_pos:
-                print timeit.Timer(partial(self.filter_stock, date)).repeat(1, 1)
-                import sys
-                sys.exit(1)
                 exsymbols = self.filter_stock(date)
                 if len(exsymbols) == 0:
                     continue
@@ -187,7 +189,5 @@ class SubnewStrategy(StockSimpleStrategy):
 
 if __name__ == "__main__":
     logging.config.fileConfig(LOGCONF)
-    strategy = SubnewStrategy(start='2011-09-30', end='2017-09-30')
+    strategy = SubnewStrategy(start='2017-01-01', end='2017-09-30')
     strategy.run()
-
-

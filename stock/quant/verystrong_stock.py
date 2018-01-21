@@ -1,6 +1,7 @@
 import os
 import cPickle as pickle
 import scipy
+import scipy.stats
 import re
 import numpy as np
 import pandas as pd
@@ -12,6 +13,7 @@ from stock.marketdata.storefactory import get_store
 from stock.filter.utils import get_zt_price
 from sklearn import linear_model
 import matplotlib.pyplot as plt
+from stock.lib.finance import load_stock_basics
 from config import store_type
 
 def get_slope(x, y):
@@ -25,10 +27,15 @@ exsymbols = store.get_stock_exsymbols()
 df_index = store.get('id000001')
 dates_len = len(df_index.date)
 start_date = df_index.index[0]
-columns = ['exsymbol', 'slope', "slope_close", "pl", "low_std", "high_std", "close_std"]
+columns = ['exsymbol', 'slope', 'mcap', 'up_ratio', 'vol_tvalue', 'low_tvalue', 'score']
 result = pd.DataFrame(columns=columns)
 index_history = store.get('id000001')
-dates_len = len(index_history.loc["2017-04-07":"2017-05-11"])
+start_date = "2017-11-13"
+end_date = "2017-12-06"
+dates_len = len(index_history.loc[start_date:end_date])
+df_index = index_history.loc[start_date:end_date]
+index_lows = df_index.low / df_index.loc[start_date].low
+df_basics = load_stock_basics()
 
 for exsymbol in exsymbols:
     if not re.match('sh', exsymbol):
@@ -36,32 +43,32 @@ for exsymbol in exsymbols:
     df = store.get(exsymbol)
     if len(df) < 100:
         continue
-    df_test = df.loc["2017-04-07":"2017-05-11"]
-    if "2017-04-07" not in df_test.index:
+    df_test = df.loc[start_date:end_date]
+    if end_date not in df.index:
         continue
     if len(df_test) < dates_len:
         continue
+    price = df.loc[end_date].close
+    total_shares = df_basics.loc[exsymbol, "totals"]
+    mcap = total_shares * price
     X = range(len(df_test))
-    lows = df_test.low / df_test.loc["2017-04-07"].low
-    highs = df_test.high / df_test.loc["2017-04-07"].high
-    closes = df_test.close / df_test.loc["2017-04-07"].close
+    lows = df_test.low / df_test.loc[start_date].low
     slope = get_slope(X, lows)
-    slope_close = get_slope(X, closes)
-    pl = df.iloc[len(df)-1].close / df.loc["2017-05-11"].close
-    low_std = np.std(lows)
-    high_std = np.std(highs)
-    close_std = np.std(closes)
-    result.loc[len(result)] = [exsymbol, slope, slope_close, pl, low_std, high_std, close_std]
-    print close_std
+    start_idx = df.index.get_loc(start_date)
+    idx = df.index.get_loc(end_date)
+    recent_low = df.iloc[idx-90:idx].close.min()
+    up_ratio = df.loc[end_date].close / recent_low - 1
+    past_vol = df.iloc[start_idx-30:start_idx].volume
+    rece_vol = df.iloc[start_idx:idx].volume
+    [vol_tvalue, vol_pvalue] = scipy.stats.ttest_ind(past_vol, rece_vol)
+    [low_tvalue, low_pvalue] = scipy.stats.ttest_ind(index_lows, lows)
+    score = -vol_tvalue / mcap / up_ratio
+    result.loc[len(result)] = [exsymbol, slope, mcap, up_ratio, vol_tvalue, low_tvalue, score]
 
 pd.set_option('display.max_rows', None)
 low_thrd = result.slope.quantile(0.1)
 high_thrd = result.slope.quantile(0.9)
-df_low = result[result.slope <= low_thrd]
-low_stocks = df_low.exsymbol
-df_high = result[result.slope >= high_thrd]
-high_stocks = df_high.exsymbol
-print result[result.pl >= result.pl.quantile(0.95)].sort_values(['pl'], ascending=False)
+print result[result.mcap > 200][result.low_tvalue < -3][result.vol_tvalue < 0].sort_values(["up_ratio"])
 import sys
 sys.exit(1)
 trading_dates = index_history.loc["2017-05-11":].index

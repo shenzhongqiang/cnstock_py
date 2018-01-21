@@ -43,5 +43,5 @@ class Store(object):
     @staticmethod
     def get_trading_dates():
         history = Store.get('id000001')
-        return history.date.values
+        return history.index.values
 

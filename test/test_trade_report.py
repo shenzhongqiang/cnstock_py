@@ -105,3 +105,6 @@ class TestTradeReport(unittest.TestCase):
         self.assertAlmostEqual(summary.comm_total, 61.2)
         self.assertAlmostEqual(summary.num_of_trades, 1)
         self.assertAlmostEqual(summary.win_rate, 0.0)
+
+    def test_get_commission(self):
+        print get_commission(4.30, 4.31, 5000)

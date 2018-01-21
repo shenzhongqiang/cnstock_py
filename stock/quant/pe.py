@@ -100,7 +100,7 @@ def generate_middle():
                 pe = mcap / year_profits[-1] * 10000
                 future_profit = df.iloc[-1].close / price - 1
                 past_profit = price / df.loc["2017-01-01":].iloc[0].close - 1
-                print exsymbol, slope, pe
+                #print exsymbol, slope, pe
                 df_res.loc[len(df_res)] = [exsymbol, slope, pe, mcap, past_profit, future_profit]
         except Exception, e:
             print str(e)
@@ -110,13 +110,11 @@ def generate_middle():
 def parse_middle(filepath="/tmp/pe.csv"):
     df= pd.read_csv(filepath, encoding="utf-8")
     df["score"] = df.incr_ratio/ df.pe
-    print df[df.mcap<1000].sort_values(["future_profit"], ascending=False)
-    print df.corr()["future_profit"]
-    #print df.sort_values(["incr_ratio"])
+    print df[df.mcap > 300].sort_values(["incr_ratio"])
 
 if __name__ == "__main__":
     #generate_middle()
-    parse_middle()
+    #parse_middle()
     PLOT = True
     if PLOT:
         df_lrb = get_lrb_data(sys.argv[1])

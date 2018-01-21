@@ -45,4 +45,4 @@ class Store(object):
     def get_trading_dates():
         r = redis.Redis(connection_pool=POOL)
         history = Store.get('id000001')
-        return history.date.values
+        return history.index.values
