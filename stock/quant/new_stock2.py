@@ -9,6 +9,7 @@ import numpy as np
 import requests
 import matplotlib.pyplot as plt
 from pandas.plotting import scatter_matrix
+import seaborn as sns
 from sklearn import linear_model
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, r2_score
@@ -42,6 +43,7 @@ def get_newstock(pages=10):
         "issuepriceMoney",
         "industrype",
         "peissuea",
+        "lwr",
     ])
     a_exsymbol = []
     a_subcode = []
@@ -52,6 +54,7 @@ def get_newstock(pages=10):
     a_issuepriceMoney = []
     a_industrype = []
     a_peissuea = []
+    a_lwr = []
     for i in range(1, pages):
         url = url_patt % i
         r = requests.get(url)
@@ -72,6 +75,7 @@ def get_newstock(pages=10):
             a_issuepriceMoney.append(stock["issuepriceMoney"])
             a_industrype.append(stock["INDUSTRYPE"])
             a_peissuea.append(stock["peissuea"])
+            a_lwr.append(stock["lwr"])
 
     df = pd.DataFrame(data={
         "exsymbol": a_exsymbol,
@@ -82,7 +86,8 @@ def get_newstock(pages=10):
         "applyontMoney": a_applyontMoney,
         "issuepriceMoney": a_issuepriceMoney,
         "industrype": a_industrype,
-        "peissuea": a_peissuea
+        "peissuea": a_peissuea,
+        "lwr": a_lwr
     })
     return df.iloc[50:]
 
@@ -90,19 +95,33 @@ def set_profit(df_stock):
     store = get_store(store_type)
     df_index = store.get('id000001')
     max_price = []
+    index_chg = []
+    zt_num = []
     for exsymbol in df_stock.index.values:
         df_history = store.get(exsymbol)
         high = df_history.high[:90].max()
+        high_idx = df_history.high[:90].idxmax()
+        ipo_idx = df_history.index[0]
+        chg = df_index.loc[high_idx].close/df_index.loc[ipo_idx].close - 1
+        num = get_zt_num(df_history)
+        zt_num.append(num)
+        index_chg.append(chg)
         max_price.append(high)
     df_stock["max_price"] = max_price
+    df_stock["index_chg"] = index_chg
+    df_stock["zt_num"] = zt_num
     df_stock["guess"] = df_stock["industrype"] * df_stock["issueprice"]/df_stock["peissuea"]
 
 def analyze(df_stock):
-    df_test = df_stock.iloc[:500]
-    df_test["result"] = df_test["max_price"] > df_test["guess"]*0.95
-    print df_test[df_test.result == False][["max_price", "guess"]]
+    df_test = df_stock.iloc[:500][df_stock.issueprice>10]
+    df_test["result"] = df_test["max_price"] > df_test["guess"]
+    df_test["ratio"] = df_test["max_price"] / df_test["guess"]
+    df_test["peratio"] = df_test["industrype"] / df_test["peissuea"]
+    df_test["priceratio"] = df_test["max_price"] / df_test["issueprice"]
+    print df_test[["issueprice", "max_price", "guess"]].sort_values(["issueprice"]).loc["sh603978"]
     print df_test.result.sum()*1.0/len(df_test)
-    print df_test.corr()["max_price"]
+    print df_test.corr()["lwr"]
+
     X = df_stock[["industrype", "issueprice"]]
     y = df_stock["max_price"]
 
@@ -125,8 +144,8 @@ def analyze(df_stock):
     print r2_score(y, ypred)
 
     #scatter_matrix(df_stock, alpha=0.2, figsize=(20, 12))
-    plt.scatter(df_stock["industrype"], df_stock["issueprice"], alpha=0.2, c=df_stock["max_price"], cmap="jet")
-    plt.colorbar()
+    sns.set(color_codes=True)
+    sns.regplot(x="peratio", y="lwr", data=df_test)
     plt.show()
 
 if __name__ == "__main__":
@@ -137,15 +156,11 @@ if __name__ == "__main__":
 
     # load new stocks from file
     df = pd.read_csv("/tmp/newstock", dtype={
-        "applyontMoney": "f4",
         "exsymbol": "S10",
-        "fxzl": "f4",
         "industrype": "f4",
         "issueprice": "f4",
-        "issuepriceMoney": "f4",
         "peissuea": "f4",
-        "subcode": "S10",
-        "wsfxsl": "f4"
+        "lwr": "f4",
     })
     df.set_index("exsymbol", inplace=True)
     set_profit(df)
