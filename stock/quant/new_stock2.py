@@ -44,6 +44,7 @@ def get_newstock(pages=10):
         "industrype",
         "peissuea",
         "lwr",
+        "purchasedate"
     ])
     a_exsymbol = []
     a_subcode = []
@@ -55,6 +56,7 @@ def get_newstock(pages=10):
     a_industrype = []
     a_peissuea = []
     a_lwr = []
+    a_purchasedate = []
     for i in range(1, pages):
         url = url_patt % i
         r = requests.get(url)
@@ -76,6 +78,7 @@ def get_newstock(pages=10):
             a_industrype.append(stock["INDUSTRYPE"])
             a_peissuea.append(stock["peissuea"])
             a_lwr.append(stock["lwr"])
+            a_purchasedate.append(stock["purchasedate"])
 
     df = pd.DataFrame(data={
         "exsymbol": a_exsymbol,
@@ -87,7 +90,8 @@ def get_newstock(pages=10):
         "issuepriceMoney": a_issuepriceMoney,
         "industrype": a_industrype,
         "peissuea": a_peissuea,
-        "lwr": a_lwr
+        "lwr": a_lwr,
+        "purchasedate": a_purchasedate
     })
     return df.iloc[50:]
 
@@ -113,12 +117,13 @@ def set_profit(df_stock):
     df_stock["guess"] = df_stock["industrype"] * df_stock["issueprice"]/df_stock["peissuea"]
 
 def analyze(df_stock):
-    df_test = df_stock.iloc[:500][df_stock.issueprice>10]
-    df_test["result"] = df_test["max_price"] > df_test["guess"]
+    df_test = df_stock.iloc[:][df_stock.issueprice>30]
+    print len(df_test)
+    df_test["result"] = df_test["max_price"] >= df_test["guess"]
     df_test["ratio"] = df_test["max_price"] / df_test["guess"]
     df_test["peratio"] = df_test["industrype"] / df_test["peissuea"]
     df_test["priceratio"] = df_test["max_price"] / df_test["issueprice"]
-    print df_test[["issueprice", "max_price", "guess"]].sort_values(["issueprice"]).loc["sh603978"]
+    print df_test[["purchasedate", "issueprice", "max_price", "guess", "ratio"]].sort_values(["ratio"])
     print df_test.result.sum()*1.0/len(df_test)
     print df_test.corr()["lwr"]
 
@@ -152,10 +157,10 @@ if __name__ == "__main__":
     # get new stocks and save
     #df = get_newstock(12)
     #df = df[df.industrype != "-"]
-    #df.to_csv("/tmp/newstock")
+    #df.to_csv("middleout/newstock")
 
     # load new stocks from file
-    df = pd.read_csv("/tmp/newstock", dtype={
+    df = pd.read_csv("middleout/newstock", dtype={
         "exsymbol": "S10",
         "industrype": "f4",
         "issueprice": "f4",
