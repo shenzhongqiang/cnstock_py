@@ -21,18 +21,19 @@ def download_stock_history(data):
     try:
         symbol = data["symbol"]
         is_index = data["is_index"]
-        df = ts.get_k_data(symbol, index=is_index, start="2000-01-01")
+        df = ts.get_k_data(symbol, index=is_index, start="2012-01-01")
         if df.empty:
             return
         path = os.path.join(stock_dir, symbol)
         exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol, is_index)
-        redis_store = get_store("redis_store")
+        #redis_store = get_store("redis_store")
+        #redis_store.save(exsymbol, df)
         file_store = get_store("file_store")
-        redis_store.save(exsymbol, df)
         file_store.save(exsymbol, df)
-    except Exception, e:
-        #print "error getting history due to %s" % str(e)
-        pass
+    except Exception as e:
+        print("error getting history due to %s" % str(e))
+        #import traceback
+        #traceback.print_exc()
 
 if __name__ == "__main__":
     pool = Pool(20)
@@ -47,8 +48,8 @@ if __name__ == "__main__":
     for symbol in index_symbols:
         all_symbols.append({"symbol": symbol, "is_index": True})
 
-    store = get_store("redis_store")
-    store.flush()
+    #store = get_store("redis_store")
+    #store.flush()
     results = []
     for symbol in all_symbols:
         res = pool.apply_async(download_stock_history, (symbol,))

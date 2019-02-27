@@ -1,14 +1,10 @@
 import sys
 import os
-import cPickle as pickle
 import scipy
 import scipy.stats
 import re
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from pandas.plotting import scatter_matrix
-import seaborn as sns
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates, exsymbol_to_symbol
 from stock.marketdata.storefactory import get_store
 from stock.filter.utils import get_zt_price
@@ -49,7 +45,7 @@ def value_down(array):
     return True
 
 if len(sys.argv) < 2:
-    print "Usage: %s <date>" % (sys.argv[0])
+    print("Usage: %s <date>" % (sys.argv[0]))
     sys.exit(1)
 
 date = sys.argv[1]
@@ -63,5 +59,5 @@ for exsymbol in exsymbols:
         continue
     df["mean_vol"] = df.volume.shift(1).rolling(window=40).mean()
     bar = df.loc[date]
-    if bar.volume > bar.mean_vol * 10 and bar.close > bar.open:
-        print exsymbol
+    if bar.volume > bar.mean_vol * 3 and bar.close > bar.open:
+        print(exsymbol)

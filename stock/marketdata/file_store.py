@@ -8,7 +8,7 @@ class Store(object):
     def save(exsymbol, df):
         stock_dir = HIST_DIR['stock']
         path = os.path.join(stock_dir, exsymbol)
-        with open(path, "wb") as f:
+        with open(path, "w") as f:
             f.write(df.to_csv())
 
     @staticmethod
@@ -16,7 +16,7 @@ class Store(object):
         stock_dir = HIST_DIR['stock']
         path = os.path.join(stock_dir, exsymbol)
         df = None
-        with open(path, "rb") as f:
+        with open(path, "r") as f:
             df = pd.read_csv(f)
             index = pd.to_datetime(df.date, format="%Y-%m-%d")
             df.set_index(index, inplace=True)

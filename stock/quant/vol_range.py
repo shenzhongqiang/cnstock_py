@@ -1,6 +1,5 @@
 import sys
 import os
-import cPickle as pickle
 import scipy
 import scipy.stats
 import re
@@ -62,7 +61,7 @@ df["price_slope"] = df.close.rolling(window=22).apply(get_slope)
 df["tvalue_down"] = df.vol_tvalue.rolling(window=5).apply(value_down)
 df_test = df.loc["2017-01-01":]
 df_test["vol_chg"] = df_test.volume.pct_change()
-print df_test[df_test.vol_pvalue < 0.01][df_test.tvalue_down == True][df_test.price_slope>0].sort_values(["already_up"], ascending=False)
+print(df_test[df_test.vol_pvalue < 0.01][df_test.tvalue_down == True][df_test.price_slope>0].sort_values(["already_up"], ascending=False))
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
 ax2 = ax1.twinx()
