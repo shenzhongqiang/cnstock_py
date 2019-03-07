@@ -1,4 +1,5 @@
 import datetime
+import os
 import os.path
 import re
 import json
@@ -16,7 +17,7 @@ def get_stock_symbols():
     return df.code.tolist()
 
 def get_index_symbols():
-    df = pd.read_csv(SYM["all"], dtype=str)
+    df = pd.read_csv(SYM["id"], dtype=str)
     return df.code.tolist()
 
 def get_index_symbol(type):
@@ -97,3 +98,43 @@ def symbol_to_exsymbol(symbol, index=False):
 def exsymbol_to_symbol(exsymbol):
     return exsymbol[2:]
 
+def get_today_all():
+    folder = REAL_DIR["stock"]
+    files = os.listdir(folder)
+    symbols = get_stock_symbols()
+    exsymbols = list(map(lambda x: symbol_to_exsymbol(x), symbols))
+    df = pd.DataFrame(columns=["close", "open", "high", "low", "volume",
+        "chgperc", "yest_close", "amount",
+        "b1_v", "b1_p", "a1_v", "a1_p",
+        "pe", "pb", "lt_mcap", "mcap"], index=exsymbols)
+    for filename in files:
+        exsymbol = filename
+        filepath = os.path.join(folder, filename)
+        with open(filepath, "r") as f:
+            content = f.read()
+            m = re.match(r"v_(.*?)=", content)
+            if m == None:
+                raise Exception("cannot extract exsymbol from %s" \
+                    % (content))
+            result = re.sub("^v_.*?=\"|\";$", "", content)
+            data = result.split("~")
+            if len(data) < 47:
+                continue
+            df.at[exsymbol, "pe"] = 0 if data[39] == '' else float(data[39])
+            df.at[exsymbol, "pb"] = 0 if data[46] == '' else float(data[46])
+            df.at[exsymbol, "close"] = float(data[3])
+            df.at[exsymbol, "yest_close"] = float(data[4])
+            df.at[exsymbol, "open"] = float(data[5])
+            df.at[exsymbol, "volume"] = float(data[6])
+            chg = float(data[31])
+            df.at[exsymbol, "chgperc"] = float(data[32])
+            df.at[exsymbol, "high"] = float(data[33])
+            df.at[exsymbol, "low"] = float(data[34])
+            df.at[exsymbol, "amount"] = float(data[37])
+            df.at[exsymbol, "b1_v"] = float(data[10])
+            df.at[exsymbol, "b1_p"] = float(data[11])
+            df.at[exsymbol, "a1_p"] = float(data[19])
+            df.at[exsymbol, "a1_v"] = float(data[20])
+            df.at[exsymbol, "lt_mcap"] = 0 if data[44] == '' else float(data[44])
+            df.at[exsymbol, "mcap"] = 0 if data[45] == '' else float(data[45])
+    return df

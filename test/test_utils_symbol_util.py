@@ -58,3 +58,7 @@ class TestSymbolUtil(unittest.TestCase):
         self.assertTrue(res == False)
         res = is_st('sz000927')
         self.assertTrue(res == True)
+
+    def test_get_today_all(self):
+        df = get_today_all()
+        print(df)

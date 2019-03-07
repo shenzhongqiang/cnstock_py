@@ -34,7 +34,7 @@ def get_lrb_data(exsymbol):
         msg = "%s has no lrb data" % exsymbol
         raise Exception(msg)
     content = None
-    with open(path, "rb") as f:
+    with open(path, "r") as f:
         content = f.read()
     lines = content.splitlines()
     data = {}
@@ -67,7 +67,7 @@ def get_zcfzb_data(exsymbol):
         msg = "%s has no zcfzb data" % exsymbol
         raise Exception(msg)
     content = None
-    with open(path, "rb") as f:
+    with open(path, "r") as f:
         content = f.read()
     lines = content.splitlines()
     data = {}
@@ -100,7 +100,7 @@ def get_xjllb_data(exsymbol):
         msg = "%s has no xjllb data" % exsymbol
         raise Exception(msg)
     content = None
-    with open(path, "rb") as f:
+    with open(path, "r") as f:
         content = f.read()
     lines = content.splitlines()
     data = {}
@@ -129,6 +129,6 @@ def get_xjllb_data(exsymbol):
 def load_stock_basics():
     filepath = os.path.join(BASIC_DIR, "basics")
     df = pd.read_csv(filepath, encoding="utf-8", dtype={"code": str, "pe": np.float64})
-    df["exsymbol"] = map(lambda x: symbol_to_exsymbol(x), df["code"])
+    df["exsymbol"] = list(map(lambda x: symbol_to_exsymbol(x), df["code"]))
     df.set_index("exsymbol", inplace=True)
     return df

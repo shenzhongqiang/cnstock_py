@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import tushare as ts
 from config import store_type
 from stock.lib.candlestick import plot_price_volume_inday
+from stock.lib.finance import load_stock_basics, get_lrb_data
 
 def get_slope(array):
     y = np.copy(array) / array[0]
@@ -53,11 +54,33 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
+df_basics = load_stock_basics()
+
 for exsymbol in exsymbols:
     df = store.get(exsymbol)[:date]
     if date not in df.index:
         continue
-    df["mean_vol"] = df.volume.shift(1).rolling(window=40).mean()
+    if len(df) < 400:
+        continue
+    if re.match(r"sz3", exsymbol):
+        continue
+    df["mean_vol"] = df.volume.shift(3).rolling(window=20).mean()
     bar = df.loc[date]
-    if bar.volume > bar.mean_vol * 3 and bar.close > bar.open:
+    upper = max(bar.open, bar.close)
+    ratio = (bar.high - upper) / upper
+    if ratio < 0.05:
+        continue
+    date_id = df.index.get_loc(date)
+    price = df.loc[date].close
+    total_shares = df_basics.loc[exsymbol, "totals"]
+    mcap = total_shares * price
+    df_lrb = get_lrb_data(exsymbol)
+    if df_lrb.ix[-1].jlr < 0:
+        continue
+    if mcap < 200:
+        continue
+    if df.ix[date_id].volume > df.ix[date_id-3].mean_vol*3 and \
+        df.ix[date_id-1].volume > df.ix[date_id-3].mean_vol*3 and \
+        df.ix[date_id-2].volume > df.ix[date_id-3].mean_vol*3 and \
+        bar.close > bar.open:
         print(exsymbol)

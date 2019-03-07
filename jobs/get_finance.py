@@ -31,9 +31,8 @@ def download_zcfzb(symbol):
         with open(path, "wb") as f:
             content = r.content.decode("gb2312")
             f.write(content.encode("utf-8"))
-    except Exception, e:
-        print "error getting ZCFZB data due to %s" % str(e)
-        pass
+    except Exception as e:
+        print("error getting ZCFZB data due to %s" % str(e))
 
 def download_lrb(symbol):
     try:
@@ -45,9 +44,8 @@ def download_lrb(symbol):
         with open(path, "wb") as f:
             content = r.content.decode("gb2312")
             f.write(content.encode("utf-8"))
-    except Exception, e:
-        print "error getting LRB data due to %s" % str(e)
-        pass
+    except Exception as e:
+        print("error getting LRB data due to %s" % str(e))
 
 def download_xjllb(symbol):
     try:
@@ -59,9 +57,8 @@ def download_xjllb(symbol):
         with open(path, "wb") as f:
             content = r.content.decode("gb2312")
             f.write(content.encode("utf-8"))
-    except Exception, e:
-        print "error getting XJLLB data due to %s" % str(e)
-        pass
+    except Exception as e:
+        print("error getting XJLLB data due to %s" % str(e))
 
 def download_stock_finance(data):
     download_zcfzb(data["symbol"])
