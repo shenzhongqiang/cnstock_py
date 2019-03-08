@@ -19,6 +19,7 @@ BASIC_DIR = os.path.join(ROOTDIR, 'data/basics')
 
 REAL_DIR = {
     'stock': os.path.join(ROOTDIR, 'data/realtime/stock'),
+    'daily': os.path.join(ROOTDIR, 'data/realtime/daily'),
 }
 
 SYM = {

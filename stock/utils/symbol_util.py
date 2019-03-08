@@ -137,4 +137,4 @@ def get_today_all():
             df.at[exsymbol, "a1_v"] = float(data[20])
             df.at[exsymbol, "lt_mcap"] = 0 if data[44] == '' else float(data[44])
             df.at[exsymbol, "mcap"] = 0 if data[45] == '' else float(data[45])
-    return df
+    return df[df.lt_mcap > 0]
