@@ -138,3 +138,9 @@ def get_today_all():
             df.at[exsymbol, "lt_mcap"] = 0 if data[44] == '' else float(data[44])
             df.at[exsymbol, "mcap"] = 0 if data[45] == '' else float(data[45])
     return df[df.lt_mcap > 0]
+
+def get_realtime_by_date(date_str):
+    folder = REAL_DIR["daily"]
+    filepath = os.path.join(folder, date_str + ".csv")
+    df = pd.read_csv(filepath, index_col=0)
+    return df

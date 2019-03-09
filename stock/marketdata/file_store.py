@@ -25,7 +25,7 @@ class Store(object):
     @staticmethod
     def flush():
         files = os.listdir(HIST_DIR["stock"])
-        filepaths = map(lambda x: os.path.join(HIST_DIR["stock"], x), files)
+        filepaths = list(map(lambda x: os.path.join(HIST_DIR["stock"], x), files))
         for path in filepaths:
             os.remove(path)
 
@@ -37,7 +37,7 @@ class Store(object):
     @staticmethod
     def get_stock_exsymbols():
         exsymbols = os.listdir(HIST_DIR["stock"])
-        result = filter(lambda x: re.search(r'^(?!id)', x), exsymbols)
+        result = list(filter(lambda x: re.search(r'^(?!id)', x), exsymbols))
         return result
 
     @staticmethod
