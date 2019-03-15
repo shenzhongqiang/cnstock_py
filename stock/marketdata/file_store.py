@@ -12,6 +12,12 @@ class Store(object):
             f.write(df.to_csv())
 
     @staticmethod
+    def has(exsymbol):
+        stock_dir = HIST_DIR['stock']
+        path = os.path.join(stock_dir, exsymbol)
+        return os.path.isfile(path)
+
+    @staticmethod
     def get(exsymbol):
         stock_dir = HIST_DIR['stock']
         path = os.path.join(stock_dir, exsymbol)
