@@ -28,6 +28,36 @@ def filter_by_history(date, exsymbols):
         df.loc[exsymbol] = [df_past.iloc[-1].increase, mcap, df_past.iloc[-1].zhangting30]
     return df
 
+def get_strong_zhangting(df):
+    print("============ strong zhangting ============")
+    df_part = df.loc[(df.chgperc > 9.9) & (df.a1_v == 0)]
+    df_hist = filter_by_history(date, df_part.index)
+    df_res = df_part.merge(df_hist, how="inner", left_index=True, right_index=True)
+    df_plt = df_res[["fengdan", "fengdanvol", "lt_mcap", "increase", "v_diff"]]
+    df_plt = df_plt.dropna(how="any")
+    print(df_plt.sort_values("fengdan", ascending=False).head(10))
+
+def get_strong_dieting(df):
+    print("=========== strong dieting =========")
+    df_part = df.loc[(df.chgperc < -9.9) & (df.b1_v == 0)]
+    print(df_part.sort_values("v_diff", ascending=True)[["lt_mcap", "v_diff"]].head(10))
+
+def get_big_bid_volume(df):
+    print("============ big bid volume =========")
+    df_res = df.loc[df.a1_v >0].sort_values("v_diff", ascending=False).head(10)
+    df_plt = df_res[["chgperc", "lt_mcap", "fengdan", "v_diff", "a1_v", "b1_v"]]
+    print(df_plt)
+
+def get_small_mcap(df):
+    print("============ small mcap =============")
+    df_part = df.loc[df.lt_mcap < 10]
+    df_hist = filter_by_history(date, df_part.index)
+    df_res = df_part.merge(df_hist, how="inner", left_index=True, right_index=True)
+    df_plt = df_res[["chgperc", "lt_mcap", "increase"]]
+    df_plt = df_plt.dropna(how="any").sort_values("increase", ascending=True).head(10)
+    print(df_plt)
+
+
 if len(sys.argv) < 2:
     print("Usage: %s <2019-03-08>" % sys.argv[0])
     sys.exit(1)
@@ -45,26 +75,9 @@ df.loc[:, "v_diff"] = (df.b1_v - df.a1_v) * df.close / df.lt_mcap / 1e6
 df.loc[:, "chg_per_vol"] = df.chgperc / (df.volume*df.close/df.lt_mcap/1e6)
 df.loc[:, "range_per_vol"] = (df.high/df.low-1) / (df.volume*df.close/df.lt_mcap/1e6)
 
-print("============ strong zhangting ============")
-df_part = df.loc[(df.chgperc > 9.9) & (df.a1_v == 0)]
-df_hist = filter_by_history(date, df_part.index)
-df_res = df_part.merge(df_hist, how="inner", left_index=True, right_index=True)
-df_plt = df_res[["fengdan", "fengdanvol", "lt_mcap", "increase", "v_diff"]]
-df_plt = df_plt.dropna(how="any")
 
-print(df_plt.sort_values("fengdan", ascending=False).head(10))
-
-print("=========== strong dieting =========")
-df_part = df.loc[(df.chgperc < -9.9) & (df.b1_v == 0)]
-print(df_part.sort_values("v_diff", ascending=True)[["lt_mcap", "v_diff"]].head(10))
-
-print("============ big bid volume =========")
-df_res = df[df.a1_v >0].sort_values("v_diff", ascending=False).head(10)
-df_plt = df_res[["chgperc", "lt_mcap", "fengdan", "v_diff", "a1_v", "b1_v"]]
-print(df_plt)
-
-
-print("============ low volume high increase =============")
-df_res = df[df.chgperc > 9.9].sort_values("range_per_vol", ascending=False).head(10)
-df_plt = df_res[["volume", "chgperc", "lt_mcap", "fengdan", "chg_per_vol", "range_per_vol"]]
-print(df_plt)
+get_strong_zhangting(df)
+get_strong_dieting(df)
+get_big_bid_volume(df)
+get_small_mcap(df)
+print(df.loc["sz002813"])
