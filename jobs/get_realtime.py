@@ -36,7 +36,7 @@ async def run():
     async with aiohttp.ClientSession() as session:
         for symbol in symbols:
             exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol)
-            task = asyncio.ensure_future(download_realtime(exsymbol, session))
+            task = asyncio.create_task(download_realtime(exsymbol, session))
             tasks.append(task)
 
         await asyncio.gather(*tasks)

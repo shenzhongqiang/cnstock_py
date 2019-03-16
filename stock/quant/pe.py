@@ -1,22 +1,12 @@
 import sys
 import os
-import cPickle as pickle
-import scipy
 import re
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from pandas.plotting import scatter_matrix
-import seaborn as sns
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates, exsymbol_to_symbol
 from stock.marketdata.storefactory import get_store
-from stock.filter.utils import get_zt_price
 from stock.lib.finance import get_lrb_data
 from sklearn import linear_model
-from sklearn.model_selection import cross_val_score
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVR
 import matplotlib.pyplot as plt
 from config import store_type
 from stock.lib.finance import load_stock_basics
@@ -100,17 +90,16 @@ def generate_middle():
                 pe = mcap / year_profits[-1] * 10000
                 future_profit = df.iloc[-1].close / price - 1
                 past_profit = price / df.loc["2017-01-01":].iloc[0].close - 1
-                #print exsymbol, slope, pe
                 df_res.loc[len(df_res)] = [exsymbol, slope, pe, mcap, past_profit, future_profit]
-        except Exception, e:
-            print str(e)
+        except Exception as e:
+            print(str(e))
 
     df_res.to_csv("/tmp/pe.csv")
 
 def parse_middle(filepath="/tmp/pe.csv"):
     df= pd.read_csv(filepath, encoding="utf-8")
     df["score"] = df.incr_ratio/ df.pe
-    print df[df.mcap > 300].sort_values(["incr_ratio"])
+    print(df[df.mcap > 300].sort_values(["incr_ratio"]))
 
 if __name__ == "__main__":
     #generate_middle()
@@ -119,6 +108,7 @@ if __name__ == "__main__":
     if PLOT:
         df_lrb = get_lrb_data(sys.argv[1])
         get_quarter_profit(df_lrb)
+        print(df_lrb["yylr"])
         plt.plot(df_lrb.index[-16:], df_lrb.profit[-16:])
         #plt.axhline(y=0.0, c='r')
         plt.show()
