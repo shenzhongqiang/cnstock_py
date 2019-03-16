@@ -21,12 +21,12 @@ def init():
         os.remove(filepath)
 
 async def download_realtime(exsymbol, session):
-        url = "http://qt.gtimg.cn/q=" + exsymbol
-        filepath = os.path.join(REAL_DIR['stock'], exsymbol)
-        async with session.get(url) as response:
-            resp = await response.text()
-            with open(filepath, "w") as f:
-                f.write(resp)
+    url = "http://qt.gtimg.cn/q=" + exsymbol
+    filepath = os.path.join(REAL_DIR['stock'], exsymbol)
+    async with session.get(url) as response:
+        resp = await response.text()
+        with open(filepath, "w") as f:
+            f.write(resp)
 
 async def run():
     symbols = stock.utils.symbol_util.get_stock_symbols()
