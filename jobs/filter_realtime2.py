@@ -57,6 +57,9 @@ def get_small_mcap(df):
     df_plt = df_plt.dropna(how="any").sort_values("increase", ascending=True).head(10)
     print(df_plt)
 
+def get_biggest_fengdan(df):
+    print("============ biggest fengdan =========")
+    print(df.sort_values("fengdan_money", ascending=False)[["fengdan_money", "fengdan", "lt_mcap"]].head(10))
 
 if len(sys.argv) < 2:
     print("Usage: %s <2019-03-08>" % sys.argv[0])
@@ -70,6 +73,7 @@ df_base = stock.utils.symbol_util.get_realtime_by_date(date)
 # 10% stock
 df = df_base.loc[(df_base.lt_mcap > 0) & (df_base.volume > 0)].copy()
 df.loc[:, "fengdan"] = df["b1_v"] * df["b1_p"] *100 / df["lt_mcap"] / 1e8
+df.loc[:, "fengdan_money"] = df["b1_v"]*df["b1_p"]/1e6
 df.loc[:, "fengdanvol"] = df["b1_v"] / df["volume"]
 df.loc[:, "v_diff"] = (df.b1_v - df.a1_v) * df.close / df.lt_mcap / 1e6
 df.loc[:, "chg_per_vol"] = df.chgperc / (df.volume*df.close/df.lt_mcap/1e6)
@@ -80,4 +84,5 @@ get_strong_zhangting(df)
 get_strong_dieting(df)
 get_big_bid_volume(df)
 get_small_mcap(df)
+get_biggest_fengdan(df)
 print(df.loc["sz002813"])
