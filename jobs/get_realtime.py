@@ -41,7 +41,7 @@ async def run():
 
         await asyncio.gather(*tasks)
 
-if __name__ == "__main__":
+def main():
     init()
     print("init complete")
     loop = asyncio.get_event_loop()
@@ -56,3 +56,6 @@ if __name__ == "__main__":
     filepath = os.path.join(REAL_DIR["daily"], filename)
     df.to_csv(filepath)
     print("save complete")
+
+if __name__ == "__main__":
+    main()

@@ -5,6 +5,7 @@ import stock.utils.symbol_util
 from stock.marketdata.storefactory import get_store
 from stock.lib.finance import load_stock_basics
 from config import store_type
+import tushare as ts
 
 def filter_by_history(date, exsymbols):
     store = get_store(store_type)
@@ -28,14 +29,30 @@ def filter_by_history(date, exsymbols):
         df.loc[exsymbol] = [df_past.iloc[-1].increase, mcap, df_past.iloc[-1].zhangting30]
     return df
 
-def get_strong_zhangting(df):
+def get_zt_time(date, exsymbols):
+    df_res = pd.DataFrame(columns=["zt_vol"])
+    df_basics = load_stock_basics()
+    for exsymbol in exsymbols:
+        symbol = stock.utils.symbol_util.exsymbol_to_symbol(exsymbol)
+        outstanding = df_basics.loc[exsymbol, "outstanding"]
+        df = ts.get_tick_data(symbol, date=date, src="tt")
+        high = df.price.max()
+        zt_vol = df[df.price==high].volume.sum()
+        df_res.loc[exsymbol] = [zt_vol]
+    return df_res
+
+def get_strong_zhangting(date, df):
     print("============ strong zhangting ============")
     df_part = df.loc[(df.chgperc > 9.9) & (df.a1_v == 0)]
     df_hist = filter_by_history(date, df_part.index)
     df_res = df_part.merge(df_hist, how="inner", left_index=True, right_index=True)
-    df_plt = df_res[["fengdan", "fengdanvol", "lt_mcap", "increase", "v_diff"]]
+    #df_zt = get_zt_time(date, df_part.index)
+    #df_res = df_res.merge(df_zt, how="inner", left_index=True, right_index=True)
+    #df_res.loc[:, "bs_ratio"] = df_res.fengdan/df_res.zt_vol
+    #df_res.loc[:, "sell_by_vol"] = df_res.zt_vol / df_res.volume
+    df_plt = df_res[["fengdan", "fengdan_money", "fengdanvol", "lt_mcap", "increase", "v_diff"]]
     df_plt = df_plt.dropna(how="any")
-    print(df_plt.sort_values("fengdan", ascending=False).head(10))
+    print(df_plt.sort_values("fengdan", ascending=False).head(50))
 
 def get_strong_dieting(df):
     print("=========== strong dieting =========")
@@ -48,7 +65,7 @@ def get_big_bid_volume(df):
     df_plt = df_res[["chgperc", "lt_mcap", "fengdan", "v_diff", "a1_v", "b1_v"]]
     print(df_plt)
 
-def get_small_mcap(df):
+def get_small_mcap(date, df):
     print("============ small mcap =============")
     df_part = df.loc[df.lt_mcap < 10]
     df_hist = filter_by_history(date, df_part.index)
@@ -79,10 +96,9 @@ df.loc[:, "v_diff"] = (df.b1_v - df.a1_v) * df.close / df.lt_mcap / 1e6
 df.loc[:, "chg_per_vol"] = df.chgperc / (df.volume*df.close/df.lt_mcap/1e6)
 df.loc[:, "range_per_vol"] = (df.high/df.low-1) / (df.volume*df.close/df.lt_mcap/1e6)
 
-
-get_strong_zhangting(df)
+get_strong_zhangting(date, df)
 get_strong_dieting(df)
 get_big_bid_volume(df)
-get_small_mcap(df)
+get_small_mcap(date, df)
 get_biggest_fengdan(df)
-print(df.loc["sz002813"])
+print(df.loc["sh603829"])

@@ -25,9 +25,12 @@ for exsymbol in exsymbols:
     df = store.get(exsymbol)
     if len(df) < 400:
         continue
-    close_min = df.close.iloc[-90:].min()
+    close_min = df.close.iloc[-22:].min()
     profit = df.iloc[-1].close / close_min - 1
     df_date.loc[len(df_date)] = [exsymbol, profit]
 df_date.dropna(how="any", inplace=True)
 df_top = df_date.sort_values(["profit"]).tail(100)
+df_bottom = df_date.sort_values(["profit"]).head(100)
+
 print(df_top)
+print(df_bottom)

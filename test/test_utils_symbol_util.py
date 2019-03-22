@@ -65,3 +65,7 @@ class TestSymbolUtil(unittest.TestCase):
 
     def test_get_realtime_by_date(self):
         df = get_realtime_by_date("2019-03-07")
+
+    def test_get_realtime_date(self):
+        date_str = get_realtime_date()
+        print(date_str)

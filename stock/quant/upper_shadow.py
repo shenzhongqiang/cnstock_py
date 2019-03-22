@@ -1,43 +1,44 @@
 import sys
-import datetime
-import os
-import cPickle as pickle
-import scipy
-import re
-import numpy as np
-import pandas as pd
-import seaborn as sns
-from pandas.plotting import scatter_matrix
-import seaborn as sns
-from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
+from stock.utils.symbol_util import get_stock_symbols
 from stock.marketdata.storefactory import get_store
-from stock.filter.utils import get_zt_price
-from sklearn import linear_model
-import matplotlib.pyplot as plt
-from stock.lib.candlestick import plot_compare_graph
 from config import store_type
-import tushare as ts
+import pandas as pd
 
 if len(sys.argv) == 1:
-    print "Usage: %s <date>" % (sys.argv[0])
+    print("Usage: %s <date>" % (sys.argv[0]))
     sys.exit(1)
 
 date = sys.argv[1]
 
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
-store = get_store(store_type)
 df_index = store.get('id000001')
 
+df_res = pd.DataFrame(columns=["body", "yest_chg", "highperc", "increase", "closeup", "past_zt"])
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
     if len(df) < 200:
         continue
     if date not in df.index:
         continue
-    df_bar = df.loc[date]
-    upper = max(df_bar.open, df_bar.close)
-    ratio = (df_bar.high - upper) / upper
-    if ratio > 0.05:
-        print exsymbol
+    idx = df.index.get_loc(date)
+    df.loc[:, "highperc"] = df.high / df.close.shift(1) - 1
+    df.loc[:, "closeperc"] = df.close / df.close.shift(1) - 1
+    df.loc[:, "past_zt"] = df.highperc.rolling(window=30).max()
+    df.loc[:, "close60"] = df.close.rolling(window=60).min()
+    df.loc[:, "increase"] = df.close / df.close60 - 1
+    df_today = df.iloc[idx]
+    df_yest = df.iloc[idx-1]
+    yest_chg = df_yest.closeperc
+    upper = max(df_today.open, df_today.close)
+    body = abs(df_today.close-df_today.open)/df_yest.close
+    highperc = df_today.high / df_yest.close - 1
+    increase = df_today.increase
+    closeup = df_today.close > df_today.open and df_today.open > df_yest.close
+    past_zt = df_today.past_zt > 0.095
+    df_res.loc[exsymbol] = [body, yest_chg, highperc, increase, closeup, past_zt]
 
+df_res = df_res.dropna(how="any")
+df_plt = df_res[df_res.highperc>0.04][df_res.highperc<0.06][df_res.body<0.02][df_res.body>-0.02][df_res.closeup==True].sort_values("increase", ascending=False)
+pd.set_option('display.max_rows', None)
+print(df_plt)

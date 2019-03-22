@@ -6,10 +6,12 @@ import json
 from stock.utils import request
 from stock.globalvar import *
 from stock.marketdata.utils import load_csv
-import tushare as ts
 import pandas as pd
 
 class InvalidType(Exception):
+    pass
+
+class NoRealtimeData(Exception):
     pass
 
 def get_stock_symbols():
@@ -139,8 +141,23 @@ def get_today_all():
             df.at[exsymbol, "mcap"] = 0 if data[45] == '' else float(data[45])
     return df[df.lt_mcap > 0]
 
+def get_realtime_date():
+    folder = REAL_DIR["stock"]
+    filepath = os.path.join(folder, "sz399001")
+    with open(filepath, "r") as f:
+        content = f.read()
+        m = re.match(r"v_(.*?)=", content)
+        result = re.sub("^v_.*?=\"|\";$", "", content)
+        data = result.split("~")
+        datetime_str = data[30]
+        dt = datetime.datetime.strptime(datetime_str, "%Y%m%d%H%M%S")
+        date_str = dt.strftime("%Y-%m-%d")
+        return date_str
+
 def get_realtime_by_date(date_str):
     folder = REAL_DIR["daily"]
     filepath = os.path.join(folder, date_str + ".csv")
+    if not os.path.isfile(filepath):
+        raise NoRealtimeData("no such file: %s" % filepath)
     df = pd.read_csv(filepath, index_col=0)
     return df

@@ -18,6 +18,7 @@ columns = ["exsymbol", "chgperc", "chg_per_vol", "range_per_vol", "body_per_vol"
 df_date = pd.DataFrame(columns=columns)
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
+    df.loc[:, "chgperc"] = df.close/df.close.shift(1) - 1
     if len(df) < 2:
         continue
     if date not in df.index:
@@ -27,6 +28,8 @@ for exsymbol in exsymbols:
     if outstanding == 0:
         continue
     idx = df.index.get_loc(date)
+    if df.iloc[idx].chgperc >0.099 and df.iloc[idx-1].chgperc>0.099 and df.iloc[idx-2].chgperc>0.099 and df.iloc[idx-3].chgperc>0.099 and df.iloc[idx-4].chgperc>0.099:
+        print(exsymbol)
     close = df.iloc[idx].close
     high = df.iloc[idx].high
     openp = df.iloc[idx].open
