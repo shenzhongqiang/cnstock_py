@@ -21,4 +21,4 @@ history: realtime
 
 upper_shadow: history
 	$(info get upper shadow)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/upper_shadow.py $(date)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/upper_shadow.py

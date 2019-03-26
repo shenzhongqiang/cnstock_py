@@ -1,14 +1,15 @@
 import sys
+import datetime
 from stock.utils.symbol_util import get_stock_symbols, get_realtime_by_date
 from stock.marketdata.storefactory import get_store
 from config import store_type
 import pandas as pd
 
+date = None
 if len(sys.argv) == 1:
-    print("Usage: %s <date>" % (sys.argv[0]))
-    sys.exit(1)
-
-date = sys.argv[1]
+    date = datetime.date.today().strftime("%Y-%m-%d")
+else:
+    date = sys.argv[1]
 
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
