@@ -1,24 +1,24 @@
+all: test symbols history realtime upper_shadow
 PYTHONPATH=.
 NOSECMD='nosetests'
 
-.PHONY: test download_symbols get_history get_realtime
+.PHONY: all
 
-init:
-	@if test ! -d html; then mkdir html; fi
 test:
 	$(NOSECMD) -sv test/
 
-get_symbols:
-	PYTHONPATH=$(PYTHONPATH) python jobs/get_symbols.py
+symbols:
+	$(info get symbols)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_symbols.py
 
-get_history:
-	PYTHONPATH=$(PYTHONPATH) python jobs/get_history.py
+realtime: symbols
+	$(info get realtime)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_realtime.py
 
-get_realtime:
-	PYTHONPATH=$(PYTHONPATH) python jobs/get_realtime.py
+history: realtime
+	$(info get history)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_history.py
 
-filter_realtime: init
-	PYTHONPATH=$(PYTHONPATH) python jobs/filter_realtime.py
-
-filter_backtest: init
-	PYTHONPATH=$(PYTHONPATH) python jobs/filter_backtest.py
+upper_shadow: history
+	$(info get upper shadow)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/upper_shadow.py $(date)

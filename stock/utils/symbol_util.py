@@ -6,6 +6,7 @@ import json
 from stock.utils import request
 from stock.globalvar import *
 from stock.marketdata.utils import load_csv
+import tushare as ts
 import pandas as pd
 
 class InvalidType(Exception):

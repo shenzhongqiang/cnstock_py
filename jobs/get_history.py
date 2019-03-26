@@ -19,7 +19,7 @@ def init():
 def add_today_data(exsymbol, df, df_realtime, date):
     if exsymbol not in df_realtime.index:
         return
-    if date in df.date:
+    if date in df.date.values:
         return
     today_bar = df_realtime.loc[exsymbol]
     symbol = stock.utils.symbol_util.exsymbol_to_symbol(exsymbol)
@@ -65,9 +65,6 @@ if __name__ == "__main__":
 
     for symbol in index_symbols:
         all_symbols.append({"symbol": symbol, "is_index": True})
-
-    # download realtime data
-    jobs.get_realtime.main()
 
     # load realtime data
     date_str = stock.utils.symbol_util.get_realtime_date()
