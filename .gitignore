@@ -42,6 +42,10 @@ nosetests.xml
 .ropeproject
 
 db.sqlite3
-data
+data/history
+data/symbol
+data/realtime/stock
+data/finance
+data/basics
 cnstock.db
 middleout

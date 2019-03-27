@@ -13,11 +13,11 @@ else:
 
 store = get_store(store_type)
 exsymbols = store.get_stock_exsymbols()
-df_index = store.get('id000001')
+df_index = store.get('sz000001')
 date_idx = df_index.index.get_loc(date)
 yest_date = df_index.index[date_idx-1].strftime("%Y-%m-%d")
 
-df_res = pd.DataFrame(columns=["body", "tmr_chg", "today_chg", "yest_chg", "upper", "lower", "vol_ratio", "highperc", "increase10", "increase60", "closeup", "past_zt"])
+df_res = pd.DataFrame(columns=["body", "tmr_chg", "yest_one", "opengap", "today_chg", "yest_chg", "upper", "lower", "vol_ratio", "highperc", "increase10", "increase60", "closeup"])
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
     if len(df) < 200:
@@ -25,14 +25,11 @@ for exsymbol in exsymbols:
     if date not in df.index:
         continue
     idx = df.index.get_loc(date)
-    df.loc[:, "highperc"] = df.high / df.close.shift(1) - 1
     df.loc[:, "closeperc"] = df.close / df.close.shift(1) - 1
-    df.loc[:, "past_zt"] = df.closeperc.rolling(window=3).max()
     df.loc[:, "close10"] = df.close.rolling(window=10).min()
     df.loc[:, "close60"] = df.close.rolling(window=60).min()
     df.loc[:, "increase10"] = df.close / df.close10 - 1
     df.loc[:, "increase60"] = df.close / df.close60 - 1
-    df.loc[:, "vol_ratio"] = df.volume /  df.volume.shift(1)
     #if idx+1 >= len(df):
     #    continue
     #df_tmr = df.iloc[idx+1]
@@ -40,19 +37,20 @@ for exsymbol in exsymbols:
     df_yest = df.iloc[idx-1]
     today_chg = df_today.closeperc
     yest_chg = df_yest.closeperc
+    yest_one = df_yest.high == df_yest.low
     tmr_chg = 0 #df_tmr.closeperc
+    opengap = df.iloc[idx].open / df.iloc[idx-1].close - 1
     upper_edge = max(df_today.open, df_today.close)
     lower_edge = min(df_today.open, df_today.close)
     body = (df_today.close-df_today.open)/df_yest.close
     upper = (df_today.high - upper_edge)/df_yest.close
     lower = (lower_edge - df_today.low)/df_yest.close
-    vol_ratio = df_today.vol_ratio
+    vol_ratio = df_today.volume - df_yest.volume
     highperc = df_today.high / df_yest.close - 1
     increase10 = df_today.increase10
     increase60 = df_today.increase60
     closeup = df_today.close > df_today.open
-    past_zt = df_today.past_zt > 0.095
-    df_res.loc[exsymbol] = [body, tmr_chg, today_chg, yest_chg, upper, lower, vol_ratio, highperc, increase10, increase60, closeup, past_zt]
+    df_res.loc[exsymbol] = [body, tmr_chg, yest_one, opengap, today_chg, yest_chg, upper, lower, vol_ratio, highperc, increase10, increase60, closeup]
 
 df_res = df_res.dropna(how="any")
 pd.set_option('display.max_rows', None)
@@ -71,7 +69,9 @@ print("========== yest zhangting ==========")
 df_plt2 = df_res[df_res.yest_chg>0.08][df_res.upper>0.03][df_res.lower<0.03][df_res.body>-0.02]
 df_plt2 = df_plt2.merge(df_realtime, how="inner", left_index=True, right_index=True)
 print(df_plt2[["tmr_chg", "today_chg", "highperc", "upper", "lower", "fengdan", "fengdan_money"]])
-print("========== past zhangting ==========")
-df_plt3 = df_res[df_res.past_zt==True][df_res.body<0.02][df_res.body>-0.02][df_res.highperc>0.04][df_res.today_chg<0.03][df_res.today_chg>-0.03].sort_values("increase10", ascending=False)
-print(df_plt3)
 
+print("========== opengap ==========")
+df_plt2 = df_res[df_res.yest_chg>0.095][df_res.opengap > 0.02]
+df_plt2 = df_plt2.merge(df_realtime, how="inner", left_index=True, right_index=True)
+columns = ["tmr_chg", "today_chg", "opengap", "fengdan", "fengdan_money", "increase60"]
+print(df_plt2[columns].sort_values("fengdan", ascending=False))
