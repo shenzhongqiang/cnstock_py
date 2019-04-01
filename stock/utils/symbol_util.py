@@ -15,6 +15,9 @@ class InvalidType(Exception):
 class NoRealtimeData(Exception):
     pass
 
+class NoTickData(Exception):
+    pass
+
 def get_stock_symbols():
     df = pd.read_csv(SYM["all"], dtype=str)
     return df.code.tolist()
@@ -162,3 +165,18 @@ def get_realtime_by_date(date_str):
         raise NoRealtimeData("no such file: %s" % filepath)
     df = pd.read_csv(filepath, index_col=0)
     return df
+
+def get_kaipan(exsymbol):
+    folder = TICK_DIR["stock"]
+    filepath = os.path.join(folder, exsymbol)
+    if not os.path.isfile(filepath):
+        raise NoTickData("no such file: %s" % filepath)
+    df = pd.read_csv(filepath, sep='\t', index_col=0, header=0, names=['time', 'price', 'change', 'volume', 'amount', 'type'])
+    df.index = pd.to_datetime(df.index, format="%H:%M:%S")
+    s0 = pd.Series({'time': None, 'price': 0, 'change': 0, 'volume': 0, 'amount': 0, 'type': None})
+    if len(df) == 0:
+        return s0
+    s = df.iloc[0]
+    if s.name.hour == 9 and s.name.minute < 30:
+        return s
+    return s0

@@ -19,6 +19,10 @@ history: realtime
 	$(info get history)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_history.py
 
+tick: symbols
+	$(info get tick)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_tick.py
+
 upper_shadow: history
 	$(info get upper shadow)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/upper_shadow.py

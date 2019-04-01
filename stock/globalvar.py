@@ -22,6 +22,11 @@ REAL_DIR = {
     'daily': os.path.join(ROOTDIR, 'data/realtime/daily'),
 }
 
+TICK_DIR = {
+    'stock': os.path.join(ROOTDIR, 'data/tick/stock'),
+    'daily': os.path.join(ROOTDIR, 'data/tick/daily'),
+}
+
 SYM = {
     'all': os.path.join(SYMDIR, 'symbols.all'),
     'sh':  os.path.join(SYMDIR, 'symbols.sh'),

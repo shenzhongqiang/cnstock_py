@@ -69,3 +69,7 @@ class TestSymbolUtil(unittest.TestCase):
     def test_get_realtime_date(self):
         date_str = get_realtime_date()
         print(date_str)
+
+    def test_get_kaipan(self):
+        s = get_kaipan("sz002680")
+        print(s)
