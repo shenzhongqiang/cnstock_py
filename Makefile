@@ -26,3 +26,7 @@ tick: realtime
 upper_shadow: history
 	$(info get upper shadow)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/upper_shadow.py
+
+opengap: tick
+	$(info get opengap)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_opengap.py

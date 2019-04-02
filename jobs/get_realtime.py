@@ -43,11 +43,11 @@ async def run():
 
 def main():
     init()
-    print("init complete")
+    print("realtime: init complete")
     loop = asyncio.get_event_loop()
     future = asyncio.ensure_future(run())
     loop.run_until_complete(future)
-    print("download complete")
+    print("realtime: download complete")
 
     df = stock.utils.symbol_util.get_today_all()
     now = datetime.datetime.now()
@@ -55,7 +55,7 @@ def main():
     filename = "%s.csv" % today
     filepath = os.path.join(REAL_DIR["daily"], filename)
     df.to_csv(filepath)
-    print("save complete")
+    print("realtime: save complete")
 
 if __name__ == "__main__":
     main()

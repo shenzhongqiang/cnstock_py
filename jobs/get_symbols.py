@@ -8,5 +8,5 @@ if not os.path.isdir(SYMDIR):
 
 print("start to download symbols")
 stock.utils.symbol_util.download_symbols()
-print("download finished")
+print("symbol download finished")
 

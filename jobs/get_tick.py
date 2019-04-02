@@ -70,13 +70,13 @@ def main(date):
     # if date is not today, download tick data and get kaipan from tick
     if today != date:
         init()
-        print("init complete")
+        print("tick: init complete")
         loop = asyncio.get_event_loop()
         future = asyncio.ensure_future(run(date))
         loop.run_until_complete(future)
-        print("download tick complete")
+        print("tick: download complete")
         save_kaipan_from_tick(date)
-        print("agg tick complete")
+        print("tick: agg complete")
         return
 
     # if date is today and before 9:30, get kaipan from realtime
@@ -85,7 +85,7 @@ def main(date):
         filename = "%s.csv" % today
         filepath = os.path.join(TICK_DIR["daily"], filename)
         df.to_csv(filepath)
-        print("agg tick complete")
+        print("tick: agg complete")
 
 if __name__ == "__main__":
     date = None

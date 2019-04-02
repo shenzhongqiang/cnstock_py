@@ -31,11 +31,11 @@ df_yest_zt.loc[:, "fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df
 df_yest_zt.loc[:, "fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
 df_res = df_yest_zt[["fengdan", "fengdan_money"]].merge(df_today, how="inner", left_index=True, right_index=True)
 df_res = df_res.merge(df_tick, how="left", left_index=True, right_index=True)
-df_res.loc[:, "kaipan_ratio"] = df_res["kaipan_money"]/df_res["fengdan_money"]
+df_res.loc[:, "fengdan_ratio"] = df_res.fengdan_money/df_res.kaipan_money
 
-df_res1 = df_res[df_res.opengap>=0.02]
+df_res1 = df_res[df_res.opengap>=0.02][df_res.opengap<=0.05]
 df_res2 = df_res[df_res.opengap<0.02]
 
-columns = ["opengap", "fengdan", "fengdan_money", "lt_mcap", "mcap", "kaipan_money", "kaipan_ratio"]
-print(df_res1[columns].sort_values("kaipan_ratio", ascending=True))
-print(df_res2[columns].sort_values("kaipan_ratio", ascending=True))
+columns = ["opengap", "fengdan", "fengdan_money", "lt_mcap", "mcap", "kaipan_money", "fengdan_ratio"]
+print(df_res1[columns].sort_values("fengdan", ascending=True))
+print(df_res2[columns].sort_values("fengdan", ascending=True))
