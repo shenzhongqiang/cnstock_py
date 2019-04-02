@@ -5,7 +5,7 @@ import os.path
 import asyncio
 import aiohttp
 import stock.utils.symbol_util
-from stock.globalvar import TICK_DIR
+from stock.globalvar import TICK_DIR, REAL_DIR
 from stock.marketdata.storefactory import get_store
 from config import store_type
 import pandas as pd
@@ -41,7 +41,12 @@ async def run(date):
 
         await asyncio.gather(*tasks)
 
-def save_today_all(date):
+def save_kaipan_from_realtime():
+    df = stock.utils.symbol_util.get_today_all()
+    df_res = pd.DataFrame(data={"kaipan_price": df.close, "kaipan_money": df.amount*10000})
+    return df_res
+
+def save_kaipan_from_tick(date):
     folder = TICK_DIR["stock"]
     files = os.listdir(folder)
     df = pd.DataFrame(columns=["kaipan_price", "kaipan_money"])
@@ -60,14 +65,27 @@ def save_today_all(date):
 
 
 def main(date):
-    init()
-    print("init complete")
-    loop = asyncio.get_event_loop()
-    future = asyncio.ensure_future(run(date))
-    loop.run_until_complete(future)
-    print("download complete")
-    save_today_all(date)
-    print("save complete")
+    now = datetime.datetime.now()
+    today = now.strftime("%Y-%m-%d")
+    # if date is not today, download tick data and get kaipan from tick
+    if today != date:
+        init()
+        print("init complete")
+        loop = asyncio.get_event_loop()
+        future = asyncio.ensure_future(run(date))
+        loop.run_until_complete(future)
+        print("download tick complete")
+        save_kaipan_from_tick(date)
+        print("agg tick complete")
+        return
+
+    # if date is today and before 9:30, get kaipan from realtime
+    if now.hour <= 9 and now.minute < 30:
+        df = save_kaipan_from_realtime()
+        filename = "%s.csv" % today
+        filepath = os.path.join(TICK_DIR["daily"], filename)
+        df.to_csv(filepath)
+        print("agg tick complete")
 
 if __name__ == "__main__":
     date = None

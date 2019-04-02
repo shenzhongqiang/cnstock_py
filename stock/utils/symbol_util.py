@@ -180,3 +180,11 @@ def get_kaipan(exsymbol):
     if s.name.hour == 9 and s.name.minute < 30:
         return s
     return s0
+
+def get_tick_by_date(date_str):
+    folder = TICK_DIR["daily"]
+    filepath = os.path.join(folder, date_str + ".csv")
+    if not os.path.isfile(filepath):
+        raise NoTickData("no such file: %s" % filepath)
+    df = pd.read_csv(filepath, index_col=0)
+    return df
