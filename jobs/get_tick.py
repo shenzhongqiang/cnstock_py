@@ -43,7 +43,9 @@ async def run(date):
 
 def save_kaipan_from_realtime():
     df = stock.utils.symbol_util.get_today_all()
-    df_res = pd.DataFrame(data={"kaipan_price": df.close, "kaipan_money": df.amount*10000})
+    df.loc[:, "b1_money"] = df.close * df.b1_v * 100
+    df.loc[:, "kaipan_money"] = df.apply(lambda x: x.amount*1e4 if x.amount > 0 else x.b1_money, axis=1)
+    df_res = pd.DataFrame(data={"kaipan_price": df.close, "kaipan_money": df.kaipan_money})
     return df_res
 
 def save_kaipan_from_tick(date):
@@ -68,7 +70,14 @@ def main(date):
     now = datetime.datetime.now()
     today = now.strftime("%Y-%m-%d")
     # if date is not today, download tick data and get kaipan from tick
-    if today != date:
+    if today == date and now.hour <= 9 and now.minute < 30:
+        # if date is today and before 9:30, get kaipan from realtime
+        df = save_kaipan_from_realtime()
+        filename = "%s.csv" % today
+        filepath = os.path.join(TICK_DIR["daily"], filename)
+        df.to_csv(filepath)
+        print("tick: agg complete")
+    else:
         init()
         print("tick: init complete")
         loop = asyncio.get_event_loop()
@@ -76,15 +85,6 @@ def main(date):
         loop.run_until_complete(future)
         print("tick: download complete")
         save_kaipan_from_tick(date)
-        print("tick: agg complete")
-        return
-
-    # if date is today and before 9:30, get kaipan from realtime
-    if now.hour <= 9 and now.minute < 30:
-        df = save_kaipan_from_realtime()
-        filename = "%s.csv" % today
-        filepath = os.path.join(TICK_DIR["daily"], filename)
-        df.to_csv(filepath)
         print("tick: agg complete")
 
 if __name__ == "__main__":
