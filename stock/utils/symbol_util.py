@@ -166,20 +166,37 @@ def get_realtime_by_date(date_str):
     df = pd.read_csv(filepath, index_col=0)
     return df
 
+def get_zhangting_minutes(df_tick):
+    high = df_tick.price.max()
+    df_tick.loc[:, "last_price"] = df_tick.price.shift(1)
+    df_tick.loc[:, "last_time"] = df_tick["time"].shift(1)
+    time_diff = df_tick.time.values - df_tick.last_time.values
+    df_tick.loc[:, "time_diff"] = time_diff
+    zhangting_time = df_tick[(df_tick.price==high) & (df_tick.last_price==high)].time_diff.sum()
+    zhangting_min = zhangting_time / datetime.timedelta(minutes=1)
+    return zhangting_min
+
 def get_kaipan(exsymbol):
     folder = TICK_DIR["stock"]
     filepath = os.path.join(folder, exsymbol)
     if not os.path.isfile(filepath):
         raise NoTickData("no such file: %s" % filepath)
-    df = pd.read_csv(filepath, sep='\t', index_col=0, header=0, names=['time', 'price', 'change', 'volume', 'amount', 'type'])
-    df.index = pd.to_datetime(df.index, format="%H:%M:%S")
-    s0 = pd.Series({'time': None, 'price': 0, 'change': 0, 'volume': 0, 'amount': 0, 'type': None})
+    df = pd.read_csv(filepath, sep='\t', header=0, names=['time', 'price', 'change', 'volume', 'amount', 'type'])
+    df.loc[:, "time"] = pd.to_datetime(df["time"])
+    df.index = df["time"]
+    s_null = pd.Series(data={'price': 0, 'change': 0, 'volume': 0, 'amount': 0, 'type': None, 'sell_amount': 0, 'zhangting_min': 0}, name=None)
     if len(df) == 0:
-        return s0
+        return s_null
+    high = df.price.max()
+    sell_amount = df[df.price==high].volume.sum() * high / 1e6
+    df_tick1 = df[df.time<="11:30:00"]
+    df_tick2 = df[df.time>="13:00:00"]
+    zhangting1_min = get_zhangting_minutes(df_tick1)
+    zhangting2_min = get_zhangting_minutes(df_tick2)
+    zhangting_min = zhangting1_min + zhangting2_min
     s = df.iloc[0]
-    if s.name.hour == 9 and s.name.minute < 30:
-        return s
-    return s0
+    s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': sell_amount, 'zhangting_min': zhangting_min}, name=s.name)
+    return s_kaipan
 
 def get_tick_by_date(date_str):
     folder = TICK_DIR["daily"]

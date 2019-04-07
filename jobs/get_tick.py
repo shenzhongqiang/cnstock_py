@@ -51,16 +51,15 @@ def save_kaipan_from_realtime():
 def save_kaipan_from_tick(date):
     folder = TICK_DIR["stock"]
     files = os.listdir(folder)
-    df = pd.DataFrame(columns=["kaipan_price", "kaipan_money"])
+    df = pd.DataFrame(columns=["kaipan_price", "kaipan_money", "sell_amount", "zhangting_min"])
     for filename in files:
         exsymbol = filename
+        print(exsymbol)
         filepath = os.path.join(folder, filename)
         with open(filepath, "r") as f:
             content = f.read()
         s = stock.utils.symbol_util.get_kaipan(exsymbol)
-        kaipan_price = s.price
-        kaipan_money = s.amount
-        df.at[exsymbol] = [kaipan_price, kaipan_money]
+        df.at[exsymbol] = [s.price, s.amount, s.sell_amount, s.zhangting_min]
     outfile = "%s.csv" % date
     outpath = os.path.join(TICK_DIR["daily"], outfile)
     df.to_csv(outpath)

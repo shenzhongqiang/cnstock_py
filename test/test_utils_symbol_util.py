@@ -71,7 +71,7 @@ class TestSymbolUtil(unittest.TestCase):
         print(date_str)
 
     def test_get_kaipan(self):
-        s = get_kaipan("sz002680")
+        s = get_kaipan("sz000983")
         print(s)
 
     def test_get_tick_by_date(self):
