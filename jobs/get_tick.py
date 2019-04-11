@@ -9,6 +9,7 @@ from stock.globalvar import TICK_DIR, REAL_DIR
 from stock.marketdata.storefactory import get_store
 from config import store_type
 import pandas as pd
+import concurrent.futures
 
 def init():
     for k, v in TICK_DIR.items():
@@ -48,18 +49,24 @@ def save_kaipan_from_realtime():
     df_res = pd.DataFrame(data={"kaipan_price": df.close, "kaipan_money": df.kaipan_money})
     return df_res
 
-def save_kaipan_from_tick(date):
+async def save_kaipan_from_tick(loop, date):
     folder = TICK_DIR["stock"]
     files = os.listdir(folder)
     df = pd.DataFrame(columns=["kaipan_price", "kaipan_money", "sell_amount", "zhangting_min"])
-    for filename in files:
-        exsymbol = filename
-        print(exsymbol)
-        filepath = os.path.join(folder, filename)
-        with open(filepath, "r") as f:
-            content = f.read()
-        s = stock.utils.symbol_util.get_kaipan(exsymbol)
-        df.at[exsymbol] = [s.price, s.amount, s.sell_amount, s.zhangting_min]
+    tasks = []
+    df_rt = stock.utils.symbol_util.get_realtime_by_date(date)
+    print(df_rt)
+    with concurrent.futures.ProcessPoolExecutor(max_workers=10) as pool:
+        for filename in files:
+            exsymbol = filename
+            if exsymbol not in df_rt.index:
+                continue
+            s_rt = df_rt.loc[exsymbol]
+            task = loop.run_in_executor(pool, stock.utils.symbol_util.get_kaipan, exsymbol, s_rt)
+            tasks.append(task)
+        result = await asyncio.gather(*tasks)
+        for (exsymbol, s) in result:
+            df.at[exsymbol] = [s.price, s.amount, s.sell_amount, s.zhangting_min]
     outfile = "%s.csv" % date
     outpath = os.path.join(TICK_DIR["daily"], outfile)
     df.to_csv(outpath)
@@ -83,7 +90,9 @@ def main(date):
         future = asyncio.ensure_future(run(date))
         loop.run_until_complete(future)
         print("tick: download complete")
-        save_kaipan_from_tick(date)
+        loop = asyncio.get_event_loop()
+        future = asyncio.ensure_future(save_kaipan_from_tick(loop, date))
+        loop.run_until_complete(future)
         print("tick: agg complete")
 
 if __name__ == "__main__":

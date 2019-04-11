@@ -54,7 +54,7 @@ def download_stock_history(data, df_realtime, date):
 
 if __name__ == "__main__":
     init()
-    pool = Pool(20)
+    pool = Pool(10)
 
     # download stock symbols
     symbols = stock.utils.symbol_util.get_stock_symbols()

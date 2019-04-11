@@ -176,7 +176,8 @@ def get_zhangting_minutes(df_tick):
     zhangting_min = zhangting_time / datetime.timedelta(minutes=1)
     return zhangting_min
 
-def get_kaipan(exsymbol):
+def get_kaipan(exsymbol, s_rt):
+    print(exsymbol)
     folder = TICK_DIR["stock"]
     filepath = os.path.join(folder, exsymbol)
     if not os.path.isfile(filepath):
@@ -186,17 +187,22 @@ def get_kaipan(exsymbol):
     df.index = df["time"]
     s_null = pd.Series(data={'price': 0, 'change': 0, 'volume': 0, 'amount': 0, 'type': None, 'sell_amount': 0, 'zhangting_min': 0}, name=None)
     if len(df) == 0:
-        return s_null
-    high = df.price.max()
-    sell_amount = df[df.price==high].volume.sum() * high / 1e6
-    df_tick1 = df[df.time<="11:30:00"]
-    df_tick2 = df[df.time>="13:00:00"]
-    zhangting1_min = get_zhangting_minutes(df_tick1)
-    zhangting2_min = get_zhangting_minutes(df_tick2)
-    zhangting_min = zhangting1_min + zhangting2_min
+        return (exsymbol, s_null)
+
     s = df.iloc[0]
-    s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': sell_amount, 'zhangting_min': zhangting_min}, name=s.name)
-    return s_kaipan
+    s_kaipan = None
+    if s.rt["chgperc"] < 9.9:
+        s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': 0, 'zhangting_min': 0}, name=s.name)
+    else:
+        high = df.price.max()
+        sell_amount = df[df.price==high].volume.sum() * high / 1e6
+        df_tick1 = df[df.time<="11:30:00"].copy()
+        df_tick2 = df[df.time>="13:00:00"].copy()
+        zhangting1_min = get_zhangting_minutes(df_tick1)
+        zhangting2_min = get_zhangting_minutes(df_tick2)
+        zhangting_min = zhangting1_min + zhangting2_min
+        s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': sell_amount, 'zhangting_min': zhangting_min}, name=s.name)
+    return (exsymbol, s_kaipan)
 
 def get_tick_by_date(date_str):
     folder = TICK_DIR["daily"]
