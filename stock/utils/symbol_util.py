@@ -182,7 +182,7 @@ def get_kaipan(exsymbol, s_rt):
     if not os.path.isfile(filepath):
         raise NoTickData("no such file: %s" % filepath)
     df = pd.read_csv(filepath, sep='\t', header=0, names=['time', 'price', 'change', 'volume', 'amount', 'type'])
-    df.loc[:, "time"] = pd.to_datetime(df["time"])
+    df.loc[:, "time"] = pd.to_datetime(df["time"], format="%H:%M:%S")
     df.index = df["time"]
     s_null = pd.Series(data={'price': 0, 'change': 0, 'volume': 0, 'amount': 0, 'type': None, 'sell_amount': 0, 'zhangting_min': 0}, name=None)
     if len(df) == 0:
