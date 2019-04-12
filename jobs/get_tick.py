@@ -55,7 +55,6 @@ async def save_kaipan_from_tick(loop, date):
     df = pd.DataFrame(columns=["kaipan_price", "kaipan_money", "sell_amount", "zhangting_min"])
     tasks = []
     df_rt = stock.utils.symbol_util.get_realtime_by_date(date)
-    print(df_rt)
     with concurrent.futures.ProcessPoolExecutor(max_workers=10) as pool:
         for filename in files:
             exsymbol = filename

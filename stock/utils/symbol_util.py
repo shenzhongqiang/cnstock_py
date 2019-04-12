@@ -177,7 +177,6 @@ def get_zhangting_minutes(df_tick):
     return zhangting_min
 
 def get_kaipan(exsymbol, s_rt):
-    print(exsymbol)
     folder = TICK_DIR["stock"]
     filepath = os.path.join(folder, exsymbol)
     if not os.path.isfile(filepath):
@@ -191,7 +190,7 @@ def get_kaipan(exsymbol, s_rt):
 
     s = df.iloc[0]
     s_kaipan = None
-    if s.rt["chgperc"] < 9.9:
+    if s_rt["chgperc"] < 9.9:
         s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': 0, 'zhangting_min': 0}, name=s.name)
     else:
         high = df.price.max()
