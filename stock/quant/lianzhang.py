@@ -17,7 +17,7 @@ df_index = store.get('sz000001')
 date_idx = df_index.index.get_loc(date)
 yest_date = df_index.index[date_idx-1].strftime("%Y-%m-%d")
 
-df_res = pd.DataFrame(columns=["tmr_chg", "opengap", "increase60", "fengdan1"])
+df_res = pd.DataFrame(columns=["tmr_chg", "opengap", "increase60"])
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
     if len(df) < 200:
@@ -33,7 +33,7 @@ for exsymbol in exsymbols:
         tmr_chg = 0
         if idx+1 < len(df):
             tmr_chg = df.iloc[idx+1].close / df.iloc[idx].close - 1
-        df_res.loc[exsymbol] = [tmr_chg, opengap, increase60, 0]
+        df_res.loc[exsymbol] = [tmr_chg, opengap, increase60]
 
 df_res = df_res.dropna(how="any")
 pd.set_option('display.max_rows', None)

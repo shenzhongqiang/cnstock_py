@@ -189,19 +189,30 @@ def get_kaipan(exsymbol, s_rt, date):
         return (exsymbol, s_null)
 
     s = df.iloc[0]
-    s_kaipan = None
+    open_dt = datetime.datetime.strptime(date + " 09:30:00", "%Y-%m-%d %H:%M:%S")
+    open_price = 0
+    open_change = 0
+    open_volume = 0
+    open_amount = 0
+    if s.name < open_dt:
+        open_price = s.price
+        open_change = s.change
+        open_volume = s.volume
+        open_amount = s.amount
+
     highperc = s_rt["high"]/s_rt["yest_close"] - 1
     if highperc < 0.099:
-        s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': 0, 'zhangting_min': 0}, name=s.name)
-    else:
-        high = df.price.max()
-        sell_amount = df[df.price==high].volume.sum() * high / 1e6
-        df_tick1 = df[df.time<=date + " 11:30:00"].copy()
-        df_tick2 = df[df.time>=date + " 13:00:00"].copy()
-        zhangting1_min = get_zhangting_minutes(df_tick1)
-        zhangting2_min = get_zhangting_minutes(df_tick2)
-        zhangting_min = zhangting1_min + zhangting2_min
-        s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': sell_amount, 'zhangting_min': zhangting_min}, name=s.name)
+        s_kaipan = pd.Series(data={'price': open_price, 'change': open_change, 'volume': open_volume, 'amount': open_amount, 'sell_amount': 0, 'zhangting_min': 0}, name=s.name)
+        return (exsymbol, s_kaipan)
+
+    high = df.price.max()
+    sell_amount = df[df.price==high].volume.sum() * high / 1e6
+    df_tick1 = df[df.time<=date + " 11:30:00"].copy()
+    df_tick2 = df[df.time>=date + " 13:00:00"].copy()
+    zhangting1_min = get_zhangting_minutes(df_tick1)
+    zhangting2_min = get_zhangting_minutes(df_tick2)
+    zhangting_min = zhangting1_min + zhangting2_min
+    s_kaipan = pd.Series(data={'price': open_price, 'change': open_change, 'volume': open_volume, 'amount': open_amount, 'sell_amount': sell_amount, 'zhangting_min': zhangting_min}, name=s.name)
     return (exsymbol, s_kaipan)
 
 def get_tick_by_date(date_str):

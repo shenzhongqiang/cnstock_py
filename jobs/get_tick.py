@@ -67,7 +67,6 @@ def save_kaipan_from_tick(date):
     outpath = os.path.join(TICK_DIR["daily"], outfile)
     df.to_csv(outpath)
 
-
 def main(date):
     now = datetime.datetime.now()
     today = now.strftime("%Y-%m-%d")
