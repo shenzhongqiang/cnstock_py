@@ -60,7 +60,7 @@ def save_kaipan_from_tick(date):
         if exsymbol not in df_rt.index:
             continue
         s_rt = df_rt.loc[exsymbol]
-        (exsymbol, s) = stock.utils.symbol_util.get_kaipan(exsymbol, s_rt)
+        (exsymbol, s) = stock.utils.symbol_util.get_kaipan(exsymbol, s_rt, date)
         df.at[exsymbol] = [s.price, s.amount, s.sell_amount, s.zhangting_min]
 
     outfile = "%s.csv" % date

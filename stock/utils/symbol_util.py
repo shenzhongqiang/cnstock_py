@@ -176,13 +176,13 @@ def get_zhangting_minutes(df_tick):
     zhangting_min = zhangting_time / datetime.timedelta(minutes=1)
     return zhangting_min
 
-def get_kaipan(exsymbol, s_rt):
+def get_kaipan(exsymbol, s_rt, date):
     folder = TICK_DIR["stock"]
     filepath = os.path.join(folder, exsymbol)
     if not os.path.isfile(filepath):
         raise NoTickData("no such file: %s" % filepath)
     df = pd.read_csv(filepath, sep='\t', header=0, names=['time', 'price', 'change', 'volume', 'amount', 'type'])
-    df.loc[:, "time"] = pd.to_datetime(df["time"], format="%H:%M:%S")
+    df.loc[:, "time"] = pd.to_datetime(date + ' ' + df["time"], format="%Y-%m-%d %H:%M:%S")
     df.index = df["time"]
     s_null = pd.Series(data={'price': 0, 'change': 0, 'volume': 0, 'amount': 0, 'type': None, 'sell_amount': 0, 'zhangting_min': 0}, name=None)
     if len(df) == 0:
@@ -190,13 +190,14 @@ def get_kaipan(exsymbol, s_rt):
 
     s = df.iloc[0]
     s_kaipan = None
-    if s_rt["chgperc"] < 9.9:
+    highperc = s_rt["high"]/s_rt["yest_close"] - 1
+    if highperc < 0.099:
         s_kaipan = pd.Series(data={'price': s.price, 'change': s.change, 'volume': s.volume, 'amount': s.amount, 'type': s.type, 'sell_amount': 0, 'zhangting_min': 0}, name=s.name)
     else:
         high = df.price.max()
         sell_amount = df[df.price==high].volume.sum() * high / 1e6
-        df_tick1 = df[df.time<="11:30:00"].copy()
-        df_tick2 = df[df.time>="13:00:00"].copy()
+        df_tick1 = df[df.time<=date + " 11:30:00"].copy()
+        df_tick2 = df[df.time>=date + " 13:00:00"].copy()
         zhangting1_min = get_zhangting_minutes(df_tick1)
         zhangting2_min = get_zhangting_minutes(df_tick2)
         zhangting_min = zhangting1_min + zhangting2_min

@@ -54,7 +54,7 @@ df_res0 = df_res[df_res.opengap>0.05]
 df_res1 = df_res[(df_res.opengap>=0.02) & (df_res.opengap<=0.05)]
 df_res2 = df_res[df_res.opengap<0.02]
 
-columns = ["opengap", "fengdan", "fengdan_money", "lt_mcap", "sell_amount", "zhangting_min", "sell_speed"]
-print(df_res0[columns].sort_values("fengdan", ascending=True))
-print(df_res1[columns].sort_values("fengdan", ascending=True))
-print(df_res2[columns].sort_values("fengdan", ascending=True))
+columns = ["opengap", "fengdan", "fengdan_money", "sell_amount", "zhangting_min", "sell_speed", "lt_mcap"]
+print(df_res0[columns].sort_values("fengdan_money", ascending=True))
+print(df_res1[columns].sort_values("fengdan_money", ascending=True))
+print(df_res2[columns].sort_values("fengdan_money", ascending=True))

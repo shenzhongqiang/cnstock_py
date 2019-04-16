@@ -17,7 +17,7 @@ df_index = store.get('sz000001')
 date_idx = df_index.index.get_loc(date)
 yest_date = df_index.index[date_idx-1].strftime("%Y-%m-%d")
 
-df_res = pd.DataFrame(columns=["tmr_chg", "opengap", "increase60", "fengdan1", "fengdan2", "fengdan3"])
+df_res = pd.DataFrame(columns=["tmr_chg", "opengap", "increase60", "fengdan1"])
 for exsymbol in exsymbols:
     df = store.get(exsymbol)
     if len(df) < 200:
@@ -25,8 +25,7 @@ for exsymbol in exsymbols:
     if date not in df.index:
         continue
     idx = df.index.get_loc(date)
-    df.loc[:, "closeperc"] = df.close / df.close.shift(1) - 1
-    if df.iloc[idx].close / df.iloc[idx-5].close  -1 > 0.5:
+    if df.iloc[idx].close / df.iloc[idx-10].close  -1 > 0.5:
         df.loc[:, "close60"] = df.close.rolling(window=60).min()
         df.loc[:, "increase60"] = df.close / df.close60 - 1
         increase60 = df.iloc[idx].increase60
@@ -34,7 +33,7 @@ for exsymbol in exsymbols:
         tmr_chg = 0
         if idx+1 < len(df):
             tmr_chg = df.iloc[idx+1].close / df.iloc[idx].close - 1
-        df_res.loc[exsymbol] = [tmr_chg, opengap, increase60, 0, 0, 0]
+        df_res.loc[exsymbol] = [tmr_chg, opengap, increase60, 0]
 
 df_res = df_res.dropna(how="any")
 pd.set_option('display.max_rows', None)

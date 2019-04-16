@@ -2,10 +2,8 @@ import datetime
 import sys
 import pandas as pd
 from stock.utils.symbol_util import get_stock_symbols, get_realtime_by_date, NoRealtimeData, get_tick_by_date
-from stock.lib.finance import load_stock_basics
 from stock.marketdata.storefactory import get_store
 from config import store_type
-import tushare as ts
 
 def get_zhangting_minutes(df_tick):
     high = df_tick.price.max()
@@ -23,28 +21,17 @@ if len(sys.argv) < 2:
 
 exsymbol = sys.argv[1]
 store = get_store(store_type)
-df_basics = load_stock_basics()
-outstanding = df_basics.loc[exsymbol, "outstanding"]
 df = store.get(exsymbol)
-print("date\tfengdan\tfengdan_money\tsell_amount\tzhangting_min\tmoney_ratio\tsell_speed")
-for date in df.index[-20:]:
-    try:
-        date_str = date.strftime("%Y-%m-%d")
-        df_rt = get_realtime_by_date(date_str)
-        row = df_rt.loc[exsymbol]
-        fengdan = row["b1_v"] * row["b1_p"]*100/row["lt_mcap"]/1e8
-        fengdan_money = row["b1_v"] * row["b1_p"]*100/1e8
-        df_tick = ts.get_tick_data(exsymbol, date=date_str, src="tt")
-        df_tick.loc[:, "time"] = pd.to_datetime(df_tick["time"])
-        df_tick1 = df_tick[df_tick.time<="11:30:00"].copy()
-        df_tick2 = df_tick[df_tick.time>="13:00:00"].copy()
-        zhangting1_min = get_zhangting_minutes(df_tick1)
-        zhangting2_min = get_zhangting_minutes(df_tick2)
-        zhangting_min = zhangting1_min + zhangting2_min
-        high = df_tick.price.max()
-        sell_amount = df_tick[df_tick.price==high].volume.sum()*high/1e6
-        sell_speed = sell_amount / zhangting_min
-        money_ratio = (sell_amount+fengdan_money)/row["lt_mcap"]
-        print("{}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}".format(date_str, fengdan, fengdan_money, sell_amount, zhangting_min, money_ratio, sell_speed))
-    except NoRealtimeData as e:
-        continue
+print("date\tfengdan\tfengdan_money\tsell_amount\tzhangting_min\tmoney_ratio")
+for date in df.index[-10:]:
+    date_str = date.strftime("%Y-%m-%d")
+    df_rt = get_realtime_by_date(date_str)
+    df_tick = get_tick_by_date(date_str)
+    row_rt = df_rt.loc[exsymbol]
+    row_tick = df_tick.loc[exsymbol]
+    fengdan = row_rt["b1_v"] * row_rt["b1_p"]*100/row_rt["lt_mcap"]/1e8
+    fengdan_money = row_rt["b1_v"] * row_rt["b1_p"]*100/1e8
+    zhangting_min = row_tick["zhangting_min"]
+    sell_amount = row_tick["sell_amount"]
+    money_ratio = (fengdan_money+sell_amount)/row_rt["lt_mcap"]
+    print("{}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}".format(date_str, fengdan, fengdan_money, sell_amount, zhangting_min, money_ratio))
