@@ -22,8 +22,8 @@ if len(sys.argv) < 2:
 exsymbol = sys.argv[1]
 store = get_store(store_type)
 df = store.get(exsymbol)
-print("date\tfengdan\tfengdan_money\tsell_amount\tzhangting_min\tmoney_ratio\tkaipan_money")
-for date in df.index[-27:]:
+print("date\tfengdan\tfengdan_money\tsell_amount\tzhangting_min\tkaipan_money")
+for date in df.index[-30:]:
     date_str = date.strftime("%Y-%m-%d")
     df_rt = get_realtime_by_date(date_str)
     df_tick = get_tick_by_date(date_str)
@@ -34,5 +34,4 @@ for date in df.index[-27:]:
     zhangting_min = row_tick["zhangting_min"]
     sell_amount = row_tick["sell_amount"]
     kaipan_money = row_tick["kaipan_money"]
-    money_ratio = (fengdan_money+sell_amount)/row_rt["lt_mcap"]
-    print("{}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5g}\t{:.5f}\t{:.0f}".format(date_str, fengdan, fengdan_money, sell_amount, zhangting_min, money_ratio, kaipan_money))
+    print("{}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5g}\t{:.0f}".format(date_str, fengdan, fengdan_money, sell_amount, zhangting_min, kaipan_money))
