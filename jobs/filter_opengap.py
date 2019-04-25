@@ -67,18 +67,18 @@ def get_zhangting(today):
     df_res = df_yest_zt[["fengdan", "fengdan_money"]].merge(df_today, how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick[["kaipan_money"]], how="left", left_index=True, right_index=True)
     df_tick_yest = stock.utils.symbol_util.get_tick_by_date(yest_str)
-    df_res = df_res.merge(df_tick_yest[["sell_amount", "zhangting_min"]], how="inner", left_index=True, right_index=True)
-    df_res["sell_speed"] = df_res["sell_amount"]/df_res["zhangting_min"]
+    df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_force", "zhangting_min"]], how="inner", left_index=True, right_index=True)
+    df_res["sell_speed"] = df_res["zhangting_sell"]/df_res["zhangting_min"]
     df_hist = filter_by_history(yest_str, df_res.index)
     df_res = df_res.merge(df_hist, how="inner", left_index=True, right_index=True)
     df_basics = get_industry()
     df_res = df_res.merge(df_basics, how="left", left_index=True, right_index=True)
     df_res.loc[:, "kaipan_by_fengdan"] = df_res.kaipan_money/df_res.fengdan_money
-    df_res = df_res[(df_res.opengap<0.05) & (df_res.opengap>0) & (df_res.lt_mcap<200) & (df_res.zhangting_min>100)]
-    df_res.loc[:, "money_ratio"] = (df_res.sell_amount+df_res.fengdan_money)/df_res.lt_mcap
+    df_res = df_res[(df_res.opengap>=0.0) & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
+    df_res.loc[:, "money_ratio"] = (df_res.zhangting_sell+df_res.fengdan_money)/df_res.lt_mcap
 
-    columns = ["opengap", "fengdan", "fengdan_money", "sell_amount", "zhangting_min", "lt_mcap", "kaipan_money", "increase5", "industry"]
-    print(df_res[columns].sort_values("sell_amount", ascending=True))
+    columns = ["opengap", "fengdan", "fengdan_money", "zhangting_min", "zhangting_force", "zhangting_sell", "lt_mcap", "kaipan_money", "increase5", "industry"]
+    print(df_res[columns].sort_values("zhangting_sell", ascending=True))
 
 def get_zhangting_begin(today):
     today_str = today.strftime("%Y-%m-%d")
@@ -95,13 +95,13 @@ def get_zhangting_begin(today):
     df_tick_yest.loc[:, "yest_kaipan_money"] = df_tick_yest["kaipan_money"]
     df_tick_today = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_res = df_res.merge(df_today[["opengap"]], how="inner", left_index=True, right_index=True)
-    df_res = df_res[df_res.opengap>0]
-    df_res = df_res.merge(df_tick_yest[["sell_amount", "zhangting_min", "yest_kaipan_money"]], how="inner", left_index=True, right_index=True)
+    df_res = df_res[df_res.opengap>=0]
+    df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_force", "zhangting_min", "yest_kaipan_money"]], how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick_today[["kaipan_money"]], how="inner", left_index=True, right_index=True)
     df_basics = get_industry()
     df_res = df_res.merge(df_basics, how="left", left_index=True, right_index=True)
-    columns = ["yest_chg", "opengap", "sell_amount", "zhangting_min", "yest_kaipan_money", "kaipan_money", "lt_mcap", "industry"]
-    print(df_res[columns].sort_values("sell_amount", ascending=True))
+    columns = ["yest_chg", "opengap", "zhangting_min", "zhangting_force", "zhangting_sell", "yest_kaipan_money", "kaipan_money", "lt_mcap", "industry"]
+    print(df_res[columns].sort_values("zhangting_sell", ascending=True))
 
 pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)

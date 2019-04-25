@@ -6,6 +6,7 @@ import json
 from stock.utils import request
 from stock.globalvar import *
 from stock.marketdata.utils import load_csv
+import numpy as np
 import tushare as ts
 import pandas as pd
 
@@ -166,25 +167,42 @@ def get_realtime_by_date(date_str):
     df = pd.read_csv(filepath, index_col=0)
     return df
 
-def get_zhangting_minutes(df_tick):
-    high = df_tick.price.max()
+def get_zhangting_data(df_tick, zt_price):
     df_tick.loc[:, "last_price"] = df_tick.price.shift(1)
     df_tick.loc[:, "last_time"] = df_tick["time"].shift(1)
     time_diff = df_tick.time.values - df_tick.last_time.values
     df_tick.loc[:, "time_diff"] = time_diff
-    zhangting_time = df_tick[(df_tick.price==high) & (df_tick.last_price==high)].time_diff.sum()
+    zhangting_time = df_tick[(df_tick.price==zt_price) & (df_tick.last_price==zt_price)].time_diff.sum()
+    zhangting_force = df_tick[(df_tick.last_price<zt_price) & (df_tick.price==zt_price)].amount.sum()/1e8
+    df_zt = df_tick[df_tick.price==zt_price]
+    zhangting_force = 0
+    if len(df_zt) > 0:
+        zt_start = df_zt.index[0]
+        df_beforezt = df_tick.loc[:zt_start]
+        if len(df_beforezt) > 0:
+            push_start = df_beforezt[df_beforezt.change<0].index.max()
+            if np.isnan(push_start):
+                push_start = 0
+            df_push = df_tick.loc[push_start+1:zt_start]
+            zhangting_force = df_push.amount.sum()/1e8
+    zhangting_sell = df_tick[(df_tick.price==zt_price)].amount.sum()/1e8
     zhangting_min = zhangting_time / datetime.timedelta(minutes=1)
-    return zhangting_min
+    return {"zhangting_min": zhangting_min, "zhangting_force": zhangting_force, "zhangting_sell": zhangting_sell}
 
-def get_kaipan(exsymbol, s_rt, date):
+def get_kaipan(exsymbol, date):
     folder = TICK_DIR["stock"]
     filepath = os.path.join(folder, exsymbol)
     if not os.path.isfile(filepath):
         raise NoTickData("no such file: %s" % filepath)
     df = pd.read_csv(filepath, sep='\t', header=0, names=['time', 'price', 'change', 'volume', 'amount', 'type'])
     df.loc[:, "time"] = pd.to_datetime(date + ' ' + df["time"], format="%Y-%m-%d %H:%M:%S")
-    df.index = df["time"]
-    s_null = pd.Series(data={'price': 0, 'change': 0, 'volume': 0, 'amount': 0, 'type': None, 'sell_amount': 0, 'zhangting_min': 0}, name=None)
+    s_null = pd.Series(data={'price': 0,
+        'change': 0,
+        'volume': 0,
+        'amount': 0,
+        'zhangting_min': 0,
+        "zhangting_force": 0,
+        "zhangting_sell": 0}, name=None)
     if len(df) == 0:
         return (exsymbol, s_null)
 
@@ -194,25 +212,27 @@ def get_kaipan(exsymbol, s_rt, date):
     open_change = 0
     open_volume = 0
     open_amount = 0
-    if s.name < open_dt:
+    if s.time < open_dt:
         open_price = s.price
         open_change = s.change
         open_volume = s.volume
         open_amount = s.amount
 
-    highperc = s_rt["high"]/s_rt["yest_close"] - 1
-    if highperc < 0.099:
-        s_kaipan = pd.Series(data={'price': open_price, 'change': open_change, 'volume': open_volume, 'amount': open_amount, 'sell_amount': 0, 'zhangting_min': 0}, name=s.name)
-        return (exsymbol, s_kaipan)
-
     high = df.price.max()
-    sell_amount = df[df.price==high].volume.sum() * high / 1e6
     df_tick1 = df[df.time<=date + " 11:30:00"].copy()
     df_tick2 = df[df.time>=date + " 13:00:00"].copy()
-    zhangting1_min = get_zhangting_minutes(df_tick1)
-    zhangting2_min = get_zhangting_minutes(df_tick2)
-    zhangting_min = zhangting1_min + zhangting2_min
-    s_kaipan = pd.Series(data={'price': open_price, 'change': open_change, 'volume': open_volume, 'amount': open_amount, 'sell_amount': sell_amount, 'zhangting_min': zhangting_min}, name=s.name)
+    data1 = get_zhangting_data(df_tick1, high)
+    data2 = get_zhangting_data(df_tick2, high)
+    zhangting_min = data1["zhangting_min"] + data2["zhangting_min"]
+    zhangting_force = data1["zhangting_force"] + data2["zhangting_force"]
+    zhangting_sell = data1["zhangting_sell"] + data2["zhangting_sell"]
+    s_kaipan = pd.Series(data={'price': open_price,
+        'change': open_change,
+        'volume': open_volume,
+        'amount': open_amount,
+        'zhangting_min': zhangting_min,
+        'zhangting_force': zhangting_force,
+        'zhangting_sell': zhangting_sell}, name=s.time)
     return (exsymbol, s_kaipan)
 
 def get_tick_by_date(date_str):

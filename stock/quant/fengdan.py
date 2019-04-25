@@ -5,16 +5,6 @@ from stock.utils.symbol_util import get_stock_symbols, get_realtime_by_date, NoR
 from stock.marketdata.storefactory import get_store
 from config import store_type
 
-def get_zhangting_minutes(df_tick):
-    high = df_tick.price.max()
-    df_tick.loc[:, "last_price"] = df_tick.price.shift(1)
-    df_tick.loc[:, "last_time"] = df_tick["time"].shift(1)
-    time_diff = df_tick.time.values - df_tick.last_time.values
-    df_tick.loc[:, "time_diff"] = time_diff
-    zhangting_time = df_tick[(df_tick.price==high) & (df_tick.last_price==high)].time_diff.sum()
-    zhangting_min = zhangting_time / datetime.timedelta(minutes=1)
-    return zhangting_min
-
 if len(sys.argv) < 2:
     print("Usage: %s <sz002750>" % sys.argv[0])
     sys.exit(1)
@@ -22,8 +12,8 @@ if len(sys.argv) < 2:
 exsymbol = sys.argv[1]
 store = get_store(store_type)
 df = store.get(exsymbol)
-print("date\tfengdan\tfengdan_money\tsell_amount\tzhangting_min\tkaipan_money")
-for date in df.index[-30:]:
+print("date\tfengdan\tfengdan_money\tzhangting_min\tzhangting_force\tzhangting_sell\tkaipan_money")
+for date in df.index[-15:]:
     date_str = date.strftime("%Y-%m-%d")
     df_rt = get_realtime_by_date(date_str)
     df_tick = get_tick_by_date(date_str)
@@ -32,6 +22,7 @@ for date in df.index[-30:]:
     fengdan = row_rt["b1_v"] * row_rt["b1_p"]*100/row_rt["lt_mcap"]/1e8
     fengdan_money = row_rt["b1_v"] * row_rt["b1_p"]*100/1e8
     zhangting_min = row_tick["zhangting_min"]
-    sell_amount = row_tick["sell_amount"]
+    zhangting_force = row_tick["zhangting_force"]
+    zhangting_sell = row_tick["zhangting_sell"]
     kaipan_money = row_tick["kaipan_money"]
-    print("{}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5g}\t{:.0f}".format(date_str, fengdan, fengdan_money, sell_amount, zhangting_min, kaipan_money))
+    print("{}\t{:.5f}\t{:.5f}\t{:.5g}\t{:.5f}\t{:.5f}\t{:.0f}".format(date_str, fengdan, fengdan_money, zhangting_min, zhangting_force, zhangting_sell, kaipan_money))
