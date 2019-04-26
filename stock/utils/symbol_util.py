@@ -219,6 +219,9 @@ def get_kaipan(exsymbol, date):
         open_amount = s.amount
 
     high = df.price.max()
+    yest_close = s.price - s.change
+    if high/yest_close < 1.099:
+        return
     df_tick1 = df[df.time<=date + " 11:30:00"].copy()
     df_tick2 = df[df.time>=date + " 13:00:00"].copy()
     data1 = get_zhangting_data(df_tick1, high)

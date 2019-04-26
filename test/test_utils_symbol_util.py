@@ -1,6 +1,8 @@
 from stock.utils.symbol_util import *
 import unittest
 import os.path
+import tushare as ts
+import pandas as pd
 
 class TestSymbolUtil(unittest.TestCase):
     def setUp(self):
@@ -77,3 +79,13 @@ class TestSymbolUtil(unittest.TestCase):
     def test_get_tick_by_date(self):
         df = get_tick_by_date("2019-04-01")
         print(df)
+
+    def test_get_zhangting_data(self):
+        date = '2019-04-24'
+        df_tick = ts.get_tick_data('002547', date=date, src='tt')
+        df_tick.loc[:, "time"] = pd.to_datetime(date + ' ' + df_tick["time"], format="%Y-%m-%d %H:%M:%S")
+        high = df_tick.price.max()
+        df_tick1 = df_tick[df_tick.time<=date + " 11:30:00"].copy()
+        df_tick2 = df_tick[df_tick.time>=date + " 13:00:00"].copy()
+        result = get_zhangting_data(df_tick2, high)
+        print(result)
