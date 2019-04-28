@@ -173,18 +173,14 @@ def get_zhangting_data(df_tick, zt_price):
     time_diff = df_tick.time.values - df_tick.last_time.values
     df_tick.loc[:, "time_diff"] = time_diff
     zhangting_time = df_tick[(df_tick.price==zt_price) & (df_tick.last_price==zt_price)].time_diff.sum()
-    zhangting_force = df_tick[(df_tick.last_price<zt_price) & (df_tick.price==zt_price)].amount.sum()/1e8
     df_zt = df_tick[df_tick.price==zt_price]
     zhangting_force = 0
     if len(df_zt) > 0:
         zt_start = df_zt.index[0]
-        df_beforezt = df_tick.loc[:zt_start]
+        df_beforezt = df_tick.loc[:zt_start-1]
         if len(df_beforezt) > 0:
-            push_start = df_beforezt[df_beforezt.change<0].index.max()
-            if np.isnan(push_start):
-                push_start = 0
-            df_push = df_tick.loc[push_start+1:zt_start]
-            zhangting_force = df_push.amount.sum()/1e8
+            thre = df_beforezt.amount.quantile(0.99)
+            zhangting_force = df_beforezt[df_beforezt.amount>=thre].amount.sum()/1e8
     zhangting_sell = df_tick[(df_tick.price==zt_price)].amount.sum()/1e8
     zhangting_min = zhangting_time / datetime.timedelta(minutes=1)
     return {"zhangting_min": zhangting_min, "zhangting_force": zhangting_force, "zhangting_sell": zhangting_sell}
@@ -221,14 +217,20 @@ def get_kaipan(exsymbol, date):
     high = df.price.max()
     yest_close = s.price - s.change
     if high/yest_close < 1.099:
-        return
-    df_tick1 = df[df.time<=date + " 11:30:00"].copy()
-    df_tick2 = df[df.time>=date + " 13:00:00"].copy()
-    data1 = get_zhangting_data(df_tick1, high)
-    data2 = get_zhangting_data(df_tick2, high)
-    zhangting_min = data1["zhangting_min"] + data2["zhangting_min"]
-    zhangting_force = data1["zhangting_force"] + data2["zhangting_force"]
-    zhangting_sell = data1["zhangting_sell"] + data2["zhangting_sell"]
+        s_kaipan = pd.Series(data={'price': open_price,
+            'change': open_change,
+            'volume': open_volume,
+            'amount': open_amount,
+            'zhangting_min': 0,
+            'zhangting_force': 0,
+            'zhangting_sell': 0}, name=s.time)
+        return (exsymbol, s_kaipan)
+
+    df.loc[df.time>=date + " 13:00:00", "time"] = df.loc[df.time>=date + " 13:00:00"].time - datetime.timedelta(minutes=90)
+    data = get_zhangting_data(df, high)
+    zhangting_min = data["zhangting_min"]
+    zhangting_force = data["zhangting_force"]
+    zhangting_sell = data["zhangting_sell"]
     s_kaipan = pd.Series(data={'price': open_price,
         'change': open_change,
         'volume': open_volume,

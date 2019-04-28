@@ -95,7 +95,7 @@ def get_zhangting_begin(today):
     df_tick_yest.loc[:, "yest_kaipan_money"] = df_tick_yest["kaipan_money"]
     df_tick_today = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_res = df_res.merge(df_today[["opengap"]], how="inner", left_index=True, right_index=True)
-    df_res = df_res[df_res.opengap>=0]
+    #df_res = df_res[df_res.opengap>=0]
     df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_force", "zhangting_min", "yest_kaipan_money"]], how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick_today[["kaipan_money"]], how="inner", left_index=True, right_index=True)
     df_basics = get_industry()
