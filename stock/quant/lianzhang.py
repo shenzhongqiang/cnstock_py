@@ -26,7 +26,7 @@ for exsymbol in exsymbols:
     if date not in df.index:
         continue
     idx = df.index.get_loc(date)
-    min10 = np.min(df.iloc[idx-10:].close)
+    min10 = np.min(df.iloc[idx-10:idx].close)
     increase = df.iloc[idx].close/min10 - 1
     tmr_chg = 0
     if idx+1 < len(df):
