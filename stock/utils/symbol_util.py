@@ -177,13 +177,18 @@ def get_zhangting_data(df_tick, zt_price):
     zhangting_force = 0
     if len(df_zt) > 0:
         zt_start = df_zt.index[0]
-        df_beforezt = df_tick.loc[:zt_start-1]
+        df_beforezt = df_tick.loc[:zt_start]
         if len(df_beforezt) > 0:
-            thre = df_beforezt.amount.quantile(0.99)
-            zhangting_force = df_beforezt[df_beforezt.amount>=thre].amount.sum()/1e8
-    zhangting_sell = df_tick[(df_tick.price==zt_price)].amount.sum()/1e8
+            df_zt_buy = df_beforezt[df_beforezt.type=="买盘"]
+            thre = df_zt_buy.amount.quantile(0.99)
+            zhangting_force = df_zt_buy[df_zt_buy.amount>=thre].amount.sum()/1e8
+    df_zt_sell = df_zt[df_zt.type=="卖盘"]
+    zhangting_sell = df_zt_sell.amount.sum()/1e8
+    thre = df_zt_sell.amount.quantile(0.99)
+    thre = np.max([thre, 1e6])
+    inst_sell = df_zt_sell[df_zt_sell.amount>thre].amount.sum()/1e8
     zhangting_min = zhangting_time / datetime.timedelta(minutes=1)
-    return {"zhangting_min": zhangting_min, "zhangting_force": zhangting_force, "zhangting_sell": zhangting_sell}
+    return {"zhangting_min": zhangting_min, "zhangting_force": zhangting_force, "zhangting_sell": zhangting_sell, "inst_sell": inst_sell}
 
 def get_kaipan(exsymbol, date):
     folder = TICK_DIR["stock"]
@@ -197,8 +202,9 @@ def get_kaipan(exsymbol, date):
         'volume': 0,
         'amount': 0,
         'zhangting_min': 0,
-        "zhangting_force": 0,
-        "zhangting_sell": 0}, name=None)
+        'zhangting_force': 0,
+        'zhangting_sell': 0,
+        'inst_sell': 0}, name=None)
     if len(df) == 0:
         return (exsymbol, s_null)
 
@@ -216,14 +222,17 @@ def get_kaipan(exsymbol, date):
 
     high = df.price.max()
     yest_close = s.price - s.change
-    if high/yest_close < 1.099:
+    zt_price = round(yest_close*1.1+1e-8, 2)
+
+    if zt_price-high > 1e-8:
         s_kaipan = pd.Series(data={'price': open_price,
             'change': open_change,
             'volume': open_volume,
             'amount': open_amount,
             'zhangting_min': 0,
             'zhangting_force': 0,
-            'zhangting_sell': 0}, name=s.time)
+            'zhangting_sell': 0,
+            'inst_sell': 0}, name=s.time)
         return (exsymbol, s_kaipan)
 
     df.loc[df.time>=date + " 13:00:00", "time"] = df.loc[df.time>=date + " 13:00:00"].time - datetime.timedelta(minutes=90)
@@ -231,13 +240,15 @@ def get_kaipan(exsymbol, date):
     zhangting_min = data["zhangting_min"]
     zhangting_force = data["zhangting_force"]
     zhangting_sell = data["zhangting_sell"]
+    inst_sell = data["inst_sell"]
     s_kaipan = pd.Series(data={'price': open_price,
         'change': open_change,
         'volume': open_volume,
         'amount': open_amount,
         'zhangting_min': zhangting_min,
         'zhangting_force': zhangting_force,
-        'zhangting_sell': zhangting_sell}, name=s.time)
+        'zhangting_sell': zhangting_sell,
+        'inst_sell': inst_sell}, name=s.time)
     return (exsymbol, s_kaipan)
 
 def get_tick_by_date(date_str):
@@ -245,5 +256,10 @@ def get_tick_by_date(date_str):
     filepath = os.path.join(folder, date_str + ".csv")
     if not os.path.isfile(filepath):
         raise NoTickData("no such file: %s" % filepath)
+    df = pd.read_csv(filepath, index_col=0)
+    return df
+
+def load_concept():
+    filepath = os.path.join(BASIC_DIR, "concept")
     df = pd.read_csv(filepath, index_col=0)
     return df

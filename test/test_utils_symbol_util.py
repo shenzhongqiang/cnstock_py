@@ -89,3 +89,7 @@ class TestSymbolUtil(unittest.TestCase):
         df_tick2 = df_tick[df_tick.time>=date + " 13:00:00"].copy()
         result = get_zhangting_data(df_tick2, high)
         print(result)
+
+    def test_load_concept(self):
+        df = load_concept()
+        print(df)
