@@ -224,7 +224,7 @@ def get_kaipan(exsymbol, date):
     yest_close = s.price - s.change
     zt_price = round(yest_close*1.1+1e-8, 2)
 
-    if zt_price-high > 1e-8:
+    if abs(zt_price-high) > 1e-8:
         s_kaipan = pd.Series(data={'price': open_price,
             'change': open_change,
             'volume': open_volume,

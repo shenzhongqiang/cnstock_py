@@ -9,6 +9,7 @@ def get_stock_chg(date):
     df.loc[:, "chg"] = df["chgperc"]/100
     df.loc[:, "zt_price"] = df.yest_close.apply(lambda x: round(x*1.1+1e-8, 2))
     df.loc[:, "is_zhangting"] = (df["zt_price"]-df["close"])<1e-8
+    df.loc[:, "is_nice"] = df["chg"] >= 0.08
     return df
 
 if __name__ == "__main__":
@@ -25,10 +26,19 @@ if __name__ == "__main__":
     df_concept = load_concept()
     df_res = df_concept.merge(df_stock, how="left", left_on="exsymbol", right_index=True)
     df_chg = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    print("======================= concept avg changes ========================")
     print(df_chg[df_chg.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("concept")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
-    df_hot = df_zt[df_zt.num_zhangting>=3]
+    df_hot = df_zt[df_zt.num_zhangting>=4]
     df_hot_stocks = df_res[df_res.concept.isin(df_hot.index) & df_res.is_zhangting==True]
     columns = ["concept", "exsymbol", "chg"]
+    print("======================= zhangting num ========================")
     print(df_hot_stocks[columns])
+
+    #df_nice = df_res.groupby("concept")["is_nice"].agg(["sum"]).rename(columns={"sum": "num_nice"})
+    #df_hot = df_nice[df_nice.num_nice>=8]
+    #df_hot_stocks = df_res[df_res.concept.isin(df_hot.index) & df_res.is_nice==True]
+    #columns = ["concept", "exsymbol", "chg"]
+    #print("======================= big change num ========================")
+    #print(df_hot_stocks[columns])

@@ -35,7 +35,7 @@ def get_industry():
 def filter_by_history(date, exsymbols):
     store = get_store(store_type)
     result = []
-    df = pd.DataFrame(columns=["increase60", "increase5", "future"])
+    df = pd.DataFrame(columns=["increase60", "increase5", "volratio", "future"])
     for exsymbol in exsymbols:
         if not store.has(exsymbol):
             continue
@@ -43,12 +43,14 @@ def filter_by_history(date, exsymbols):
         df_past = df_stock.loc[:date].copy()
         if len(df_past) == 0:
             continue
+        vol_avg = np.mean(df_past.iloc[-6:-1].volume)
+        volratio = df_past.iloc[-1].volume/vol_avg
         close_min60 = np.min(df_past.iloc[-60:].close)
         close_min5 = np.min(df_past.iloc[-5:].close)
         increase60 = df_past.iloc[-1].close/close_min60-1
         increase5 = df_past.iloc[-1].close/close_min5-1
         future = df_stock.iloc[-1].close/df_past.iloc[-1].close-1
-        df.loc[exsymbol] = [increase60, increase5, future]
+        df.loc[exsymbol] = [increase60, increase5, volratio, future]
     return df
 
 def get_zhangting(today):
@@ -75,10 +77,11 @@ def get_zhangting(today):
     df_basics = get_industry()
     df_res = df_res.merge(df_basics, how="left", left_index=True, right_index=True)
     df_res.loc[:, "kaipan_by_fengdan"] = df_res.kaipan_money/df_res.fengdan_money
-    df_res = df_res[(df_res.opengap>=0.0)] # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
+    df_res = df_res[(df_res.opengap>=0) & (df_res.opengap<0.05)] # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
     df_res.loc[:, "money_ratio"] = (df_res.zhangting_sell+df_res.fengdan_money)/df_res.lt_mcap
 
-    columns = ["opengap", "fengdan", "fengdan_money", "zhangting_force", "zhangting_sell", "zhangting_min", "lt_mcap", "kaipan_money", "inst_ratio", "industry"]
+    columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_force", "zhangting_sell", "zhangting_min", "lt_mcap", "inst_ratio", "volratio", "industry"]
+    print("========================== zhangting ==========================")
     print(df_res[columns].sort_values("zhangting_sell", ascending=True))
 
 def get_zhangting_begin(today):
@@ -90,19 +93,22 @@ def get_zhangting_begin(today):
     df_yest.loc[:, "openperc"] = df_yest["open"]/df_yest["yest_close"]-1
     df_yest.loc[:, "yest_chg"] = df_yest["chgperc"]
     #df_res = df_yest[(df_yest.chgperc>6) & (df_yest.chgperc<9.9) & (df_yest.close>df_yest.open)]
-    df_res = df_yest[(df_yest.highperc>0.099) & (df_yest.chgperc<9.9) & (df_yest.lt_mcap<100) & (df_yest.close>df_yest.open)]
+    df_res = df_yest[(df_yest.highperc>0.099) & (df_yest.chgperc<9.9) & (df_yest.lt_mcap<300) & (df_yest.close>df_yest.open)]
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
     df_today.loc[:, "opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
     df_tick_yest = stock.utils.symbol_util.get_tick_by_date(yest_str)
     df_tick_today = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_res = df_res.merge(df_today[["opengap"]], how="inner", left_index=True, right_index=True)
-    df_res = df_res[df_res.opengap>=0]
+    df_res = df_res[df_res.opengap>=-0.02]
     df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_force", "zhangting_min"]], how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick_today[["kaipan_money"]], how="inner", left_index=True, right_index=True)
     df_res["kaipan"] = df_res["kaipan_money"]/df_res["lt_mcap"]/1e8
+    df_hist = filter_by_history(yest_str, df_res.index)
+    df_res = df_res.merge(df_hist, how="inner", left_index=True, right_index=True)
     df_basics = get_industry()
     df_res = df_res.merge(df_basics, how="left", left_index=True, right_index=True)
-    columns = ["yest_chg", "opengap", "zhangting_force", "zhangting_sell", "zhangting_min", "kaipan", "lt_mcap", "industry"]
+    columns = ["yest_chg", "opengap", "zhangting_force", "zhangting_sell", "zhangting_min", "kaipan", "lt_mcap", "volratio", "industry"]
+    print("========================== zhangting begin ==========================")
     print(df_res[columns].sort_values("yest_chg", ascending=True))
 
 def get_opengap(today):
@@ -112,6 +118,7 @@ def get_opengap(today):
     df_today = df_today[(df_today.b1_v>0) & (df_today.a1_v>0) & (df_today.b1_p > 0) & (df_today.a1_p > 0)].copy()
     df_today.loc[:, "ba_diff"] = df_today["b1_p"]/df_today["a1_p"]-1
     df_res = df_today[(df_today.chgperc < -4) & (df_today.ba_diff < -0.04)]
+    print("========================== ==========================")
     print(df_res)
 
 pd.set_option('display.max_rows', None)
@@ -125,4 +132,3 @@ else:
 
 get_zhangting(today)
 get_zhangting_begin(today)
-get_opengap(today)

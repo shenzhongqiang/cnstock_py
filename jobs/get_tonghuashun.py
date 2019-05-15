@@ -20,8 +20,8 @@ def get_cookie(concept_id):
     cookie = mydriver.get_cookies()[0]
     return {cookie["name"]: cookie["value"]}
 
-def get_page_stocks(concept_id, page_id):
-    url = "http://q.10jqka.com.cn/gn/detail/field/264648/order/desc/page/{}/ajax/1/code/{}".format(page_id, concept_id)
+def get_page_stocks(dtype, concept_id, page_id):
+    url = "http://q.10jqka.com.cn/{}/detail/field/264648/order/desc/page/{}/ajax/1/code/{}".format(dtype, page_id, concept_id)
     print(concept_id, page_id)
     cookie = get_cookie(concept_id)
     r = requests.get(url, headers=headers, timeout=30, cookies=cookie)
@@ -38,12 +38,12 @@ def get_page_stocks(concept_id, page_id):
         exsymbols.append(exsymbol)
     return exsymbols
 
-def get_concept_stocks(url):
+def get_index_stocks(url, dtype="gn"):
     r = requests.get(url, headers=headers, timeout=30)
     content = r.content
-    matched = re.search(r'http://q.10jqka.com.cn/gn/detail/code/(\d+)', url)
+    matched = re.search(r'http://q.10jqka.com.cn/\w+/detail/code/(\d+)', url)
     if not matched:
-        raise Exception("error with url. not concept code")
+        raise Exception("error with url. no code")
     concept_id = matched.group(1)
     root = etree.HTML(content)
     pi_nodes = root.xpath('.//span[@class="page_info"]')
@@ -57,7 +57,7 @@ def get_concept_stocks(url):
 
     exsymbols = []
     for i in range(1, page_num+1, 1):
-        some_exsymbols = get_page_stocks(concept_id, i)
+        some_exsymbols = get_page_stocks(dtype, concept_id, i)
         exsymbols.extend(some_exsymbols)
     return exsymbols
 
@@ -72,13 +72,31 @@ def save_concepts():
     for node in cate_nodes:
         concept_name = node.text
         concept_url = node.attrib["href"]
-        exsymbols = get_concept_stocks(concept_url)
+        exsymbols = get_index_stocks(concept_url, dtype="gn")
         s_concept.extend([concept_name]*len(exsymbols))
         s_exsymbol.extend(exsymbols)
     df = pd.DataFrame({"concept": s_concept, "exsymbol": s_exsymbol})
     filepath = os.path.join(BASIC_DIR, "concept")
     df.to_csv(filepath)
 
+def save_industries():
+    url = "http://q.10jqka.com.cn/thshy/"
+    r = requests.get(url, headers=headers, timeout=30)
+    content = r.content
+    root = etree.HTML(content)
+    cate_nodes = root.xpath('.//div[@class="cate_items"]/a')
+    s_industry = []
+    s_exsymbol = []
+    for node in cate_nodes:
+        industry_name = node.text
+        industry_url = node.attrib["href"]
+        exsymbols = get_index_stocks(industry_url, dtype="thshy")
+        s_industry.extend([industry_name]*len(exsymbols))
+        s_exsymbol.extend(exsymbols)
+    df = pd.DataFrame({"industry": s_industry, "exsymbol": s_exsymbol})
+    filepath = os.path.join(BASIC_DIR, "industry")
+    df.to_csv(filepath)
 
 if __name__ == "__main__":
     save_concepts()
+    save_industries()

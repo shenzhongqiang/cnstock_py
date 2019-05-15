@@ -33,8 +33,10 @@ exsymbol = sys.argv[1]
 store = get_store(store_type)
 df = store.get(exsymbol)
 df["chg"] = df.close / df.close.shift(1) - 1
-print("date\tchg\tfengdan\tfengdan_money\tzhangting_min\tzhangting_force\tzhangting_sell\tkaipan_money\tin\tout\tinst_sell\ttotal_sell")
-for date in df.index[-15:]:
+df["avg5"]=df["volume"].shift(1).rolling(window=5).mean()
+df["volratio"]=df["volume"]/df["avg5"]
+print("date\tchg\tfengdan\tfengdan_money\tzhangting_min\tzhangting_force\tzhangting_sell\tkaipan_money\tin\tout\tinst_sell\ttotal_sell\tvolratio")
+for date in df.index[-20:]:
     date_str = date.strftime("%Y-%m-%d")
     fengdan = 0
     fengdan_money = 0
@@ -53,7 +55,8 @@ for date in df.index[-15:]:
     zhangting_force = row_tick["zhangting_force"]
     zhangting_sell = row_tick["zhangting_sell"]
     kaipan_money = row_tick["kaipan_money"]
+    volratio = df.loc[date_str].volratio
     symbol = exsymbol[2:]
     [in_amt, out_amt] = get_in_out(symbol, date_str)
     [inst_amt, ttl_amt] = get_zhangting_sell(symbol, date_str)
-    print("{}\t{:.3f}\t{:.5f}\t{:.5f}\t{:.5g}\t{:.5f}\t{:.5f}\t{:.0f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}".format(date_str, chg, fengdan, fengdan_money, zhangting_min, zhangting_force, zhangting_sell, kaipan_money, in_amt, out_amt, inst_amt, ttl_amt))
+    print("{}\t{:.3f}\t{:.5f}\t{:.5f}\t{:.5g}\t{:.5f}\t{:.5f}\t{:.0f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}\t{:.5f}".format(date_str, chg, fengdan, fengdan_money, zhangting_min, zhangting_force, zhangting_sell, kaipan_money, in_amt, out_amt, inst_amt, ttl_amt, volratio))

@@ -18,7 +18,7 @@ def print_stocks(date):
         if date not in df.index:
             continue
         idx = df.index.get_loc(date)
-        min10 = np.min(df.iloc[idx-22:idx].close)
+        min10 = np.min(df.iloc[idx-20:idx].close)
         increase = df.iloc[idx].close/min10 - 1
         tmr_chg = 0
         if idx+1 < len(df):
@@ -100,4 +100,5 @@ else:
     date = sys.argv[1]
 
 pd.set_option('display.max_rows', None)
-print_potential(date)
+#print_potential(date)
+print_stocks(date)
