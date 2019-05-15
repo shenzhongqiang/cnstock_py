@@ -263,3 +263,8 @@ def load_concept():
     filepath = os.path.join(BASIC_DIR, "concept")
     df = pd.read_csv(filepath, index_col=0)
     return df
+
+def load_industry():
+    filepath = os.path.join(BASIC_DIR, "industry")
+    df = pd.read_csv(filepath, index_col=0)
+    return df

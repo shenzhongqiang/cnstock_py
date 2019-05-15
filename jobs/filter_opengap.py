@@ -8,7 +8,6 @@ from pandas.tseries.offsets import BDay
 import matplotlib.pyplot as plt
 import stock.utils.symbol_util
 from stock.marketdata.storefactory import get_store
-from stock.lib.finance import load_stock_basics
 from stock.globalvar import *
 import tushare as ts
 from config import store_type
@@ -26,11 +25,14 @@ def get_last_trading_date(today):
     return yest
 
 def get_industry():
-    df_basics = ts.get_stock_basics()
-    df_basics.loc[:, "code"] = df_basics.index
-    df_basics.loc[:, "exsymbol"] = df_basics.code.apply(lambda x: 'sh'+x if re.match(r'6', x) else 'sz'+x)
-    df_basics.set_index("exsymbol", inplace=True)
-    return df_basics[["industry"]]
+    df_industry = stock.utils.symbol_util.load_industry()
+    df_res = df_industry.groupby("exsymbol")["industry"].agg({"industry": lambda x: ",".join(x)})
+    return df_res
+
+def get_concept():
+    df = stock.utils.symbol_util.load_concept()
+    df_res = df.groupby("exsymbol")["concept"].agg({"concept": lambda x: ",".join(x)})
+    return df_res
 
 def filter_by_history(date, exsymbols):
     store = get_store(store_type)
@@ -74,13 +76,15 @@ def get_zhangting(today):
     df_res["sell_speed"] = df_res["zhangting_sell"]/df_res["zhangting_min"]
     df_hist = filter_by_history(yest_str, df_res.index)
     df_res = df_res.merge(df_hist, how="inner", left_index=True, right_index=True)
-    df_basics = get_industry()
-    df_res = df_res.merge(df_basics, how="left", left_index=True, right_index=True)
+    df_industry = get_industry()
+    df_concept = get_concept()
+    df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
+    df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
     df_res.loc[:, "kaipan_by_fengdan"] = df_res.kaipan_money/df_res.fengdan_money
     df_res = df_res[(df_res.opengap>=0) & (df_res.opengap<0.05)] # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
     df_res.loc[:, "money_ratio"] = (df_res.zhangting_sell+df_res.fengdan_money)/df_res.lt_mcap
 
-    columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_force", "zhangting_sell", "zhangting_min", "lt_mcap", "inst_ratio", "volratio", "industry"]
+    columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_force", "zhangting_sell", "zhangting_min", "lt_mcap", "inst_ratio", "volratio", "industry", "concept"]
     print("========================== zhangting ==========================")
     print(df_res[columns].sort_values("zhangting_sell", ascending=True))
 
@@ -105,9 +109,11 @@ def get_zhangting_begin(today):
     df_res["kaipan"] = df_res["kaipan_money"]/df_res["lt_mcap"]/1e8
     df_hist = filter_by_history(yest_str, df_res.index)
     df_res = df_res.merge(df_hist, how="inner", left_index=True, right_index=True)
-    df_basics = get_industry()
-    df_res = df_res.merge(df_basics, how="left", left_index=True, right_index=True)
-    columns = ["yest_chg", "opengap", "zhangting_force", "zhangting_sell", "zhangting_min", "kaipan", "lt_mcap", "volratio", "industry"]
+    df_industry = get_industry()
+    df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
+    df_concept = get_concept()
+    df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
+    columns = ["yest_chg", "opengap", "zhangting_force", "zhangting_sell", "zhangting_min", "kaipan", "lt_mcap", "volratio", "industry", "concept"]
     print("========================== zhangting begin ==========================")
     print(df_res[columns].sort_values("yest_chg", ascending=True))
 
@@ -121,14 +127,16 @@ def get_opengap(today):
     print("========================== ==========================")
     print(df_res)
 
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
+if __name__ == "__main__":
+    get_industry()
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
 
-today = None
-if len(sys.argv) == 1:
-    today = pd.datetime.today()
-else:
-    today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+    today = None
+    if len(sys.argv) == 1:
+        today = pd.datetime.today()
+    else:
+        today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
-get_zhangting(today)
-get_zhangting_begin(today)
+    get_zhangting(today)
+    get_zhangting_begin(today)

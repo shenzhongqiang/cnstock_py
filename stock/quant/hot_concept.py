@@ -1,6 +1,6 @@
 import sys
 from stock.marketdata.storefactory import get_store
-from stock.utils.symbol_util import load_concept, get_realtime_by_date
+from stock.utils.symbol_util import load_concept, load_industry, get_realtime_by_date
 import numpy as np
 import pandas as pd
 
@@ -36,9 +36,15 @@ if __name__ == "__main__":
     print("======================= zhangting num ========================")
     print(df_hot_stocks[columns])
 
-    #df_nice = df_res.groupby("concept")["is_nice"].agg(["sum"]).rename(columns={"sum": "num_nice"})
-    #df_hot = df_nice[df_nice.num_nice>=8]
-    #df_hot_stocks = df_res[df_res.concept.isin(df_hot.index) & df_res.is_nice==True]
-    #columns = ["concept", "exsymbol", "chg"]
-    #print("======================= big change num ========================")
-    #print(df_hot_stocks[columns])
+    df_industry = load_industry()
+    df_res = df_industry.merge(df_stock, how="left", left_on="exsymbol", right_index=True)
+    df_chg = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    print("======================= industry avg changes ========================")
+    print(df_chg[df_chg.num_stock>5].tail(10))
+
+    df_zt = df_res.groupby("industry")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
+    df_hot = df_zt[df_zt.num_zhangting>=4]
+    df_hot_stocks = df_res[df_res.industry.isin(df_hot.index) & df_res.is_zhangting==True]
+    columns = ["industry", "exsymbol", "chg"]
+    print("======================= zhangting num ========================")
+    print(df_hot_stocks[columns])

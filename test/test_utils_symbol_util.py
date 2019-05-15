@@ -93,3 +93,7 @@ class TestSymbolUtil(unittest.TestCase):
     def test_load_concept(self):
         df = load_concept()
         print(df)
+
+    def test_load_industry(self):
+        df = load_industry()
+        print(df)
