@@ -103,7 +103,7 @@ def get_zhangting_begin(today):
     df_tick_yest = stock.utils.symbol_util.get_tick_by_date(yest_str)
     df_tick_today = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_res = df_res.merge(df_today[["opengap"]], how="inner", left_index=True, right_index=True)
-    df_res = df_res[df_res.opengap>=-0.02]
+    df_res = df_res[df_res.opengap>=0]
     df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_force", "zhangting_min"]], how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick_today[["kaipan_money"]], how="inner", left_index=True, right_index=True)
     df_res["kaipan"] = df_res["kaipan_money"]/df_res["lt_mcap"]/1e8
@@ -138,5 +138,5 @@ if __name__ == "__main__":
     else:
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
-    get_zhangting(today)
     get_zhangting_begin(today)
+    get_zhangting(today)
