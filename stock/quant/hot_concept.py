@@ -45,7 +45,6 @@ def get_industry_dragon_head(df, date):
     for industry in industries:
         exsymbols = df[df.industry==industry].exsymbol
         [dragonhead, max_increase] = get_best_stock(exsymbols, date)
-        print(industry, dragonhead, max_increase)
         df_res.loc[industry] = [dragonhead, max_increase]
     return df_res
 
@@ -68,7 +67,6 @@ if __name__ == "__main__":
         today = sys.argv[1]
 
     df_stock = get_stock_chg(today)
-    '''
     df_concept = load_concept()
     df_res = df_concept.merge(df_stock, how="left", left_on="exsymbol", right_index=True)
     df_chg = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
@@ -85,7 +83,7 @@ if __name__ == "__main__":
     print("======================= concept zhangting num ========================")
     #print(df_hot_stocks[columns])
     print(df_hot.sort_values("num_zhangting"))
-    '''
+
     df_industry = load_industry()
     df_res = df_industry.merge(df_stock, how="left", left_on="exsymbol", right_index=True)
     df_chg = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")

@@ -36,7 +36,7 @@ df["chg"] = df.close / df.close.shift(1) - 1
 df["avg5"]=df["volume"].shift(1).rolling(window=5).mean()
 df["volratio"]=df["volume"]/df["avg5"]
 print("date\tchg\tfengdan\tfengdan_money\tzhangting_min\tzhangting_force\tzhangting_sell\tkaipan_money\tin\tout\tinst_sell\ttotal_sell\tvolratio")
-for date in df.index[-20:]:
+for date in df.index[-5:]:
     date_str = date.strftime("%Y-%m-%d")
     fengdan = 0
     fengdan_money = 0
