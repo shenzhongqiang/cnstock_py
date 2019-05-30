@@ -5,46 +5,46 @@ from stock.utils.symbol_util import load_concept, load_industry, get_realtime_by
 import numpy as np
 import pandas as pd
 
-def get_best_stock(exsymbols, date):
+def get_stock_increase(date):
     store = get_store(store_type)
-    dragonhead = ""
-    max_increase = 0
+    exsymbols = store.get_stock_exsymbols()
+    df = pd.DataFrame(columns=["increase"])
     for exsymbol in exsymbols:
         try:
             df_stock = store.get(exsymbol)
-            if len(df_stock) < 200:
+            if len(df_stock) < 10:
                 continue
             if date not in df_stock.index:
                 continue
             idx = df_stock.index.get_loc(date)
             min10 = np.min(df_stock.iloc[idx-10:idx].close)
             increase = df_stock.iloc[idx].close/min10 - 1
-            if increase > max_increase:
-                dragonhead = exsymbol
-                max_increase = increase
+            df.loc[exsymbol] = increase
         except Exception as e:
             continue
+    return df
+
+def get_best_stock(group):
+    idx = group["increase"].idxmax()
+    max_increase = group.loc[idx]["increase"]
+    dragonhead = group.loc[idx]["exsymbol"]
     return [dragonhead, max_increase]
 
 def get_concept_dragon_head(df, date):
-    df_res = pd.DataFrame(columns=["increase"])
     df_grp = df.groupby("concept")
-    concepts = df_grp.groups.keys()
     df_res = pd.DataFrame(columns=["dragonhead", "increase"])
-    for concept in concepts:
-        exsymbols = df[df.concept==concept].exsymbol
-        [dragonhead, max_increase] = get_best_stock(exsymbols, date)
+    for concept, group in df_grp:
+        exsymbols = group["exsymbol"]
+        [dragonhead, max_increase] = get_best_stock(group)
         df_res.loc[concept] = [dragonhead, max_increase]
     return df_res
 
 def get_industry_dragon_head(df, date):
-    df_res = pd.DataFrame(columns=["increase"])
     df_grp = df.groupby("industry")
-    industries = df_grp.groups.keys()
     df_res = pd.DataFrame(columns=["dragonhead", "increase"])
-    for industry in industries:
-        exsymbols = df[df.industry==industry].exsymbol
-        [dragonhead, max_increase] = get_best_stock(exsymbols, date)
+    for industry, group in df_grp:
+        exsymbols = group["exsymbol"]
+        [dragonhead, max_increase] = get_best_stock(group)
         df_res.loc[industry] = [dragonhead, max_increase]
     return df_res
 
@@ -53,7 +53,6 @@ def get_stock_chg(date):
     df.loc[:, "chg"] = df["chgperc"]/100
     df.loc[:, "zt_price"] = df.yest_close.apply(lambda x: round(x*1.1+1e-8, 2))
     df.loc[:, "is_zhangting"] = (df["zt_price"]-df["close"])<1e-8
-    df.loc[:, "is_nice"] = df["chg"] >= 0.08
     return df
 
 if __name__ == "__main__":
@@ -68,7 +67,9 @@ if __name__ == "__main__":
 
     df_stock = get_stock_chg(today)
     df_concept = load_concept()
-    df_res = df_concept.merge(df_stock, how="left", left_on="exsymbol", right_index=True)
+    df_increase = get_stock_increase(today)
+    df_res = df_concept.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
+    df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
     df_chg = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
     df_dragon = get_concept_dragon_head(df_res, today)
     df_chg = df_chg.merge(df_dragon, how="left", left_on="concept", right_index=True)
@@ -85,7 +86,8 @@ if __name__ == "__main__":
     print(df_hot.sort_values("num_zhangting"))
 
     df_industry = load_industry()
-    df_res = df_industry.merge(df_stock, how="left", left_on="exsymbol", right_index=True)
+    df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
+    df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
     df_chg = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
     df_dragon = get_industry_dragon_head(df_res, today)
     df_chg = df_chg.merge(df_dragon, how="left", left_on="industry", right_index=True)
