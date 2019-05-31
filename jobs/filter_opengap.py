@@ -37,7 +37,7 @@ def get_concept():
 def filter_by_history(date, exsymbols):
     store = get_store(store_type)
     result = []
-    df = pd.DataFrame(columns=["increase60", "increase5", "volratio", "future"])
+    df = pd.DataFrame(columns=["increase60", "increase5", "future"])
     for exsymbol in exsymbols:
         if not store.has(exsymbol):
             continue
@@ -45,14 +45,12 @@ def filter_by_history(date, exsymbols):
         df_past = df_stock.loc[:date].copy()
         if len(df_past) == 0:
             continue
-        vol_avg = np.mean(df_past.iloc[-6:-1].volume)
-        volratio = df_past.iloc[-1].volume/vol_avg
         close_min60 = np.min(df_past.iloc[-60:].close)
         close_min5 = np.min(df_past.iloc[-5:].close)
         increase60 = df_past.iloc[-1].close/close_min60-1
         increase5 = df_past.iloc[-1].close/close_min5-1
         future = df_stock.iloc[-1].close/df_past.iloc[-1].close-1
-        df.loc[exsymbol] = [increase60, increase5, volratio, future]
+        df.loc[exsymbol] = [increase60, increase5, future]
     return df
 
 def get_zhangting(today):
@@ -69,25 +67,23 @@ def get_zhangting(today):
     df_yest_zt.loc[:, "turnover"] = df_yest_zt["volume"]/(df_yest_zt["lt_mcap"]/df_yest_zt["close"]*1e6)
     df_yest_zt.loc[:, "fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df_yest_zt["lt_mcap"] / 1e8
     df_yest_zt.loc[:, "fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
-    df_res = df_yest_zt[["fengdan", "fengdan_money", "turnover"]].merge(df_today, how="inner", left_index=True, right_index=True)
+    df_yest_zt.loc[:, "yest_lt_mcap"] = df_yest_zt["lt_mcap"]
+    df_res = df_yest_zt[["fengdan", "fengdan_money", "yest_lt_mcap", "turnover"]].merge(df_today, how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick[["kaipan_money"]], how="left", left_index=True, right_index=True)
     df_tick_yest = stock.utils.symbol_util.get_tick_by_date(yest_str)
-    df_tick_yest.loc[:, "inst_ratio"] = df_tick_yest["inst_sell"] / df_tick_yest["zhangting_sell"]
-    df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_force", "zhangting_min", "inst_ratio"]], how="inner", left_index=True, right_index=True)
-    df_res["sell_speed"] = df_res["zhangting_sell"]/df_res["zhangting_min"]
+    df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_min"]], how="inner", left_index=True, right_index=True)
     df_hist = filter_by_history(yest_str, df_res.index)
     df_res = df_res.merge(df_hist, how="inner", left_index=True, right_index=True)
     df_industry = get_industry()
     df_concept = get_concept()
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
     df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
-    df_res.loc[:, "kaipan_by_fengdan"] = df_res.kaipan_money/df_res.fengdan_money
-    df_res = df_res[(df_res.opengap>=0) & (df_res.opengap<0.08)] # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
-    df_res.loc[:, "money_ratio"] = (df_res.zhangting_sell+df_res.fengdan_money)/df_res.lt_mcap
+    df_res = df_res[(df_res.opengap>=-0.1) & (df_res.opengap<0.08)] # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
+    df_res.loc[:, "zhangting_ratio"] = (df_res["zhangting_sell"])/df_res["yest_lt_mcap"]
 
-    columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_force", "zhangting_sell", "zhangting_min", "lt_mcap", "inst_ratio", "volratio", "turnover", "industry"]
+    columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_sell", "zhangting_ratio", "zhangting_min", "lt_mcap", "turnover", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("fengdan_money", ascending=True))
+    print(df_res[columns].sort_values("turnover", ascending=True))
 
 def get_zhangting_begin(today):
     today_str = today.strftime("%Y-%m-%d")
@@ -98,7 +94,6 @@ def get_zhangting_begin(today):
     df_yest.loc[:, "highperc"] = df_yest["high"]/df_yest["yest_close"]-1
     df_yest.loc[:, "openperc"] = df_yest["open"]/df_yest["yest_close"]-1
     df_yest.loc[:, "yest_chg"] = df_yest["chgperc"]
-    #df_res = df_yest[(df_yest.chgperc>6) & (df_yest.chgperc<9.9) & (df_yest.close>df_yest.open)]
     df_res = df_yest[(df_yest.highperc>0.099) & (df_yest.chgperc<9.9) & (df_yest.lt_mcap<300) & (df_yest.close>df_yest.open)]
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
     df_today.loc[:, "opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
@@ -106,7 +101,7 @@ def get_zhangting_begin(today):
     df_tick_today = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_res = df_res.merge(df_today[["opengap"]], how="inner", left_index=True, right_index=True)
     df_res = df_res[df_res.opengap>=0]
-    df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_force", "zhangting_min"]], how="inner", left_index=True, right_index=True)
+    df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_min"]], how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick_today[["kaipan_money"]], how="inner", left_index=True, right_index=True)
     df_res["kaipan"] = df_res["kaipan_money"]/df_res["lt_mcap"]/1e8
     df_hist = filter_by_history(yest_str, df_res.index)
@@ -115,7 +110,7 @@ def get_zhangting_begin(today):
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
     df_concept = get_concept()
     df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
-    columns = ["yest_chg", "opengap", "zhangting_force", "zhangting_sell", "zhangting_min", "kaipan", "lt_mcap", "volratio", "turnover", "industry"]
+    columns = ["yest_chg", "opengap", "kaipan_money", "zhangting_sell", "zhangting_min", "lt_mcap", "turnover", "industry"]
     print("========================== zhangting begin ==========================")
     print(df_res[columns].sort_values("yest_chg", ascending=True))
 
