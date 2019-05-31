@@ -1,14 +1,15 @@
 import sys
 from stock.marketdata.storefactory import get_store
 from config import store_type
-from stock.utils.symbol_util import load_concept, load_industry, get_realtime_by_date
+from stock.utils.symbol_util import load_concept, load_industry, get_realtime_by_date, get_stock_basics
 import numpy as np
 import pandas as pd
 
 def get_stock_increase(date):
     store = get_store(store_type)
     exsymbols = store.get_stock_exsymbols()
-    df = pd.DataFrame(columns=["increase"])
+    df = pd.DataFrame(columns=["increase", "turnover"])
+    df_basics = get_stock_basics()
     for exsymbol in exsymbols:
         try:
             df_stock = store.get(exsymbol)
@@ -19,7 +20,9 @@ def get_stock_increase(date):
             idx = df_stock.index.get_loc(date)
             min10 = np.min(df_stock.iloc[idx-10:idx].close)
             increase = df_stock.iloc[idx].close/min10 - 1
-            df.loc[exsymbol] = increase
+            outstanding = df_basics.loc[exsymbol]["outstanding"]
+            turnover = df_stock.iloc[idx].volume/outstanding/1e6
+            df.loc[exsymbol] = [increase, turnover]
         except Exception as e:
             continue
     return df
@@ -27,25 +30,26 @@ def get_stock_increase(date):
 def get_best_stock(group):
     idx = group["increase"].idxmax()
     max_increase = group.loc[idx]["increase"]
-    dragonhead = group.loc[idx]["exsymbol"]
-    return [dragonhead, max_increase]
+    dragon_increase = group.loc[idx]["exsymbol"]
+    idx = group["turnover"].idxmax()
+    max_turnover = group.loc[idx]["turnover"]
+    dragon_turnover = group.loc[idx]["exsymbol"]
+    return [dragon_increase, max_increase, dragon_turnover, max_turnover]
 
 def get_concept_dragon_head(df, date):
     df_grp = df.groupby("concept")
-    df_res = pd.DataFrame(columns=["dragonhead", "increase"])
+    df_res = pd.DataFrame(columns=["dragon_incr", "increase", "dragon_tnov", "turnover"])
     for concept, group in df_grp:
         exsymbols = group["exsymbol"]
-        [dragonhead, max_increase] = get_best_stock(group)
-        df_res.loc[concept] = [dragonhead, max_increase]
+        df_res.loc[concept] = get_best_stock(group)
     return df_res
 
 def get_industry_dragon_head(df, date):
     df_grp = df.groupby("industry")
-    df_res = pd.DataFrame(columns=["dragonhead", "increase"])
+    df_res = pd.DataFrame(columns=["dragon_incr", "increase", "dragon_tnov", "turnover"])
     for industry, group in df_grp:
         exsymbols = group["exsymbol"]
-        [dragonhead, max_increase] = get_best_stock(group)
-        df_res.loc[industry] = [dragonhead, max_increase]
+        df_res.loc[industry] = get_best_stock(group)
     return df_res
 
 def get_stock_chg(date):
@@ -70,11 +74,11 @@ if __name__ == "__main__":
     df_increase = get_stock_increase(today)
     df_res = df_concept.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
-    df_chg = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
     df_dragon = get_concept_dragon_head(df_res, today)
-    df_chg = df_chg.merge(df_dragon, how="left", left_on="concept", right_index=True)
+    df_group = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    df_group = df_group.merge(df_dragon, how="left", left_on="concept", right_index=True)
     print("======================= concept avg changes ========================")
-    print(df_chg[df_chg.num_stock>5].tail(10))
+    print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("concept")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
     df_hot = df_zt.merge(df_dragon, how="left", left_on="concept", right_index=True)
@@ -88,11 +92,11 @@ if __name__ == "__main__":
     df_industry = load_industry()
     df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
-    df_chg = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
     df_dragon = get_industry_dragon_head(df_res, today)
-    df_chg = df_chg.merge(df_dragon, how="left", left_on="industry", right_index=True)
+    df_group = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    df_group = df_group.merge(df_dragon, how="left", left_on="industry", right_index=True)
     print("======================= industry avg changes ========================")
-    print(df_chg[df_chg.num_stock>5].tail(10))
+    print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("industry")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
     df_hot = df_zt.merge(df_dragon, how="left", left_on="industry", right_index=True)

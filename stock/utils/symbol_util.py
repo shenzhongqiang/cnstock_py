@@ -268,3 +268,9 @@ def load_industry():
     filepath = os.path.join(BASIC_DIR, "industry")
     df = pd.read_csv(filepath, index_col=0)
     return df
+
+def get_stock_basics():
+    df = ts.get_stock_basics()
+    df.loc[:, "exsymbol"] = list(map(lambda x: symbol_to_exsymbol(x), df.index))
+    df = df.set_index("exsymbol")
+    return df
