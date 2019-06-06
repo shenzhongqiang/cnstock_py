@@ -83,7 +83,7 @@ def get_zhangting(today):
 
     columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_sell", "zhangting_ratio", "zhangting_min", "lt_mcap", "turnover", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("turnover", ascending=True))
+    print(df_res[columns].sort_values("fengdan_money", ascending=True))
 
 def get_zhangting_begin(today):
     today_str = today.strftime("%Y-%m-%d")

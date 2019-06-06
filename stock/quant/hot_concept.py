@@ -1,3 +1,4 @@
+import argparse
 import sys
 from stock.marketdata.storefactory import get_store
 from config import store_type
@@ -29,6 +30,8 @@ def get_stock_increase(date):
 
 def get_best_stock(group):
     idx = group["increase"].idxmax()
+    if np.isnan(idx):
+        return [np.nan, np.nan, np.nan, np.nan]
     max_increase = group.loc[idx]["increase"]
     dragon_increase = group.loc[idx]["exsymbol"]
     idx = group["turnover"].idxmax()
@@ -63,8 +66,12 @@ if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('date', nargs='?', help='date')
+    parser.add_argument('--stock', action='store_true', help='list stocks')
+    opt = parser.parse_args()
     today = None
-    if len(sys.argv) == 1:
+    if opt.date is None:
         today = pd.datetime.today().strftime("%Y-%m-%d")
     else:
         today = sys.argv[1]
@@ -74,35 +81,35 @@ if __name__ == "__main__":
     df_increase = get_stock_increase(today)
     df_res = df_concept.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
-    df_dragon = get_concept_dragon_head(df_res, today)
     df_group = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
-    df_group = df_group.merge(df_dragon, how="left", left_on="concept", right_index=True)
     print("======================= concept avg changes ========================")
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("concept")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
-    df_hot = df_zt.merge(df_dragon, how="left", left_on="concept", right_index=True)
-    df_hot = df_hot[df_hot.num_zhangting>=3]
-    df_hot_stocks = df_res[df_res.concept.isin(df_hot.index) & df_res.is_zhangting==True]
-    columns = ["concept", "exsymbol", "chg"]
+    df_hot = df_zt[df_zt.num_zhangting>=3]
     print("======================= concept zhangting num ========================")
-    #print(df_hot_stocks[columns])
     print(df_hot.sort_values("num_zhangting"))
+
+    if opt.stock:
+        print("======================= concept zhangting stocks ========================")
+        df_hot_stocks = df_res[df_res.concept.isin(df_hot.index) & df_res.is_zhangting==True]
+        columns = ["exsymbol", "chg", "increase", "turnover", "concept"]
+        print(df_hot_stocks[columns].sort_values("turnover"))
 
     df_industry = load_industry()
     df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
-    df_dragon = get_industry_dragon_head(df_res, today)
     df_group = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
-    df_group = df_group.merge(df_dragon, how="left", left_on="industry", right_index=True)
     print("======================= industry avg changes ========================")
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("industry")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
-    df_hot = df_zt.merge(df_dragon, how="left", left_on="industry", right_index=True)
-    df_hot = df_hot[df_hot.num_zhangting>=3]
-    df_hot_stocks = df_res[df_res.industry.isin(df_hot.index) & df_res.is_zhangting==True]
-    columns = ["industry", "exsymbol", "chg"]
+    df_hot = df_zt[df_zt.num_zhangting>=3]
     print("======================= industry zhangting num ========================")
-    #print(df_hot_stocks[columns])
     print(df_hot.sort_values("num_zhangting"))
+
+    if opt.stock:
+        print("======================= industry zhangting stocks ========================")
+        df_hot_stocks = df_res[df_res.industry.isin(df_hot.index) & df_res.is_zhangting==True]
+        columns = ["exsymbol", "chg", "increase", "turnover", "industry"]
+        print(df_hot_stocks[columns].sort_values("turnover"))
