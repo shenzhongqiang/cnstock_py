@@ -31,6 +31,6 @@ opengap: realtime tick
 	$(info get opengap)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_opengap.py
 
-hot_concept: realtime
+hot_concept: history
 	$(info get hot concept)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/hot_concept.py

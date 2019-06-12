@@ -68,13 +68,14 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('date', nargs='?', help='date')
-    parser.add_argument('--stock', action='store_true', help='list stocks')
+    parser.add_argument('--stock', dest='stock', action='store_true', help='list stocks')
     opt = parser.parse_args()
+    print(opt)
     today = None
     if opt.date is None:
         today = pd.datetime.today().strftime("%Y-%m-%d")
     else:
-        today = sys.argv[1]
+        today = opt.date
 
     df_stock = get_stock_chg(today)
     df_concept = load_concept()
