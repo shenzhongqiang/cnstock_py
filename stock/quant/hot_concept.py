@@ -70,7 +70,6 @@ if __name__ == "__main__":
     parser.add_argument('date', nargs='?', help='date')
     parser.add_argument('--stock', dest='stock', action='store_true', help='list stocks')
     opt = parser.parse_args()
-    print(opt)
     today = None
     if opt.date is None:
         today = pd.datetime.today().strftime("%Y-%m-%d")
@@ -82,14 +81,17 @@ if __name__ == "__main__":
     df_increase = get_stock_increase(today)
     df_res = df_concept.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
-    df_group = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    df_group = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"})
+    df_sample = df_res.groupby("concept")["exsymbol"].agg(["first"]).rename(columns={"first": "sample"})
+    df_group = df_group.merge(df_sample, how="left", left_on="concept", right_on="concept").sort_values("avg_chg")
     print("======================= concept avg changes ========================")
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("concept")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
     df_hot = df_zt[df_zt.num_zhangting>=3]
+    df_hot = df_hot.merge(df_sample, how="left", left_on="concept", right_on="concept").sort_values("num_zhangting")
     print("======================= concept zhangting num ========================")
-    print(df_hot.sort_values("num_zhangting"))
+    print(df_hot)
 
     if opt.stock:
         print("======================= concept zhangting stocks ========================")
@@ -101,13 +103,16 @@ if __name__ == "__main__":
     df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
     df_group = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    df_sample = df_res.groupby("industry")["exsymbol"].agg(["first"]).rename(columns={"first": "sample"})
+    df_group = df_group.merge(df_sample, how="left", left_on="industry", right_on="industry").sort_values("avg_chg")
     print("======================= industry avg changes ========================")
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("industry")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
     df_hot = df_zt[df_zt.num_zhangting>=3]
+    df_hot = df_hot.merge(df_sample, how="left", left_on="industry", right_on="industry").sort_values("num_zhangting")
     print("======================= industry zhangting num ========================")
-    print(df_hot.sort_values("num_zhangting"))
+    print(df_hot)
 
     if opt.stock:
         print("======================= industry zhangting stocks ========================")
