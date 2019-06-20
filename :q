@@ -23,6 +23,7 @@ def init():
 async def download_realtime(exsymbol, session):
     url = "http://qt.gtimg.cn/q=" + exsymbol
     if exsymbol == "":
+        print("emppyt")
         return
     filepath = os.path.join(REAL_DIR['stock'], exsymbol)
     async with session.get(url) as response:
