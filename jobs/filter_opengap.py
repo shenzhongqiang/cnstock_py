@@ -83,7 +83,7 @@ def get_zhangting(today):
 
     columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_sell", "zhangting_ratio", "zhangting_min", "lt_mcap", "turnover", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("fengdan_money", ascending=True))
+    print(df_res[columns].sort_values("zhangting_sell", ascending=True))
 
 def get_zhangting_begin(today):
     today_str = today.strftime("%Y-%m-%d")
@@ -114,14 +114,15 @@ def get_zhangting_begin(today):
     print("========================== zhangting begin ==========================")
     print(df_res[columns].sort_values("yest_chg", ascending=True))
 
-def get_opengap(today):
+def get_turnover(today):
     today_str = today.strftime("%Y-%m-%d")
-
-    df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
-    df_today = df_today[(df_today.b1_v>0) & (df_today.a1_v>0) & (df_today.b1_p > 0) & (df_today.a1_p > 0)].copy()
-    df_today.loc[:, "ba_diff"] = df_today["b1_p"]/df_today["a1_p"]-1
-    df_res = df_today[(df_today.chgperc < -4) & (df_today.ba_diff < -0.04)]
-    print("========================== ==========================")
+    yest = get_last_trading_date(today)
+    yest_str = yest.strftime("%Y-%m-%d")
+    df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
+    df_yest.loc[:, "turnover"] = df_yest["volume"]/(df_yest["lt_mcap"]/df_yest["close"]*1e6)
+    columns = ["chgperc", "turnover", "mcap", "lt_mcap"]
+    df_res = df_yest[df_yest.turnover>0.3][columns].sort_values("turnover")
+    print("========================== high turnover ==========================")
     print(df_res)
 
 if __name__ == "__main__":
@@ -137,3 +138,4 @@ if __name__ == "__main__":
 
     get_zhangting_begin(today)
     get_zhangting(today)
+    get_turnover(today)

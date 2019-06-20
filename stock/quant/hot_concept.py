@@ -19,7 +19,7 @@ def get_stock_increase(date):
             if date not in df_stock.index:
                 continue
             idx = df_stock.index.get_loc(date)
-            min10 = np.min(df_stock.iloc[idx-10:idx].close)
+            min10 = np.min(df_stock.iloc[idx-1:idx].close)
             increase = df_stock.iloc[idx].close/min10 - 1
             outstanding = df_basics.loc[exsymbol]["outstanding"]
             turnover = df_stock.iloc[idx].volume/outstanding/1e6
@@ -81,15 +81,15 @@ if __name__ == "__main__":
     df_increase = get_stock_increase(today)
     df_res = df_concept.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
-    df_group = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"})
-    df_sample = df_res.groupby("concept")["exsymbol"].agg(["first"]).rename(columns={"first": "sample"})
-    df_group = df_group.merge(df_sample, how="left", left_on="concept", right_on="concept").sort_values("avg_chg")
+    df_dragon = get_concept_dragon_head(df_res, today)
+    df_group = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    df_group = df_group.merge(df_dragon, how="left", left_on="concept", right_index=True)
     print("======================= concept avg changes ========================")
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("concept")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
     df_hot = df_zt[df_zt.num_zhangting>=3]
-    df_hot = df_hot.merge(df_sample, how="left", left_on="concept", right_on="concept").sort_values("num_zhangting")
+    df_hot = df_hot.merge(df_dragon, how="left", left_on="concept", right_index=True).sort_values("num_zhangting")
     print("======================= concept zhangting num ========================")
     print(df_hot)
 
@@ -102,15 +102,15 @@ if __name__ == "__main__":
     df_industry = load_industry()
     df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
+    df_dragon = get_industry_dragon_head(df_res, today)
     df_group = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
-    df_sample = df_res.groupby("industry")["exsymbol"].agg(["first"]).rename(columns={"first": "sample"})
-    df_group = df_group.merge(df_sample, how="left", left_on="industry", right_on="industry").sort_values("avg_chg")
+    df_group = df_group.merge(df_dragon, how="left", left_on="industry", right_index=True)
     print("======================= industry avg changes ========================")
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("industry")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
     df_hot = df_zt[df_zt.num_zhangting>=3]
-    df_hot = df_hot.merge(df_sample, how="left", left_on="industry", right_on="industry").sort_values("num_zhangting")
+    df_hot = df_hot.merge(df_dragon, how="left", left_on="industry", right_index=True).sort_values("num_zhangting")
     print("======================= industry zhangting num ========================")
     print(df_hot)
 

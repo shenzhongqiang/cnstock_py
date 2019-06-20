@@ -20,10 +20,8 @@ def print_stocks(date):
         idx = df.index.get_loc(date)
         min10 = np.min(df.iloc[idx-20:idx].close)
         increase = df.iloc[idx].close/min10 - 1
-        tmr_chg = 0
-        if idx+1 < len(df):
-            tmr_chg = df.iloc[idx+1].close / df.iloc[idx].close - 1
-        df_res.loc[exsymbol] = [tmr_chg, increase]
+        chg = df.iloc[idx].close / df.iloc[idx-1].close - 1
+        df_res.loc[exsymbol] = [chg, increase]
 
     df_res = df_res.dropna(how="any")
     pd.set_option('display.max_rows', None)
