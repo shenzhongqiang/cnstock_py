@@ -88,7 +88,7 @@ if __name__ == "__main__":
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("concept")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
-    df_hot = df_zt[df_zt.num_zhangting>=3]
+    df_hot = df_zt[df_zt.num_zhangting>=1]
     df_hot = df_hot.merge(df_dragon, how="left", left_on="concept", right_index=True).sort_values("num_zhangting")
     print("======================= concept zhangting num ========================")
     print(df_hot)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     print(df_group[df_group.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("industry")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
-    df_hot = df_zt[df_zt.num_zhangting>=3]
+    df_hot = df_zt[df_zt.num_zhangting>=1]
     df_hot = df_hot.merge(df_dragon, how="left", left_on="industry", right_index=True).sort_values("num_zhangting")
     print("======================= industry zhangting num ========================")
     print(df_hot)
