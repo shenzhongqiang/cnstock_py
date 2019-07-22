@@ -66,6 +66,10 @@ def download_symbols():
     df = ts.get_stock_basics()
     df.to_csv(SYM["all"])
     index_df = ts.get_index()
+    code0 = index_df["code"].tolist()[0]
+    matched = re.search(r'^\d+$', code0)
+    if not matched:
+        index_df["code"] = list(map(lambda x: "{:0>6}".format(x), index_df.index))
     index_df.to_csv(SYM["id"])
 
 def is_symbol_cy(symbol):

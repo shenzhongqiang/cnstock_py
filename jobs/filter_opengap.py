@@ -114,6 +114,23 @@ def get_zhangting_begin(today):
     print("========================== zhangting begin ==========================")
     print(df_res[columns].sort_values("yest_chg", ascending=True))
 
+def get_yizi(today):
+    today_str = today.strftime("%Y-%m-%d")
+    yest = get_last_trading_date(today)
+    yest_str = yest.strftime("%Y-%m-%d")
+    df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
+    df_yest.loc[:, "yest_chg"] = df_yest["chgperc"]
+    df_yest.loc[:, "lowperc"] = df_yest["low"]/df_yest["yest_close"]-1
+    df_res = df_yest[df_yest.lowperc>0.099]
+    df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
+    df_today.loc[:, "opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
+    df_res = df_res.merge(df_today[["opengap"]], how="inner", left_index=True, right_index=True)
+    df_res.loc[:, "fengdan"] = df_res["b1_v"] * df_res["b1_p"] *100 / df_res["lt_mcap"] / 1e8
+    df_res.loc[:, "fengdan_money"] = df_res["b1_v"]*df_res["b1_p"]/1e6
+    columns = ["opengap", "fengdan", "fengdan_money"]
+    print("========================== yizi zhangting ==========================")
+    print(df_res[columns])
+
 def get_turnover(today):
     today_str = today.strftime("%Y-%m-%d")
     yest = get_last_trading_date(today)
@@ -139,3 +156,4 @@ if __name__ == "__main__":
     get_zhangting_begin(today)
     get_zhangting(today)
     get_turnover(today)
+    get_yizi(today)

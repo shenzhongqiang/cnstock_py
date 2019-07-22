@@ -33,9 +33,10 @@ if __name__ == "__main__":
     df_yest.loc[:, "time"] = pd.to_datetime(yest_str + ' ' + df_yest["time"], format="%Y-%m-%d %H:%M:%S")
     ratio = df_yest[df_yest.time<= yest_str + ' ' + time_str].volume.sum() / \
         df_yest.volume.sum()
-    print(ratio)
     df_today = ts.get_tick_data(symbol, date=today_str, src='tt')
     df_today.loc[:, "time"] = pd.to_datetime(today_str + ' ' + df_today["time"], format="%Y-%m-%d %H:%M:%S")
+    volume = df_today[df_today.time<=today_str+' '+time_str].volume.sum()
+    print(volume)
     pred_volume = df_today[df_today.time<=today_str + ' ' + time_str].volume.sum() / ratio
     real_volume = df_today.volume.sum()
     yest_volume = df_yest.volume.sum()
