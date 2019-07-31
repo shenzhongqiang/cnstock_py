@@ -64,6 +64,7 @@ def get_st(exsymbols):
 
 def download_symbols():
     df = ts.get_stock_basics()
+    df = df.loc[~df.index.str.contains('^688'), :]
     df.to_csv(SYM["all"])
     index_df = ts.get_index()
     code0 = index_df["code"].tolist()[0]

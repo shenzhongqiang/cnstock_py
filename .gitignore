@@ -46,7 +46,6 @@ data/history
 data/symbol
 data/realtime/stock
 data/finance
-data/basics
 data/tick/stock
 cnstock.db
 middleout
