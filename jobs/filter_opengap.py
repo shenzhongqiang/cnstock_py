@@ -63,7 +63,7 @@ def get_zhangting(today):
     df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest_zt = df_yest[(df_yest.chgperc>9.9) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
+    df_yest_zt = df_yest[(df_yest.chgperc>9.9) & (df_yest.lt_mcap>0) & (df_yest.lt_mcap<100) & (df_yest.volume>0)].copy()
     df_yest_zt.loc[:, "turnover"] = df_yest_zt["volume"]/(df_yest_zt["lt_mcap"]/df_yest_zt["close"]*1e6)
     df_yest_zt.loc[:, "fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df_yest_zt["lt_mcap"] / 1e8
     df_yest_zt.loc[:, "fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
@@ -135,10 +135,20 @@ def get_turnover(today):
     today_str = today.strftime("%Y-%m-%d")
     yest = get_last_trading_date(today)
     yest_str = yest.strftime("%Y-%m-%d")
+    yest2 = get_last_trading_date(yest)
+    yest_str2 = yest2.strftime("%Y-%m-%d")
+    df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
+    df_today.loc[:, "opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
+    df_today.loc[:, "todaychg"] = df_today["chgperc"]
+    df_today = df_today[(df_today.opengap>0) & (df_today.lt_mcap>0) & (df_today.lt_mcap<100)].copy()
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest.loc[:, "turnover"] = df_yest["volume"]/(df_yest["lt_mcap"]/df_yest["close"]*1e6)
-    columns = ["chgperc", "turnover", "mcap", "lt_mcap"]
-    df_res = df_yest[df_yest.turnover>0.3][columns].sort_values("turnover")
+    df_yest = df_yest[(df_yest.chgperc<9.9) & (df_yest.lt_mcap>0) & (df_yest.lt_mcap<100) & (df_yest.volume>0)].copy()
+    df_yest2 = stock.utils.symbol_util.get_realtime_by_date(yest_str2)
+    df_yest2_zt = df_yest2[(df_yest2.chgperc>9.9) & (df_yest2.lt_mcap>0) & (df_yest2.lt_mcap<100) & (df_yest2.volume>0)].copy()
+    df_res = df_yest2_zt.merge(df_yest, how="inner", left_index=True, right_index=True)
+    df_res = df_res.merge(df_today, how="inner", left_index=True, right_index=True)
+    columns = ["todaychg", "mcap", "lt_mcap"]
+    df_res = df_res.sort_values("todaychg")
     print("========================== high turnover ==========================")
     print(df_res)
 
@@ -153,7 +163,5 @@ if __name__ == "__main__":
     else:
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
-    get_zhangting_begin(today)
     get_zhangting(today)
     get_turnover(today)
-    get_yizi(today)

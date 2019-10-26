@@ -56,13 +56,16 @@ def get_zhangting(today):
     df_zt.loc[:, "turnover"] = df_zt["volume"]/(df_zt["lt_mcap"]/df_zt["close"]*1e6)
     df_zt.loc[:, "fengdan"] = df_zt["b1_v"] * df_zt["b1_p"] *100 / df_zt["lt_mcap"] / 1e8
     df_zt.loc[:, "fengdan_money"] = df_zt["b1_v"]*df_zt["b1_p"]/1e6
+
+    df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
+    df_res = df_zt.merge(df_tick[["zhangting_sell", "zhangting_min"]], how="inner", left_index=True, right_index=True)
+
     df_industry = get_industry()
     df_concept = get_concept()
-    df_res = df_zt.merge(df_industry, how="left", left_index=True, right_index=True)
-    df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
-    columns = ["fengdan", "fengdan_money", "lt_mcap", "turnover", "industry"]
+    df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
+    columns = ["fengdan", "fengdan_money", "lt_mcap", "turnover", "zhangting_sell", "zhangting_min", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("fengdan_money", ascending=True))
+    print(df_res[columns].sort_values("zhangting_sell", ascending=True))
 
 
 def get_turnover(today):

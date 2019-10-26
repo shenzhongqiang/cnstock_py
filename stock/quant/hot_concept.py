@@ -62,6 +62,36 @@ def get_stock_chg(date):
     df.loc[:, "is_zhangting"] = (df["zt_price"]-df["close"])<1e-8
     return df
 
+def get_lianban(date):
+    df = get_realtime_by_date(date)
+    df.loc[:, "zt_price"] = df.yest_close.apply(lambda x: round(x*1.1+1e-8, 2))
+    df.loc[:, "is_zhangting"] = (df["zt_price"]-df["close"])<1e-8
+    df_zt = df[df.is_zhangting==True]
+
+    store = get_store(store_type)
+    for exsymbol in df_zt.index.tolist():
+        try:
+            df_stock = store.get(exsymbol)
+            idx = df_stock.index.get_loc(date)
+            df_stock = df_stock.iloc[:idx+1]
+            df_stock.loc[:, "zt_price"] = df_stock.close.shift(1).apply(lambda x: round(x*1.1+1e-8, 2))
+            df_stock.loc[:, "is_zhangting"] = np.absolute(df_stock["zt_price"]-df_stock["close"])<1e-8
+            df_nozt = df_stock[df_stock.is_zhangting==False]
+            lianban = 0
+            if len(df_nozt) == 0:
+                lianban = len(df_stock)
+            else:
+                idx_start = df_stock.index.get_loc(df_nozt.index[-1])
+                idx_end = df_stock.index.get_loc(df_stock.index[-1])
+                lianban = idx_end - idx_start
+            df_zt.loc[exsymbol, "lianban"] = lianban
+            df_zt.loc[exsymbol, "xingu"] = lianban == len(df_stock)-1
+        except:
+            continue
+
+    columns = ["lianban", "xingu"]
+    return df_zt[df_zt.xingu==False][columns].sort_values("lianban")
+
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -119,3 +149,7 @@ if __name__ == "__main__":
         df_hot_stocks = df_res[df_res.industry.isin(df_hot.index) & df_res.is_zhangting==True]
         columns = ["exsymbol", "chg", "increase", "turnover", "industry"]
         print(df_hot_stocks[columns].sort_values("turnover"))
+
+    df_lianban = get_lianban(today)
+    print("======================= lianban ========================")
+    print(df_lianban)
