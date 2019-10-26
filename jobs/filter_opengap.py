@@ -148,7 +148,7 @@ def get_turnover(today):
     df_res = df_yest2_zt.merge(df_yest, how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_today, how="inner", left_index=True, right_index=True)
     columns = ["todaychg", "mcap", "lt_mcap"]
-    df_res = df_res.sort_values("todaychg")
+    df_res = df_res[columns].sort_values("todaychg")
     print("========================== high turnover ==========================")
     print(df_res)
 
