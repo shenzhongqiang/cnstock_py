@@ -68,6 +68,7 @@ if __name__ == "__main__":
 
     # load realtime data
     date_str = stock.utils.symbol_util.get_realtime_date()
+    print(date_str)
     df_realtime = stock.utils.symbol_util.get_realtime_by_date(date_str)
 
     results = []
@@ -75,6 +76,6 @@ if __name__ == "__main__":
         res = pool.apply_async(download_stock_history, (symbol, df_realtime, date_str))
         results.append(res)
 
-    for i in trange(len(results)):
-        res = results[i]
-        res.wait()
+    pool.close()
+    pool.join()
+
