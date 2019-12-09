@@ -13,12 +13,8 @@ headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 
 def get_cookie(concept_id):
     url = "http://q.10jqka.com.cn/gn/detail/code/{}".format(concept_id)
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--headless')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36"')
-    mydriver = webdriver.Chrome(chrome_options=chrome_options, executable_path='/home/shenzhongqiang/chromedriver')
+    webdriver.DesiredCapabilities.PHANTOMJS['phantomjs.page.settings.userAgent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
+    mydriver = webdriver.PhantomJS()
     mydriver.set_window_size(1120, 550)
     mydriver.get(url)
     cookie = mydriver.get_cookies()[0]
