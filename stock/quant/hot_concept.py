@@ -127,7 +127,7 @@ if __name__ == "__main__":
         print("======================= concept zhangting stocks ========================")
         df_hot_stocks = df_res[df_res.concept.isin(df_hot.index) & df_res.is_zhangting==True]
         columns = ["exsymbol", "chg", "increase", "turnover", "concept"]
-        print(df_hot_stocks[columns].sort_values("turnover"))
+        print(df_hot_stocks[columns].sort_values("concept"))
 
     df_industry = load_industry()
     df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
@@ -148,8 +148,9 @@ if __name__ == "__main__":
         print("======================= industry zhangting stocks ========================")
         df_hot_stocks = df_res[df_res.industry.isin(df_hot.index) & df_res.is_zhangting==True]
         columns = ["exsymbol", "chg", "increase", "turnover", "industry"]
-        print(df_hot_stocks[columns].sort_values("turnover"))
+        print(df_hot_stocks[columns].sort_values("industry"))
 
     df_lianban = get_lianban(today)
     print("======================= lianban ========================")
     print(df_lianban)
+    print("zt_num:", len(df_lianban))

@@ -209,10 +209,12 @@ def get_kaipan(exsymbol, date):
         'zhangting_min': 0,
         'zhangting_force': 0,
         'zhangting_sell': 0,
-        'inst_sell': 0}, name=None)
+        'inst_sell': 0,
+        'cost': 0}, name=None)
     if len(df) == 0:
         return (exsymbol, s_null)
 
+    cost = np.sum(df.price * df.volume) / np.sum(df.volume)
     s = df.iloc[0]
     open_dt = datetime.datetime.strptime(date + " 09:30:00", "%Y-%m-%d %H:%M:%S")
     open_price = 0
@@ -237,7 +239,8 @@ def get_kaipan(exsymbol, date):
             'zhangting_min': 0,
             'zhangting_force': 0,
             'zhangting_sell': 0,
-            'inst_sell': 0}, name=s.time)
+            'inst_sell': 0,
+            'cost': cost}, name=s.time)
         return (exsymbol, s_kaipan)
 
     df.loc[df.time>=date + " 13:00:00", "time"] = df.loc[df.time>=date + " 13:00:00"].time - datetime.timedelta(minutes=90)
@@ -253,7 +256,8 @@ def get_kaipan(exsymbol, date):
         'zhangting_min': zhangting_min,
         'zhangting_force': zhangting_force,
         'zhangting_sell': zhangting_sell,
-        'inst_sell': inst_sell}, name=s.time)
+        'inst_sell': inst_sell,
+        'cost': cost}, name=s.time)
     return (exsymbol, s_kaipan)
 
 def get_tick_by_date(date_str):

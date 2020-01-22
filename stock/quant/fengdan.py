@@ -15,7 +15,7 @@ exsymbol = sys.argv[1]
 store = get_store(store_type)
 df = store.get(exsymbol)
 df["chg"] = df.close / df.close.shift(1) - 1
-print("date\t\tchg\tfengdan\tfengdan_money\tkaipan_money\tturnover")
+print("date\t\tchg\tfengdan\tfengdan_money\tkaipan_money\tzhangting_sell")
 for date in df.index[-25:]:
     date_str = date.strftime("%Y-%m-%d")
     fengdan = 0
@@ -23,9 +23,12 @@ for date in df.index[-25:]:
     turnover = 0
     try:
         df_rt = get_realtime_by_date(date_str)
+        df_tick = get_tick_by_date(date_str)
         row_rt = df_rt.loc[exsymbol]
+        row_tick = df_tick.loc[exsymbol]
         fengdan = row_rt["b1_v"] * row_rt["b1_p"]*100/row_rt["lt_mcap"]/1e8
         fengdan_money = row_rt["b1_v"] * row_rt["b1_p"]*100/1e8
+        zhangting_sell = row_tick["zhangting_sell"]
         turnover = row_rt["volume"]/(row_rt["lt_mcap"]/row_rt["close"]*1e6)
     except Exception:
         pass
@@ -35,4 +38,4 @@ for date in df.index[-25:]:
     row_tick = df_tick.loc[exsymbol]
     kaipan_money = row_tick["kaipan_money"]
     symbol = exsymbol[2:]
-    print("{}\t{:.2f}\t{:.5f}\t{:.3f}\t{:.0f}\t{:.3f}".format(date_str, chg, fengdan, fengdan_money, kaipan_money, turnover))
+    print("{}\t{:.2f}\t{:.5f}\t{:.3f}\t{:.0f}\t{:.3f}".format(date_str, chg, fengdan, fengdan_money, kaipan_money, zhangting_sell))

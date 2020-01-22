@@ -5,7 +5,6 @@ import datetime
 import numpy as np
 import pandas as pd
 from pandas.tseries.offsets import BDay
-import matplotlib.pyplot as plt
 import stock.utils.symbol_util
 from stock.marketdata.storefactory import get_store
 from stock.globalvar import *
@@ -83,7 +82,7 @@ def get_zhangting(today):
 
     columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_sell", "zhangting_ratio", "zhangting_min", "lt_mcap", "turnover", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("zhangting_sell", ascending=True))
+    print(df_res[columns].sort_values("kaipan_money", ascending=True))
 
 def get_zhangting_begin(today):
     today_str = today.strftime("%Y-%m-%d")
@@ -164,4 +163,3 @@ if __name__ == "__main__":
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
     get_zhangting(today)
-    get_turnover(today)

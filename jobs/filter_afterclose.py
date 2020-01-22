@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import stock.utils.symbol_util
 from stock.marketdata.storefactory import get_store
 from config import store_type
@@ -47,25 +46,56 @@ def filter_by_history(date, exsymbols):
         df.loc[exsymbol] = [increase60, increase5, future]
     return df
 
+def get_lianban(exsymbol, date):
+    store = get_store(store_type)
+    lianban = -1
+    xingu = None
+    try:
+        df_stock = store.get(exsymbol)
+        idx = df_stock.index.get_loc(date)
+        df_stock = df_stock.iloc[:idx+1]
+        df_stock.loc[:, "zt_price"] = df_stock.close.shift(1).apply(lambda x: round(x*1.1+1e-8, 2))
+        df_stock.loc[:, "is_zhangting"] = np.absolute(df_stock["zt_price"]-df_stock["close"])<1e-8
+        df_nozt = df_stock[df_stock.is_zhangting==False]
+        lianban = 0
+        if len(df_nozt) == 0:
+            lianban = len(df_stock)
+        else:
+            idx_start = df_stock.index.get_loc(df_nozt.index[-1])
+            idx_end = df_stock.index.get_loc(df_stock.index[-1])
+            lianban = idx_end - idx_start
+        xingu = lianban == len(df_stock)-1
+    except Exception as e:
+        print(str(e))
+        pass
+
+    return (lianban, xingu)
+
 def get_zhangting(today):
     today_str = today.strftime("%Y-%m-%d")
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
     df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1, 2)
-    df_today["diff2zt"] = df_today["zt_price"] - df_today["close"]
-    df_zt = df_today[(df_today.diff2zt<1e-3) & (df_today.lt_mcap>0) & (df_today.volume>0)].copy()
+    df_today.loc[:, "is_zhangting"] = (df_today["zt_price"]-df_today["close"])<1e-8
+    df_zt = df_today[(df_today.is_zhangting==True) & (df_today.lt_mcap>0) & (df_today.volume>0)].copy()
     df_zt.loc[:, "turnover"] = df_zt["volume"]/(df_zt["lt_mcap"]/df_zt["close"]*1e6)
     df_zt.loc[:, "fengdan"] = df_zt["b1_v"] * df_zt["b1_p"] *100 / df_zt["lt_mcap"] / 1e8
     df_zt.loc[:, "fengdan_money"] = df_zt["b1_v"]*df_zt["b1_p"]/1e6
+    for exsymbol in df_zt.index.tolist():
+        (lianban, xingu) = get_lianban(exsymbol, today_str)
+        df_zt.loc[exsymbol, "lianban"] = lianban
+        df_zt.loc[exsymbol, "xingu"] = xingu
 
+    df_zt = df_zt[df_zt.xingu==False]
     df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
-    df_res = df_zt.merge(df_tick[["zhangting_sell", "zhangting_min"]], how="inner", left_index=True, right_index=True)
+    df_res = df_zt.merge(df_tick[["zhangting_sell", "zhangting_min", "cost"]], how="inner", left_index=True, right_index=True)
 
+    df_res["costoverflow"] = df_res["cost"] / df_res["close"]
     df_industry = get_industry()
     df_concept = get_concept()
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
-    columns = ["fengdan", "fengdan_money", "lt_mcap", "turnover", "zhangting_sell", "zhangting_min", "industry"]
+    columns = ["fengdan", "fengdan_money", "lt_mcap", "zhangting_sell", "lianban", "industry", "costoverflow"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("zhangting_sell", ascending=True))
+    print(df_res[columns].sort_values(["lianban", "costoverflow"], ascending=True))
 
 
 def get_turnover(today):
@@ -87,4 +117,3 @@ if __name__ == "__main__":
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
     get_zhangting(today)
-    get_turnover(today)

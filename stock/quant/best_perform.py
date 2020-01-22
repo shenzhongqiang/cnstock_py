@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from stock.utils.symbol_util import get_stock_symbols, get_archived_trading_dates
 from stock.marketdata.storefactory import get_store
-import matplotlib.pyplot as plt
 from config import store_type
 
 pd.set_option('display.max_rows', None)
@@ -29,8 +28,7 @@ for exsymbol in exsymbols:
     profit = df.iloc[-1].close / close_min - 1
     df_date.loc[len(df_date)] = [exsymbol, profit]
 df_date.dropna(how="any", inplace=True)
-df_top = df_date.sort_values(["profit"]).tail(100)
+df_top = df_date.sort_values(["profit"]).tail(10)
 df_bottom = df_date.sort_values(["profit"]).head(100)
 
 print(df_top)
-print(df_bottom)
