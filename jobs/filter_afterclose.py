@@ -95,7 +95,7 @@ def get_zhangting(today):
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
     columns = ["fengdan", "fengdan_money", "lt_mcap", "zhangting_sell", "lianban", "industry", "costoverflow"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values(["lianban", "costoverflow"], ascending=True))
+    print(df_res[columns].sort_values(["fengdan_money"], ascending=True))
 
 
 def get_turnover(today):

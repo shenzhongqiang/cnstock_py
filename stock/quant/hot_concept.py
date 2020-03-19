@@ -125,9 +125,10 @@ if __name__ == "__main__":
 
     if opt.stock:
         print("======================= concept zhangting stocks ========================")
-        df_hot_stocks = df_res[df_res.concept.isin(df_hot.index) & df_res.is_zhangting==True]
+        df_hot_stocks = df_res[df_res.is_zhangting==True].merge(df_hot[["num_zhangting"]], left_on="concept", right_index=True)
+        df_hot_stocks = df_hot_stocks.sort_values(["num_zhangting", "concept"])
         columns = ["exsymbol", "chg", "increase", "turnover", "concept"]
-        print(df_hot_stocks[columns].sort_values("concept"))
+        print(df_hot_stocks[columns])
 
     df_industry = load_industry()
     df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
@@ -146,9 +147,10 @@ if __name__ == "__main__":
 
     if opt.stock:
         print("======================= industry zhangting stocks ========================")
-        df_hot_stocks = df_res[df_res.industry.isin(df_hot.index) & df_res.is_zhangting==True]
+        df_hot_stocks = df_res[df_res.is_zhangting==True].merge(df_hot[["num_zhangting"]], left_on="industry", right_index=True)
+        df_hot_stocks = df_hot_stocks.sort_values(["num_zhangting", "industry"])
         columns = ["exsymbol", "chg", "increase", "turnover", "industry"]
-        print(df_hot_stocks[columns].sort_values("industry"))
+        print(df_hot_stocks[columns])
 
     df_lianban = get_lianban(today)
     print("======================= lianban ========================")
