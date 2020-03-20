@@ -58,11 +58,14 @@ def get_zhangting(today):
     yest_str = yest.strftime("%Y-%m-%d")
 
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
+
     df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest_zt = df_yest[(df_yest.chgperc>9.9) & (df_yest.lt_mcap>0) & (df_yest.lt_mcap<100) & (df_yest.volume>0)].copy()
+    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1, 2)
+    df_yest.loc[:, "is_zhangting"] = (df_yest["zt_price"]-df_yest["close"])<1e-8
+    df_yest_zt = df_yest[(df_yest.is_zhangting==True) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
     df_yest_zt.loc[:, "turnover"] = df_yest_zt["volume"]/(df_yest_zt["lt_mcap"]/df_yest_zt["close"]*1e6)
     df_yest_zt.loc[:, "fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df_yest_zt["lt_mcap"] / 1e8
     df_yest_zt.loc[:, "fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
@@ -78,9 +81,8 @@ def get_zhangting(today):
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
     df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
     df_res = df_res # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
-    df_res.loc[:, "zhangting_ratio"] = (df_res["zhangting_sell"])/df_res["yest_lt_mcap"]
 
-    columns = ["opengap", "fengdan", "fengdan_money", "kaipan_money", "zhangting_sell", "zhangting_ratio", "zhangting_min", "lt_mcap", "turnover", "industry"]
+    columns = ["opengap", "fengdan_money", "kaipan_money", "lt_mcap", "industry"]
     print("========================== zhangting ==========================")
     print(df_res[columns].sort_values("kaipan_money", ascending=True))
 

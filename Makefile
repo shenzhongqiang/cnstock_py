@@ -31,6 +31,10 @@ opengap: realtime tick
 	$(info get opengap)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_opengap.py
 
+afterclose: realtime tick
+	$(info get afterclose)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_afterclose.py
+
 hot_concept: history
 	$(info get hot concept)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/hot_concept.py

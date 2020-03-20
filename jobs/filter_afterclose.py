@@ -93,7 +93,7 @@ def get_zhangting(today):
     df_industry = get_industry()
     df_concept = get_concept()
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
-    columns = ["fengdan", "fengdan_money", "lt_mcap", "zhangting_sell", "lianban", "industry", "costoverflow"]
+    columns = ["fengdan", "fengdan_money", "lt_mcap", "zhangting_sell", "lianban", "industry"]
     print("========================== zhangting ==========================")
     print(df_res[columns].sort_values(["fengdan_money"], ascending=True))
 

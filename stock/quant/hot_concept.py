@@ -112,47 +112,74 @@ if __name__ == "__main__":
     df_res = df_concept.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
     df_dragon = get_concept_dragon_head(df_res, today)
-    df_group = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
-    df_group = df_group.merge(df_dragon, how="left", left_on="concept", right_index=True)
+    df_concept_grp = df_res.groupby("concept")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    df_concept_grp = df_concept_grp.merge(df_dragon, how="left", left_on="concept", right_index=True)
     print("======================= concept avg changes ========================")
-    print(df_group[df_group.num_stock>5].tail(10))
+    print(df_concept_grp[df_concept_grp.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("concept")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
-    df_hot = df_zt[df_zt.num_zhangting>=1]
-    df_hot = df_hot.merge(df_dragon, how="left", left_on="concept", right_index=True).sort_values("num_zhangting")
+    df_concept_hot = df_zt[df_zt.num_zhangting>=1]
+    df_concept_hot = df_concept_hot.merge(df_dragon, how="left", left_on="concept", right_index=True).sort_values("num_zhangting")
     print("======================= concept zhangting num ========================")
-    print(df_hot)
+    print(df_concept_hot)
 
+    df_concept_hot_stocks = None
     if opt.stock:
         print("======================= concept zhangting stocks ========================")
-        df_hot_stocks = df_res[df_res.is_zhangting==True].merge(df_hot[["num_zhangting"]], left_on="concept", right_index=True)
-        df_hot_stocks = df_hot_stocks.sort_values(["num_zhangting", "concept"])
+        df_concept_hot_stocks = df_res[df_res.is_zhangting==True].merge(df_concept_hot[["num_zhangting"]], left_on="concept", right_index=True)
+        df_concept_hot_stocks = df_concept_hot_stocks.sort_values(["num_zhangting", "concept"])
         columns = ["exsymbol", "chg", "increase", "turnover", "concept"]
-        print(df_hot_stocks[columns])
+        df_concept_hot_stocks = df_concept_hot_stocks[columns]
+        print(df_concept_hot_stocks)
 
     df_industry = load_industry()
     df_res = df_industry.merge(df_stock, how="inner", left_on="exsymbol", right_index=True)
     df_res = df_res.merge(df_increase, how="inner", left_on="exsymbol", right_index=True)
     df_dragon = get_industry_dragon_head(df_res, today)
-    df_group = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
-    df_group = df_group.merge(df_dragon, how="left", left_on="industry", right_index=True)
+    df_industry_grp = df_res.groupby("industry")["chg"].agg(["mean", "count"]).rename(columns={"mean": "avg_chg", "count": "num_stock"}).sort_values("avg_chg")
+    df_industry_grp = df_industry_grp.merge(df_dragon, how="left", left_on="industry", right_index=True)
     print("======================= industry avg changes ========================")
-    print(df_group[df_group.num_stock>5].tail(10))
+    print(df_industry_grp[df_industry_grp.num_stock>5].tail(10))
 
     df_zt = df_res.groupby("industry")["is_zhangting"].agg(["sum"]).rename(columns={"sum": "num_zhangting"})
-    df_hot = df_zt[df_zt.num_zhangting>=1]
-    df_hot = df_hot.merge(df_dragon, how="left", left_on="industry", right_index=True).sort_values("num_zhangting")
+    df_industry_hot = df_zt[df_zt.num_zhangting>=1]
+    df_industry_hot = df_industry_hot.merge(df_dragon, how="left", left_on="industry", right_index=True).sort_values("num_zhangting")
     print("======================= industry zhangting num ========================")
-    print(df_hot)
+    print(df_industry_hot)
 
+    df_industry_hot_stocks = None
     if opt.stock:
         print("======================= industry zhangting stocks ========================")
-        df_hot_stocks = df_res[df_res.is_zhangting==True].merge(df_hot[["num_zhangting"]], left_on="industry", right_index=True)
-        df_hot_stocks = df_hot_stocks.sort_values(["num_zhangting", "industry"])
+        df_industry_hot_stocks = df_res[df_res.is_zhangting==True].merge(df_industry_hot[["num_zhangting"]], left_on="industry", right_index=True)
+        df_industry_hot_stocks = df_industry_hot_stocks.sort_values(["num_zhangting", "industry"])
         columns = ["exsymbol", "chg", "increase", "turnover", "industry"]
-        print(df_hot_stocks[columns])
+        df_industry_hot_stocks = df_industry_hot_stocks[columns]
+        print(df_industry_hot_stocks)
 
     df_lianban = get_lianban(today)
     print("======================= lianban ========================")
     print(df_lianban)
     print("zt_num:", len(df_lianban))
+
+    with open("/var/www/stock/index.html", "w", encoding="gbk") as f:
+        print("======================= concept avg changes ========================")
+        f.write(df_concept_grp[df_concept_grp.num_stock>5].tail(10).to_html())
+        f.write("<br/><br/>")
+        print("======================= concept zhangting num ========================")
+        f.write(df_concept_hot.to_html())
+        f.write("<br/><br/>")
+        print("======================= industry avg changes ========================")
+        f.write(df_industry_grp[df_industry_grp.num_stock>5].tail(10).to_html())
+        f.write("<br/><br/>")
+        print("======================= industry zhangting num ========================")
+        f.write(df_industry_hot.to_html())
+        f.write("<br/><br/>")
+        print("======================= lianban ========================")
+        f.write(df_lianban.to_html())
+        if opt.stock:
+            f.write("<br/><br/>")
+            print("======================= concept zhangting stocks ========================")
+            f.write(df_concept_hot_stocks.to_html())
+            f.write("<br/><br/>")
+            print("======================= industry zhangting stocks ========================")
+            f.write(df_industry_hot_stocks.to_html())
