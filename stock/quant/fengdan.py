@@ -16,7 +16,7 @@ store = get_store(store_type)
 df = store.get(exsymbol)
 df["chg"] = df.close / df.close.shift(1) - 1
 print("date\t\tchg\tfengdan\tfengdan_money\tkaipan_money\tzhangting_sell")
-for date in df.index[-25:]:
+for date in df.index[-5:]:
     date_str = date.strftime("%Y-%m-%d")
     fengdan = 0
     fengdan_money = 0
