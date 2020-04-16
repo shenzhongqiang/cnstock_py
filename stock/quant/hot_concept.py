@@ -59,13 +59,13 @@ def get_stock_chg(date):
     df = get_realtime_by_date(date)
     df.loc[:, "chg"] = df["chgperc"]/100
     df.loc[:, "zt_price"] = df.yest_close.apply(lambda x: round(x*1.1+1e-8, 2))
-    df.loc[:, "is_zhangting"] = (df["zt_price"]-df["close"])<1e-8
+    df.loc[:, "is_zhangting"] = np.absolute(df["zt_price"]-df["close"])<1e-8
     return df
 
 def get_lianban(date):
     df = get_realtime_by_date(date)
     df.loc[:, "zt_price"] = df.yest_close.apply(lambda x: round(x*1.1+1e-8, 2))
-    df.loc[:, "is_zhangting"] = (df["zt_price"]-df["close"])<1e-8
+    df.loc[:, "is_zhangting"] = np.absolute(df["zt_price"]-df["close"])<1e-8
     df_zt = df[df.is_zhangting==True]
 
     store = get_store(store_type)

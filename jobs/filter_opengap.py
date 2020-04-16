@@ -63,8 +63,8 @@ def get_zhangting(today):
     df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1, 2)
-    df_yest.loc[:, "is_zhangting"] = (df_yest["zt_price"]-df_yest["close"])<1e-8
+    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
+    df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
     df_yest_zt = df_yest[(df_yest.is_zhangting==True) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
     df_yest_zt.loc[:, "turnover"] = df_yest_zt["volume"]/(df_yest_zt["lt_mcap"]/df_yest_zt["close"]*1e6)
     df_yest_zt.loc[:, "fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df_yest_zt["lt_mcap"] / 1e8
@@ -84,27 +84,46 @@ def get_zhangting(today):
 
     columns = ["opengap", "fengdan_money", "kaipan_money", "lt_mcap", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("kaipan_money", ascending=True))
+    print(df_res[columns].sort_values("fengdan_money", ascending=True))
 
-def get_yizi(today):
+def get_zhangting_pause(today):
     today_str = today.strftime("%Y-%m-%d")
     yest = get_last_trading_date(today)
     yest_str = yest.strftime("%Y-%m-%d")
+    yest2 = get_last_trading_date(yest)
+    yest2_str = yest2.strftime("%Y-%m-%d")
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest.loc[:, "yest_chg"] = df_yest["chgperc"]
-    df_yest.loc[:, "lowperc"] = df_yest["low"]/df_yest["yest_close"]-1
-    df_res = df_yest[df_yest.lowperc>0.099]
+    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
+    df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
+    df_yest_nozt = df_yest[(df_yest.is_zhangting==False) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
+    df_yest_nozt.loc[:, "yest_chg"] = df_yest_nozt.chgperc
+
+    df_yest2 = stock.utils.symbol_util.get_realtime_by_date(yest2_str)
+    df_yest2["zt_price"] = np.round(df_yest2["yest_close"] * 1.1+1e-8, 2)
+    df_yest2.loc[:, "is_zhangting"] = np.absolute(df_yest2["zt_price"]-df_yest2["close"])<1e-8
+    df_yest2_zt = df_yest2[(df_yest2.is_zhangting==True) & (df_yest2.lt_mcap>0) & (df_yest2.volume>0)].copy()
+    df_yest2_zt.loc[:, "yest2_chg"] = df_yest2_zt.chgperc
+
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
     df_today.loc[:, "opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
-    df_res = df_res.merge(df_today[["opengap"]], how="inner", left_index=True, right_index=True)
+
+    df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
+    df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
+
+    df_res = df_today.merge(df_yest_nozt[["yest_chg"]], how="inner", left_index=True, right_index=True)
+    df_res = df_res.merge(df_yest2_zt[["yest2_chg"]], how="inner", left_index=True, right_index=True)
+    df_res = df_res.merge(df_tick[["kaipan_money"]], left_index=True, right_index=True)
     df_res.loc[:, "fengdan"] = df_res["b1_v"] * df_res["b1_p"] *100 / df_res["lt_mcap"] / 1e8
     df_res.loc[:, "fengdan_money"] = df_res["b1_v"]*df_res["b1_p"]/1e6
-    columns = ["opengap", "fengdan", "fengdan_money"]
-    print("========================== yizi zhangting ==========================")
-    print(df_res[columns])
+
+    df_industry = get_industry()
+    df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
+    columns = ["opengap", "fengdan_money", "kaipan_money", "industry"]
+
+    print("========================== zhangting pause ==========================")
+    print(df_res[columns].sort_values("kaipan_money", ascending=True))
 
 if __name__ == "__main__":
-    get_industry()
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
 
@@ -115,3 +134,4 @@ if __name__ == "__main__":
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
     get_zhangting(today)
+    get_zhangting_pause(today)

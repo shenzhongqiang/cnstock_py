@@ -74,8 +74,8 @@ def get_lianban(exsymbol, date):
 def get_zhangting(today):
     today_str = today.strftime("%Y-%m-%d")
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
-    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1, 2)
-    df_today.loc[:, "is_zhangting"] = (df_today["zt_price"]-df_today["close"])<1e-8
+    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
+    df_today.loc[:, "is_zhangting"] = np.absolute(df_today["zt_price"]-df_today["close"])<1e-8
     df_zt = df_today[(df_today.is_zhangting==True) & (df_today.lt_mcap>0) & (df_today.volume>0)].copy()
     df_zt.loc[:, "turnover"] = df_zt["volume"]/(df_zt["lt_mcap"]/df_zt["close"]*1e6)
     df_zt.loc[:, "fengdan"] = df_zt["b1_v"] * df_zt["b1_p"] *100 / df_zt["lt_mcap"] / 1e8
