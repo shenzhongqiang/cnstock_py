@@ -62,15 +62,18 @@ def get_zhangting(today):
     df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
+    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
+    df_today["is_yizi"] = np.absolute(df_today["zt_price"]-df_today["close"])<1e-8
+    df_today["fengdan_money"] = df_today.apply(lambda x: x["b1_v"] * x["b1_p"]/1e6 if x["is_yizi"] else 0, axis=1)
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
     df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
     df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
     df_yest_zt = df_yest[(df_yest.is_zhangting==True) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
     df_yest_zt.loc[:, "turnover"] = df_yest_zt["volume"]/(df_yest_zt["lt_mcap"]/df_yest_zt["close"]*1e6)
-    df_yest_zt.loc[:, "fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df_yest_zt["lt_mcap"] / 1e8
-    df_yest_zt.loc[:, "fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
+    df_yest_zt.loc[:, "yest_fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df_yest_zt["lt_mcap"] / 1e8
+    df_yest_zt.loc[:, "yest_fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
     df_yest_zt.loc[:, "yest_lt_mcap"] = df_yest_zt["lt_mcap"]
-    df_res = df_yest_zt[["fengdan", "fengdan_money", "yest_lt_mcap", "turnover"]].merge(df_today, how="inner", left_index=True, right_index=True)
+    df_res = df_yest_zt[["yest_fengdan", "yest_fengdan_money", "yest_lt_mcap", "turnover"]].merge(df_today, how="inner", left_index=True, right_index=True)
     df_res = df_res.merge(df_tick[["kaipan_money"]], how="left", left_index=True, right_index=True)
     df_tick_yest = stock.utils.symbol_util.get_tick_by_date(yest_str)
     df_res = df_res.merge(df_tick_yest[["zhangting_sell", "zhangting_min"]], how="inner", left_index=True, right_index=True)
@@ -82,7 +85,7 @@ def get_zhangting(today):
     df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
     df_res = df_res # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
 
-    columns = ["opengap", "fengdan_money", "kaipan_money", "lt_mcap", "industry"]
+    columns = ["opengap", "yest_fengdan_money", "kaipan_money", "fengdan_money", "lt_mcap", "industry"]
     print("========================== zhangting ==========================")
     print(df_res[columns].sort_values("fengdan_money", ascending=True))
 
