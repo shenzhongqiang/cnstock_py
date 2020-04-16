@@ -63,7 +63,7 @@ def get_zhangting(today):
     df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
     df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
-    df_today["is_yizi"] = np.absolute(df_today["zt_price"]-df_today["close"])<1e-8
+    df_today["is_yizi"] = np.absolute(df_today["zt_price"]-df_today["open"])<1e-8
     df_today["fengdan_money"] = df_today.apply(lambda x: x["b1_v"] * x["b1_p"]/1e6 if x["is_yizi"] else 0, axis=1)
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
     df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
