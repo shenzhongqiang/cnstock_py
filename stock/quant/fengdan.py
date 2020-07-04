@@ -15,8 +15,8 @@ exsymbol = sys.argv[1]
 store = get_store(store_type)
 df = store.get(exsymbol)
 df["chg"] = df.close / df.close.shift(1) - 1
-print("date\t\tchg\tfengdan\tfengdan_money\tkaipan_money\tzhangting_sell")
-for date in df.index[-5:]:
+print("date\t\tchg\tfengdan_money\tkaipan_money\tzhangting_sell")
+for date in df.index[-7:]:
     date_str = date.strftime("%Y-%m-%d")
     fengdan = 0
     fengdan_money = 0
@@ -36,6 +36,6 @@ for date in df.index[-5:]:
     chg = df.loc[date_str].chg * 100
     df_tick = get_tick_by_date(date_str)
     row_tick = df_tick.loc[exsymbol]
-    kaipan_money = row_tick["kaipan_money"]
+    kaipan_money = row_tick["kaipan_money"] / 1e8
     symbol = exsymbol[2:]
-    print("{}\t{:.2f}\t{:.5f}\t{:.3f}\t{:.0f}\t{:.3f}".format(date_str, chg, fengdan, fengdan_money, kaipan_money, zhangting_sell))
+    print("{}\t{:.2f}\t{:.3f}\t\t{:.3f}\t\t{:.3f}".format(date_str, chg, fengdan_money, kaipan_money, zhangting_sell))

@@ -66,6 +66,7 @@ def get_lianban(date):
     df = get_realtime_by_date(date)
     df.loc[:, "zt_price"] = df.yest_close.apply(lambda x: round(x*1.1+1e-8, 2))
     df.loc[:, "is_zhangting"] = np.absolute(df["zt_price"]-df["close"])<1e-8
+    df.loc[:, "fengdan_money"] = df["b1_v"]*df["b1_p"]*100/1e8
     df_zt = df[df.is_zhangting==True]
 
     store = get_store(store_type)
@@ -86,10 +87,12 @@ def get_lianban(date):
                 lianban = idx_end - idx_start
             df_zt.loc[exsymbol, "lianban"] = lianban
             df_zt.loc[exsymbol, "xingu"] = lianban == len(df_stock)-1
+            df_zt.loc[exsymbol, "fengdan_money"] = df.loc[exsymbol, "fengdan_money"]
+            df_zt.loc[exsymbol, "lt_mcap"] = df.loc[exsymbol, "lt_mcap"]
         except:
             continue
 
-    columns = ["lianban", "xingu"]
+    columns = ["lianban", "fengdan_money", "lt_mcap", "xingu"]
     return df_zt[df_zt.xingu==False][columns].sort_values("lianban")
 
 if __name__ == "__main__":

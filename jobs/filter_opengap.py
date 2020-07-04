@@ -63,8 +63,6 @@ def get_zhangting(today):
     df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
     df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
-    df_today["is_yizi"] = np.absolute(df_today["zt_price"]-df_today["open"])<1e-8
-    df_today["fengdan_money"] = df_today.apply(lambda x: x["b1_v"] * x["b1_p"]/1e6 if x["is_yizi"] else 0, axis=1)
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
     df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
     df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
@@ -85,9 +83,9 @@ def get_zhangting(today):
     df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
     df_res = df_res # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
 
-    columns = ["opengap", "yest_fengdan_money", "kaipan_money", "fengdan_money", "lt_mcap", "industry"]
+    columns = ["opengap", "yest_fengdan_money", "kaipan_money", "lt_mcap", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("fengdan_money", ascending=True))
+    print(df_res[columns].sort_values("kaipan_money", ascending=True))
 
 def get_zhangting_pause(today):
     today_str = today.strftime("%Y-%m-%d")
@@ -126,6 +124,25 @@ def get_zhangting_pause(today):
     print("========================== zhangting pause ==========================")
     print(df_res[columns].sort_values("kaipan_money", ascending=True))
 
+def get_yizi(today):
+    today_str = today.strftime("%Y-%m-%d")
+    df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
+
+    df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
+    df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
+    df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
+    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
+    df_today["is_yizi"] = np.absolute(df_today["zt_price"]-df_today["open"])<1e-8
+    df_today["fengdan_money"] = df_today.apply(lambda x: x["b1_v"] * x["b1_p"]/1e6 if x["is_yizi"] else 0, axis=1)
+    df_yizi = df_today[(df_today.is_yizi==True) & (df_today.lt_mcap>0)].copy()
+    df_res = df_yizi.merge(df_tick[["kaipan_money"]], left_index=True, right_index=True)
+    df_industry = get_industry()
+    df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
+    columns = ["opengap", "fengdan_money", "kaipan_money", "industry"]
+
+    print("========================== yizi ==========================")
+    print(df_res[columns].sort_values("fengdan_money", ascending=True))
+
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -138,3 +155,4 @@ if __name__ == "__main__":
 
     get_zhangting(today)
     get_zhangting_pause(today)
+    get_yizi(today)
