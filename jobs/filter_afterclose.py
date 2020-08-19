@@ -2,8 +2,10 @@ import sys
 import numpy as np
 import pandas as pd
 import stock.utils.symbol_util
+from stock.globalvar import *
 from stock.marketdata.storefactory import get_store
 from config import store_type
+from pandas.tseries.offsets import BDay
 import tushare as ts
 
 def get_last_trading_date(today):
@@ -98,14 +100,35 @@ def get_zhangting(today):
     print(df_res[columns].sort_values(["fengdan_money"], ascending=True))
 
 
-def get_turnover(today):
+def get_duanban(today):
     today_str = today.strftime("%Y-%m-%d")
+    yest = get_last_trading_date(today)
+    yest_str = yest.strftime("%Y-%m-%d")
+    df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
+    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
+    df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
+    df_yest_zt = df_yest[(df_yest.is_zhangting==True) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
+    for exsymbol in df_yest_zt.index.tolist():
+        (lianban, xingu) = get_lianban(exsymbol, yest_str)
+        df_yest_zt.loc[exsymbol, "lianban"] = lianban
+        df_yest_zt.loc[exsymbol, "xingu"] = xingu
+
+    df_yest_zt = df_yest_zt[df_yest_zt.xingu==False]
+    df_yest_zt.loc[:, "fengdan"] = df_yest_zt["b1_v"] * df_yest_zt["b1_p"] *100 / df_yest_zt["lt_mcap"] / 1e8
+    df_yest_zt.loc[:, "fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
+
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
-    df_today.loc[:, "turnover"] = df_today["volume"]/(df_today["lt_mcap"]/df_today["close"]*1e6)
-    columns = ["chgperc", "turnover", "mcap", "lt_mcap"]
-    df_res = df_today[columns].sort_values("turnover", ascending=False).head(10)
-    print("========================== high turnover ==========================")
-    print(df_res)
+    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
+    df_today.loc[:, "is_zhangting"] = np.absolute(df_today["zt_price"]-df_today["close"])<1e-8
+    df_today_nozt = df_today[(df_today.is_zhangting==False) & (df_today.lt_mcap>0) & (df_today.volume>0)].copy()
+
+    df_res = df_yest_zt.merge(df_today_nozt[["chgperc"]], how="inner", left_index=True, right_index=True)
+
+    df_industry = get_industry()
+    df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
+    columns = ["fengdan", "fengdan_money", "chgperc_y", "lt_mcap", "lianban", "industry"]
+    print("========================== duanban ==========================")
+    print(df_res[columns].sort_values(["fengdan_money"], ascending=True))
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
@@ -117,3 +140,4 @@ if __name__ == "__main__":
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
     get_zhangting(today)
+    get_duanban(today)
