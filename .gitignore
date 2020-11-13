@@ -45,6 +45,7 @@ db.sqlite3
 data/history
 data/symbol
 data/realtime/stock
+data/kaipan/stock
 data/finance
 data/tick/stock
 cnstock.db

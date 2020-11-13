@@ -94,10 +94,19 @@ def is_symbol_sz(symbol):
     else:
         return False
 
+def is_symbol_kc(symbol):
+    patt = re.compile('^kc')
+    if patt.search(symbol):
+        return True
+    else:
+        return False
+
 def symbol_to_exsymbol(symbol, index=False):
     exsymbol = ''
     if index == False:
-        if re.search(r'^6', symbol):
+        if re.search(r'688', symbol):
+            exsymbol = 'kc' + symbol
+        elif re.search(r'^6', symbol):
             exsymbol = 'sh' + symbol
         elif re.search(r'^3', symbol):
             exsymbol = 'sz' + symbol

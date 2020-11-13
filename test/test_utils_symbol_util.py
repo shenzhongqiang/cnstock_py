@@ -55,6 +55,12 @@ class TestSymbolUtil(unittest.TestCase):
         res = is_symbol_sz('sz300001')
         self.assertTrue(res == False)
 
+    def test_is_symbol_kc(self):
+        res = is_symbol_kc('kc688139')
+        self.assertTrue(res == True)
+        res = is_symbol_kc('sz300001')
+        self.assertTrue(res == False)
+
     def test_is_st(self):
         res = is_st('sh603838')
         self.assertTrue(res == False)

@@ -27,6 +27,11 @@ TICK_DIR = {
     'daily': os.path.join(ROOTDIR, 'data/tick/daily'),
 }
 
+KAIPAN_DIR = {
+    'stock': os.path.join(ROOTDIR, 'data/kaipan/stock'),
+    'daily': os.path.join(ROOTDIR, 'data/kaipan/daily'),
+}
+
 SYM = {
     'all': os.path.join(SYMDIR, 'symbols.all'),
     'sh':  os.path.join(SYMDIR, 'symbols.sh'),
