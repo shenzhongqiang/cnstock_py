@@ -105,8 +105,6 @@ def filter_stocks(today):
 
         zt_price = df.iloc[0].zt_price
         is_open_zt = np.absolute(df.iloc[-1]['LastPrice']-zt_price) < 1e-8
-        if is_open_zt:
-            continue
 
         matched_qty1 = df1.iloc[-1]['BidQty1']
         matched_amount1 = int(df1.iloc[-1]['BidQty1'] * df1.iloc[-1]['BidPrice1'] * 100)
