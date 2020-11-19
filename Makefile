@@ -38,3 +38,7 @@ afterclose: realtime tick
 hot_concept: history
 	$(info get hot concept)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/hot_concept.py
+
+kaipan:
+	$(info get kaipan)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_kaipan.py
