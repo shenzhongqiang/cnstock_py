@@ -97,7 +97,7 @@ def get_zhangting(today):
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
     columns = ["fengdan", "fengdan_money", "lt_mcap", "zhangting_sell", "lianban", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values(["fengdan_money"], ascending=True))
+    print(df_res[columns].sort_values(["lianban"], ascending=False))
 
 
 def get_duanban(today):
@@ -128,7 +128,7 @@ def get_duanban(today):
     df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
     columns = ["fengdan", "fengdan_money", "chgperc_y", "lt_mcap", "lianban", "industry"]
     print("========================== duanban ==========================")
-    print(df_res[columns].sort_values(["fengdan_money"], ascending=True))
+    print(df_res[columns].sort_values(["lianban"], ascending=False))
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)

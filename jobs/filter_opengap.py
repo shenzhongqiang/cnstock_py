@@ -143,6 +143,38 @@ def get_yizi(today):
     print("========================== yizi ==========================")
     print(df_res[columns].sort_values("fengdan_money", ascending=True))
 
+def get_open_up(today):
+    today_str = today.strftime("%Y-%m-%d")
+    yest = get_last_trading_date(today)
+    yest_str = yest.strftime("%Y-%m-%d")
+    df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
+
+    df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
+    df_tick.loc[:, "kaipan_volume"] = df_tick["kaipan_money"] / df_tick["kaipan_price"]
+    df_today.loc[:, "opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
+    df_today.loc[:, "zt_price"] = df_today.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
+    df_today.loc[:, "opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
+    df_today.loc[:, "is_zhangting"] = np.absolute(df_today["zt_price"]-df_today["open"])<1e-8
+    df_today_nozt = df_today[df_today.is_zhangting==False]
+    df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
+    df_yest.loc[:, "zt_price"] = df_yest.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
+    df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
+    df_yest_nozt = df_yest[(df_yest.is_zhangting==False) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
+
+    df_res = df_tick[["kaipan_volume", "kaipan_money"]].merge(df_today_nozt[["opengap", "volume", "chgperc"]], how="inner", left_index=True, right_index=True)
+    df_res = df_res.merge(df_yest_nozt[["volume", "chgperc"]], how="inner", left_index=True, right_index=True, suffixes=('', '_yest'))
+
+    df_res.loc[:, "volumeperc"] = df_res["kaipan_volume"] / df_res["volume_yest"] / 100
+    df_industry = get_industry()
+    df_res = df_res.merge(df_industry, how="left", left_index=True, right_index=True)
+    df_res.loc[:, "chgperc"] = df_res["chgperc"] / 100
+    df_res.loc[:, "chgperc_yest"] = df_res["chgperc_yest"] / 100
+    df_res = df_res[(df_res.opengap > 0.03) & (df_res.volumeperc > 0.03) & (df_res.chgperc_yest < 0.03)]
+    columns = ["opengap", "volumeperc", "kaipan_money", "industry", "chgperc_yest"]
+
+    print("========================== openup ==========================")
+    print(df_res[columns].sort_values("kaipan_money", ascending=False))
+
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -156,3 +188,4 @@ if __name__ == "__main__":
     get_zhangting(today)
     get_zhangting_pause(today)
     get_yizi(today)
+    get_open_up(today)
