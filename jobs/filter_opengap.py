@@ -9,6 +9,7 @@ import stock.utils.symbol_util
 from stock.marketdata.storefactory import get_store
 from stock.globalvar import *
 from config import store_type
+from stock.utils.calc_price import get_zt_price
 
 
 def get_last_trading_date(today):
@@ -24,12 +25,12 @@ def get_last_trading_date(today):
 
 def get_industry():
     df_industry = stock.utils.symbol_util.load_industry()
-    df_res = df_industry.groupby("exsymbol")["industry"].agg({"industry": lambda x: ",".join(x)})
+    df_res = df_industry.groupby("exsymbol")["industry"].agg(industry=lambda x: ",".join(x))
     return df_res
 
 def get_concept():
     df = stock.utils.symbol_util.load_concept()
-    df_res = df.groupby("exsymbol")["concept"].agg({"concept": lambda x: ",".join(x)})
+    df_res = df.groupby("exsymbol")["concept"].agg(concept=lambda x: ",".join(x))
     return df_res
 
 def filter_by_history(date, exsymbols):
@@ -63,7 +64,7 @@ def get_zhangting(today):
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
     df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
+    df_yest["zt_price"] = df_yest.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
     df_yest_zt = df_yest[(df_yest.is_zhangting==True) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
     df_yest_zt.loc[:, "turnover"] = df_yest_zt["volume"]/(df_yest_zt["lt_mcap"]/df_yest_zt["close"]*1e6)
@@ -93,13 +94,13 @@ def get_zhangting_pause(today):
     yest2 = get_last_trading_date(yest)
     yest2_str = yest2.strftime("%Y-%m-%d")
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
+    df_yest["zt_price"] = df_yest.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
     df_yest_nozt = df_yest[(df_yest.is_zhangting==False) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
     df_yest_nozt.loc[:, "yest_chg"] = df_yest_nozt.chgperc
 
     df_yest2 = stock.utils.symbol_util.get_realtime_by_date(yest2_str)
-    df_yest2["zt_price"] = np.round(df_yest2["yest_close"] * 1.1+1e-8, 2)
+    df_yest2["zt_price"] = df_yest2.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df_yest2.loc[:, "is_zhangting"] = np.absolute(df_yest2["zt_price"]-df_yest2["close"])<1e-8
     df_yest2_zt = df_yest2[(df_yest2.is_zhangting==True) & (df_yest2.lt_mcap>0) & (df_yest2.volume>0)].copy()
     df_yest2_zt.loc[:, "yest2_chg"] = df_yest2_zt.chgperc
@@ -130,7 +131,7 @@ def get_yizi(today):
     df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_tick.loc[:, "kaipan_money"] = df_tick["kaipan_money"]/1e8
     df_today["opengap"] = df_today.apply(lambda x: x["close"] if x["open"] == 0.0 else x["open"], axis=1)/df_today.yest_close - 1
-    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
+    df_today["zt_price"] = df_today.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df_today["is_yizi"] = np.absolute(df_today["zt_price"]-df_today["open"])<1e-8
     df_today["fengdan_money"] = df_today.apply(lambda x: x["b1_v"] * x["b1_p"]/1e6 if x["is_yizi"] else 0, axis=1)
     df_yizi = df_today[(df_today.is_yizi==True) & (df_today.lt_mcap>0)].copy()
