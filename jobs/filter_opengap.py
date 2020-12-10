@@ -8,7 +8,6 @@ from pandas.tseries.offsets import BDay
 import stock.utils.symbol_util
 from stock.marketdata.storefactory import get_store
 from stock.globalvar import *
-import tushare as ts
 from config import store_type
 
 

@@ -8,18 +8,11 @@ from ftplib import FTP
 import numpy as np
 import pandas as pd
 from stock.globalvar import *
-from stock.utils.symbol_util import symbol_to_exsymbol, is_symbol_kc, is_symbol_cy, is_symbol_sh
+from stock.utils.symbol_util import symbol_to_exsymbol, is_symbol_kc
+from stock.utils.calc_price import get_zt_price
 
 pd.set_option('max_columns', None)
 pd.set_option('max_rows', None)
-
-def get_zt_price(symbol, price):
-    exsymbol = symbol_to_exsymbol(symbol)
-    if is_symbol_cy(exsymbol) or is_symbol_kc(exsymbol):
-        zt_price = int(price * 1.2 * 100 + 0.50001) /100.0
-    else:
-        zt_price = int(price * 1.1 * 100 + 0.50001) /100.0
-    return zt_price
 
 def get_filepath(today):
     today_str = today.strftime("%Y%m%d")
