@@ -8,6 +8,7 @@ from stock.globalvar import *
 from stock.marketdata.utils import load_csv
 import numpy as np
 import tushare as ts
+import akshare as ak
 import pandas as pd
 
 class InvalidType(Exception):
@@ -63,14 +64,11 @@ def get_st(exsymbols):
     return st
 
 def download_symbols():
-    df = ts.get_stock_basics()
-    df = df.loc[~df.index.str.contains('^688'), :]
+    df = ak.stock_zh_a_spot()
+    df = df.loc[~df.code.str.contains('^688'), :]
     df.to_csv(SYM["all"])
-    index_df = ts.get_index()
-    code0 = index_df["code"].tolist()[0]
-    matched = re.search(r'^\d+$', code0)
-    if not matched:
-        index_df["code"] = list(map(lambda x: "{:0>6}".format(x), index_df.index))
+    index_df = ak.stock_zh_index_spot()
+    index_df["code"] = list(map(lambda x: x[2:], index_df.symbol))
     index_df.to_csv(SYM["id"])
 
 def is_symbol_cy(symbol):
