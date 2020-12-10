@@ -7,6 +7,7 @@ from stock.marketdata.storefactory import get_store
 from config import store_type
 from pandas.tseries.offsets import BDay
 import tushare as ts
+from stock.utils.calc_price import get_zt_price
 
 def get_last_trading_date(today):
     yest = today - BDay(1)
@@ -21,12 +22,12 @@ def get_last_trading_date(today):
 
 def get_industry():
     df_industry = stock.utils.symbol_util.load_industry()
-    df_res = df_industry.groupby("exsymbol")["industry"].agg({"industry": lambda x: ",".join(x)})
+    df_res = df_industry.groupby("exsymbol")["industry"].agg(industry=lambda x: ",".join(x))
     return df_res
 
 def get_concept():
     df = stock.utils.symbol_util.load_concept()
-    df_res = df.groupby("exsymbol")["concept"].agg({"concept": lambda x: ",".join(x)})
+    df_res = df.groupby("exsymbol")["concept"].agg(concept=lambda x: ",".join(x))
     return df_res
 
 def filter_by_history(date, exsymbols):
@@ -56,7 +57,7 @@ def get_lianban(exsymbol, date):
         df_stock = store.get(exsymbol)
         idx = df_stock.index.get_loc(date)
         df_stock = df_stock.iloc[:idx+1]
-        df_stock.loc[:, "zt_price"] = df_stock.close.shift(1).apply(lambda x: round(x*1.1+1e-8, 2))
+        df_stock.loc[:, "zt_price"] = df_stock.close.shift(1).apply(lambda x: get_zt_price(exsymbol[2:], x))
         df_stock.loc[:, "is_zhangting"] = np.absolute(df_stock["zt_price"]-df_stock["close"])<1e-8
         df_nozt = df_stock[df_stock.is_zhangting==False]
         lianban = 0
@@ -76,7 +77,7 @@ def get_lianban(exsymbol, date):
 def get_zhangting(today):
     today_str = today.strftime("%Y-%m-%d")
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
-    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
+    df_today["zt_price"] = df_today.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df_today.loc[:, "is_zhangting"] = np.absolute(df_today["zt_price"]-df_today["close"])<1e-8
     df_zt = df_today[(df_today.is_zhangting==True) & (df_today.lt_mcap>0) & (df_today.volume>0)].copy()
     df_zt.loc[:, "turnover"] = df_zt["volume"]/(df_zt["lt_mcap"]/df_zt["close"]*1e6)
@@ -90,7 +91,6 @@ def get_zhangting(today):
     df_zt = df_zt[df_zt.xingu==False]
     df_tick = stock.utils.symbol_util.get_tick_by_date(today_str)
     df_res = df_zt.merge(df_tick[["zhangting_sell", "zhangting_min", "cost"]], how="inner", left_index=True, right_index=True)
-
     df_res["costoverflow"] = df_res["cost"] / df_res["close"]
     df_industry = get_industry()
     df_concept = get_concept()
@@ -105,7 +105,7 @@ def get_duanban(today):
     yest = get_last_trading_date(today)
     yest_str = yest.strftime("%Y-%m-%d")
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
-    df_yest["zt_price"] = np.round(df_yest["yest_close"] * 1.1+1e-8, 2)
+    df_yest["zt_price"] = df_yest.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df_yest.loc[:, "is_zhangting"] = np.absolute(df_yest["zt_price"]-df_yest["close"])<1e-8
     df_yest_zt = df_yest[(df_yest.is_zhangting==True) & (df_yest.lt_mcap>0) & (df_yest.volume>0)].copy()
     for exsymbol in df_yest_zt.index.tolist():
@@ -118,7 +118,7 @@ def get_duanban(today):
     df_yest_zt.loc[:, "fengdan_money"] = df_yest_zt["b1_v"]*df_yest_zt["b1_p"]/1e6
 
     df_today = stock.utils.symbol_util.get_realtime_by_date(today_str)
-    df_today["zt_price"] = np.round(df_today["yest_close"] * 1.1+1e-8, 2)
+    df_today["zt_price"] = df_today.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df_today.loc[:, "is_zhangting"] = np.absolute(df_today["zt_price"]-df_today["close"])<1e-8
     df_today_nozt = df_today[(df_today.is_zhangting==False) & (df_today.lt_mcap>0) & (df_today.volume>0)].copy()
 
