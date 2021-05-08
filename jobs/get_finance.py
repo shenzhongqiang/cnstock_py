@@ -8,7 +8,6 @@ from stock.utils import request
 import stock.utils.symbol_util
 from stock.globalvar import FINANCE_DIR, BASIC_DIR
 from stock.marketdata.storefactory import get_store
-import tushare as ts
 
 ZCFZB_URL = "http://quotes.money.163.com/service/zcfzb_%s.html"
 LRB_URL = "http://quotes.money.163.com/service/lrb_%s.html"
@@ -74,7 +73,7 @@ if __name__ == "__main__":
     pool = Pool(20)
 
     # download stock basics
-    dump_basics_data()
+    # dump_basics_data()
 
     # download stock symbols
     symbols = stock.utils.symbol_util.get_stock_symbols()

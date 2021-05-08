@@ -1,45 +1,15 @@
 import os.path
-import cPickle as pickle
-from stock.globalvar import *
+import akshare as ak
+import pandas as pd
 
-def is_flat(quotes):
-    sample = quotes[-1:-50:-1]
-    if sample[0][5] < 1000000:
-        return False
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
 
-    highs = map(lambda x: x[3], sample)
-    lows = map(lambda x: x[4], sample)
-    closes = map(lambda x: x[2], sample)
-    max_high10 = max(highs[0:10])
-    min_low10 = min(lows[0:10])
-    min_low = min(lows)
-    #if closes[10] >= 1.1 * min_low and \
-    if (max_high10 - min_low10) / closes[0] < 0.02:
-        return True
-    return False
+df = ak.stock_us_fundamental()
+df["eps_growth_5y"] = df["eps_growth_5y"].apply(lambda x: float(x) if x is not None else None)
+df["market_val"] = df["market_val"].apply(lambda x: float(x))
+df["pe_ratio_12m"] = df["pe_ratio_12m"].apply(lambda x: float(x))
+df["peg_ratio"] = df["peg_ratio"].apply(lambda x: float(x))
+df_res = df[df["eps_growth_5y"]>150][df["market_val"]>20000][df["pe_ratio_12m"]<20]
 
-filepath = os.path.join(SYMDIR, "us_ticker")
-f = open(filepath)
-content = f.read()
-tickers = content.split("\n")
-f.close()
-
-us_dir = HIST_DIR['us']
-result = []
-for ticker in tickers:
-    datafile = os.path.join(us_dir, ticker)
-    if not os.path.isfile(datafile):
-        continue
-
-    output = open(datafile, "r")
-    quotes = pickle.load(output)
-    output.close()
-
-    if len(quotes) < 50:
-        continue
-
-    if is_flat(quotes):
-        result.append(ticker)
-
-print len(result)
-print result
+print(df_res.sort_values(["peg_ratio"]))
