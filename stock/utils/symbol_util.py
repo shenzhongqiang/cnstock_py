@@ -68,7 +68,7 @@ def download_symbols():
     df = df.loc[~df.code.str.contains('^688'), :]
     df.to_csv(SYM["all"])
     index_df = ak.stock_zh_index_spot()
-    index_df["code"] = list(map(lambda x: x[2:], index_df.symbol))
+    index_df["code"] = list(map(lambda x: x[2:], index_df['代码']))
     index_df.to_csv(SYM["id"])
 
 def is_symbol_cy(symbol):
