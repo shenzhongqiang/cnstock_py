@@ -83,9 +83,9 @@ def get_zhangting(today):
     df_res = df_res.merge(df_concept, how="left", left_index=True, right_index=True)
     df_res = df_res # & (df_res.lt_mcap<100)]# & (df_res.zhangting_min>100)]
 
-    columns = ["opengap", "yest_fengdan_money", "kaipan_money", "lt_mcap", "industry"]
+    columns = ["opengap", "yest_fengdan_money", "zhangting_sell", "kaipan_money", "lt_mcap", "industry"]
     print("========================== zhangting ==========================")
-    print(df_res[columns].sort_values("kaipan_money", ascending=True))
+    print(df_res[columns].sort_values("zhangting_sell", ascending=True))
 
 def get_zhangting_pause(today):
     today_str = today.strftime("%Y-%m-%d")

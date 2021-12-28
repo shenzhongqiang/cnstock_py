@@ -24,7 +24,7 @@ for exsymbol in exsymbols:
     df = store.get(exsymbol)
     if len(df) < 400:
         continue
-    close_min = df.close.iloc[-5:].min()
+    close_min = df.close.iloc[-30:].min()
     profit = df.iloc[-1].close / close_min - 1
     df_date.loc[len(df_date)] = [exsymbol, profit]
 df_date.dropna(how="any", inplace=True)
