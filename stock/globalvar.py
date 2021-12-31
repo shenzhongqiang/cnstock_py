@@ -34,11 +34,7 @@ KAIPAN_DIR = {
 
 SYM = {
     'all': os.path.join(SYMDIR, 'symbols.all'),
-    'sh':  os.path.join(SYMDIR, 'symbols.sh'),
-    'sz':  os.path.join(SYMDIR, 'symbols.sz'),
-    'cy':  os.path.join(SYMDIR, 'symbols.cy'),
     'id':  os.path.join(SYMDIR, 'symbols.id'),
-    'zz500':  os.path.join(SYMDIR, 'symbols.zz500'),
 }
 
 IPO_DIR = os.path.join(ROOTDIR, 'data/ipo')

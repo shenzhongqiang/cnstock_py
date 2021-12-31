@@ -40,6 +40,7 @@ nosetests.xml
 # Editors
 *.swp
 .ropeproject
+.idea
 
 db.sqlite3
 data/history

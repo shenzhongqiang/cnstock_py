@@ -17,7 +17,7 @@ realtime: symbols
 
 history: realtime
 	$(info get history)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_history.py
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py
 
 tick: realtime
 	$(info get tick)
