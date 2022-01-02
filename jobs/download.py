@@ -1,3 +1,5 @@
+import datetime
+import json
 import re
 import sys
 import argparse
@@ -8,7 +10,8 @@ from tqdm import trange
 import requests
 import pandas as pd
 
-from stock.globalvar import HIST_DIR, SYM, BASIC_DIR
+from stock.globalvar import HIST_DIR, SYM, BASIC_DIR, REAL_DIR
+
 
 def is_sh(a_symbol):
     m = re.match(r"6", a_symbol)
@@ -221,10 +224,70 @@ def download_all_industries_stocks():
     filepath = os.path.join(BASIC_DIR, "industry")
     df.to_csv(filepath, index=False)
 
+def download_stock_realtime(symbol):
+    if is_sh(symbol):
+        url = "http://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&fields=f43," + \
+              "f57,f58,f169,f170,f46,f44,f51,f168,f47,f164,f163,f116,f60,f45,f52,f50,f48,f167,f117,f71,f161,f49,f530,f135,f136," + \
+              "f137,f138,f139,f141,f142,f144,f145,f147,f148,f140,f143,f146,f149,f55,f62,f162,f92,f173,f104,f105,f84,f85,f183," + \
+              "f184,f185,f186,f187,f188,f189,f190,f191,f192,f107,f111,f86,f177,f78,f110,f260,f261,f262,f263,f264,f267,f268," + \
+              "f250,f251,f252,f253,f254,f255,f256,f257,f258,f266,f269,f270,f271,f273,f274,f275,f127,f199,f128,f193,f196," + \
+              "f194,f195,f197,f80,f280,f281,f282,f284,f285,f286,f287,f292,f293,f181,f294,f295,f279,f288" + \
+              "&secid=1.{}".format(symbol)
+    else:
+        url = "http://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&fields=f43," + \
+              "f57,f58,f169,f170,f46,f44,f51,f168,f47,f164,f163,f116,f60,f45,f52,f50,f48,f167,f117,f71,f161,f49,f530,f135,f136," + \
+              "f137,f138,f139,f141,f142,f144,f145,f147,f148,f140,f143,f146,f149,f55,f62,f162,f92,f173,f104,f105,f84,f85,f183," + \
+              "f184,f185,f186,f187,f188,f189,f190,f191,f192,f107,f111,f86,f177,f78,f110,f260,f261,f262,f263,f264,f267,f268," + \
+              "f250,f251,f252,f253,f254,f255,f256,f257,f258,f266,f269,f270,f271,f273,f274,f275,f127,f199,f128,f193,f196," + \
+              "f194,f195,f197,f80,f280,f281,f282,f284,f285,f286,f287,f292,f293,f181,f294,f295,f279,f288" + \
+              "&secid=0.{}".format(symbol)
+
+    try:
+        r = requests.get(url, verify=False)
+        data = r.json()["data"]
+        date_range_str = data["f80"]
+        date_range = json.loads(date_range_str)
+        date_str = str(date_range[0]["b"])[:8]
+        return {"date": date_str, "symbol": symbol, "b1_p": data["f19"], "b1_v": data["f20"]}
+    except Exception as e:
+        print("error getting history due to %s" % str(e))
+
+
+def download_realtime():
+    stock_dir = HIST_DIR['stock']
+    if not os.path.isdir(stock_dir):
+        os.makedirs(stock_dir)
+
+    df = pd.read_csv(SYM["all"], dtype={"symbol": str})
+    symbols = df["symbol"].values
+    pool = Pool(10)
+    results = []
+    for symbol in symbols:
+        res = pool.apply_async(download_stock_realtime, (symbol,))
+        results.append(res)
+    symbols = []
+    b1_p = []
+    b1_v = []
+    date_str = None
+    for i in trange(len(results)):
+        res = results[i]
+        data = res.get()
+        symbols.append(data["symbol"])
+        b1_p.append(data["b1_p"])
+        b1_v.append(data["b1_v"])
+        date_str = data["date"]
+    df = pd.DataFrame({"symbol": symbols, "b1_p": b1_p, "b1_v": b1_v})
+    df.set_index("symbol", inplace=True)
+    dt = datetime.datetime.strptime(date_str, "%Y%m%d")
+    filename = "{}.csv".format(dt.strftime("%Y-%m-%d"))
+    filepath = os.path.join(REAL_DIR["daily"], filename)
+    df.to_csv(filepath)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", action="store_true", default=False)
     parser.add_argument("--hist", action="store_true", default=False)
+    parser.add_argument("--realtime", action="store_true", default=False)
     parser.add_argument("--concept", action="store_true", default=False)
     parser.add_argument("--industry", action="store_true", default=False)
     args = parser.parse_args()
@@ -234,6 +297,9 @@ if __name__ == "__main__":
         sys.exit(0)
     if args.hist:
         download_hist()
+        sys.exit(0)
+    if args.realtime:
+        download_realtime()
         sys.exit(0)
     if args.concept:
         download_all_concepts_stocks()
