@@ -44,7 +44,8 @@ async def get_corr(df_x, symbol_y, date_str):
         return {"symbol": symbol_y, "corr": np.nan}
     df = pd.merge(df_x, df_related, how="outer", left_index=True, right_index=True, suffixes=("_x", "_y"))
     corr = df["close_x"].corr(df["close_y"])
-    return {"symbol": symbol_y, "corr": corr}
+    drift = df_x.iloc[-1]["close"]/df_x.iloc[-2]["close"] - df_related.iloc[-1]["close"]/df_related.iloc[-2]["close"]
+    return {"symbol": symbol_y, "corr": corr, "drift": drift}
 
 async def get_high_corr_stocks(symbol, related_symbols, date_str):
     df_symbol = get_stock_hist(symbol, date_str)
@@ -72,8 +73,9 @@ async def get_similar_stocks(symbol, date_str):
         related_symbols = list(filter(lambda x: x != symbol, related_symbols))
         high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
         print(concept_name)
+        print("symbol,corr,drift")
         for item in high_corr_stocks:
-            print("{},{:.2f}".format(item["symbol"], item["corr"]))
+            print("{},{:.2f},{:.3f}".format(item["symbol"], item["corr"], item["drift"]))
 
     print("========== industry ===========")
     for industry in industries:
@@ -83,34 +85,37 @@ async def get_similar_stocks(symbol, date_str):
         related_symbols = list(filter(lambda x: x != symbol, related_symbols))
         high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
         print(industry_name)
+        print("symbol,corr,drift")
         for item in high_corr_stocks:
-            print("{},{:.2f}".format(item["symbol"], item["corr"]))
+            print("{},{:.2f},{:.3f}".format(item["symbol"], item["corr"], item["drift"]))
 
 async def get_high_corr_concept_pairs(concept_name, date_str):
     df_concept = stock.utils.symbol_util.load_concept()
     stock_items = df_concept[df_concept["concept_name"] == concept_name][["symbol", "name"]].values
     if len(stock_items) == 0:
         print("no such concept: {}".format(concept_name))
+    print("x,y,corr,drift")
     for i in range(len(stock_items)):
         stock_item = stock_items[i]
         symbol = stock_item[0]
         related_symbols = list(map(lambda x: x[0], stock_items[i+1:]))
         high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
         for item in high_corr_stocks:
-            print("{},{},{:.2f}".format(symbol, item["symbol"], item["corr"]))
+            print("{},{},{:.2f},{:.3f}".format(symbol, item["symbol"], item["corr"], item["drift"]))
 
 async def get_high_corr_industry_pairs(industry_name, date_str):
     df_industry = stock.utils.symbol_util.load_industry()
     stock_items = df_industry[df_industry["industry_name"] == industry_name][["symbol", "name"]].values
     if len(stock_items) == 0:
         print("no such concept: {}".format(industry_name))
+    print("x,y,corr,drift")
     for i in range(len(stock_items)):
         stock_item = stock_items[i]
         symbol = stock_item[0]
         related_symbols = list(map(lambda x: x[0], stock_items[i+1:]))
         high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
         for item in high_corr_stocks:
-            print("{},{},{:.2f}".format(symbol, item["symbol"], item["corr"]))
+            print("{},{},{:.2f},{:.3f}".format(symbol, item["symbol"], item["corr"], item["drift"]))
 
 def get_zhangting_stocks(date_str):
     df_date = stock.utils.symbol_util.get_realtime_by_date(date_str)
