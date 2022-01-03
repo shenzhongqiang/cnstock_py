@@ -30,12 +30,12 @@ def get_stock_hist(symbol, date_str):
     if not os.path.isfile(path):
         return None
 
-    df = None
     with open(path, "r") as f:
         df = pd.read_csv(f)
         index = pd.to_datetime(df.date, format="%Y-%m-%d")
         df.set_index(index, inplace=True)
     df = df.loc[:date_str]
+    df = df.iloc[-240:]
     return df
 
 async def get_corr(df_x, symbol_y, date_str):

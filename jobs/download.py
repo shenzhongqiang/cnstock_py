@@ -86,9 +86,9 @@ def get_hist_from_data(data):
 
 def download_stock_hist(symbol):
     if is_sh(symbol):
-        url = "https://25.push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=0&end=20500101&lmt=300".format(symbol)
+        url = "https://25.push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=0&end=20500101&lmt=500".format(symbol)
     else:
-        url = "https://25.push2his.eastmoney.com/api/qt/stock/kline/get?secid=0.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=0&end=20500101&lmt=300".format(symbol)
+        url = "https://25.push2his.eastmoney.com/api/qt/stock/kline/get?secid=0.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=0&end=20500101&lmt=500".format(symbol)
     try:
         r = requests.get(url, verify=False)
         data = r.json()
