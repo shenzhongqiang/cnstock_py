@@ -130,7 +130,7 @@ def download_concepts():
         if (i-1)*pz+len(items) >= total:
             break
         i += 1
-    result = list(map(lambda x: {"symbol": x["f2"], "name": x["f14"]}, result))
+    result = list(map(lambda x: {"symbol": x["f12"], "name": x["f14"]}, result))
     return result
 
 def download_industries():
@@ -248,7 +248,8 @@ def download_stock_realtime(symbol):
         date_range_str = data["f80"]
         date_range = json.loads(date_range_str)
         date_str = str(date_range[0]["b"])[:8]
-        return {"date": date_str, "symbol": symbol, "b1_p": data["f19"], "b1_v": data["f20"]}
+        return {"date": date_str, "name": data["f58"], "symbol": symbol, "b1_p": data["f19"], "b1_v": data["f20"],
+                "close": data["f43"], "yest_close": data["f60"], "volume": data["f47"]}
     except Exception as e:
         print("error getting history due to %s" % str(e))
 
@@ -266,17 +267,26 @@ def download_realtime():
         res = pool.apply_async(download_stock_realtime, (symbol,))
         results.append(res)
     symbols = []
+    names = []
     b1_p = []
     b1_v = []
+    close = []
+    yest_close = []
+    volume = []
     date_str = None
     for i in trange(len(results)):
         res = results[i]
         data = res.get()
+        names.append(data["name"])
         symbols.append(data["symbol"])
         b1_p.append(data["b1_p"])
         b1_v.append(data["b1_v"])
+        close.append(data["close"])
+        yest_close.append(data["yest_close"])
+        volume.append(data["volume"])
         date_str = data["date"]
-    df = pd.DataFrame({"symbol": symbols, "b1_p": b1_p, "b1_v": b1_v})
+    df = pd.DataFrame({"name": names, "symbol": symbols, "close": close, "yest_close": yest_close, "b1_p": b1_p, "b1_v": b1_v,
+                       "volume": volume})
     df.set_index("symbol", inplace=True)
     dt = datetime.datetime.strptime(date_str, "%Y%m%d")
     filename = "{}.csv".format(dt.strftime("%Y-%m-%d"))

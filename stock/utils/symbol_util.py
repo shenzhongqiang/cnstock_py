@@ -174,7 +174,7 @@ def get_realtime_by_date(date_str):
     filepath = os.path.join(folder, date_str + ".csv")
     if not os.path.isfile(filepath):
         raise NoRealtimeData("no such file: %s" % filepath)
-    df = pd.read_csv(filepath, index_col=0)
+    df = pd.read_csv(filepath, dtype={"symbol": np.str_}, na_values="-")
     return df
 
 def get_zhangting_data(df_tick, zt_price):
@@ -275,12 +275,12 @@ def get_tick_by_date(date_str):
 
 def load_concept():
     filepath = os.path.join(BASIC_DIR, "concept")
-    df = pd.read_csv(filepath, index_col=0)
+    df = pd.read_csv(filepath, dtype={"symbol": np.str_})
     return df
 
 def load_industry():
     filepath = os.path.join(BASIC_DIR, "industry")
-    df = pd.read_csv(filepath, index_col=0)
+    df = pd.read_csv(filepath, dtype={"symbol": np.str_})
     return df
 
 def get_stock_basics():
