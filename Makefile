@@ -7,37 +7,26 @@ NOSECMD='nosetests'
 test:
 	$(NOSECMD) -sv test/
 
-symbols:
-	$(info get symbols)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_symbols.py
+symbol:
+	$(info get symbol)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --symbol
 
-realtime: symbols
+realtime: symbol
 	$(info get realtime)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_realtime.py
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --realtime
 
-history: realtime
+history: symbol
 	$(info get history)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --hist
 
 tick: realtime
 	$(info get tick)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_tick.py
 
-upper_shadow: history
-	$(info get upper shadow)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/upper_shadow.py
-
-opengap: realtime tick
-	$(info get opengap)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_opengap.py
-
-afterclose: realtime tick
-	$(info get afterclose)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_afterclose.py
-
-hot_concept: history
-	$(info get hot concept)
-	PYTHONPATH=$(PYTHONPATH) .venv/bin/python stock/quant/hot_concept.py
+conceptindustry:
+	$(info get concept and industry)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --concept
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --industry
 
 kaipan:
 	$(info get kaipan)
