@@ -47,17 +47,17 @@ async def get_corr(df_x, symbol_y, date_str):
     drift = df_x.iloc[-1]["close"]/df_x.iloc[-2]["close"] - df_related.iloc[-1]["close"]/df_related.iloc[-2]["close"]
     return {"symbol": symbol_y, "corr": corr, "drift": drift}
 
-async def get_high_corr_stocks(symbol, related_symbols, date_str):
+async def get_high_corr_stocks(symbol, related_symbols, date_str, corr_min):
     df_symbol = get_stock_hist(symbol, date_str)
     if df_symbol is None or len(df_symbol) < 200:
         return []
     tasks = [get_corr(df_symbol, related_symbol, date_str) for related_symbol in related_symbols]
     result = await asyncio.gather(*tasks)
-    result = list(filter(lambda x: x is not None and x["corr"] >= 0.9, result))
+    result = list(filter(lambda x: x is not None and x["corr"] >= corr_min, result))
     result.sort(key=lambda x: x["corr"], reverse=True)
     return result
 
-async def get_similar_stocks(symbol, date_str):
+async def get_similar_stocks(symbol, date_str, corr_min):
     df_concept = stock.utils.symbol_util.load_concept()
     df_industry = stock.utils.symbol_util.load_industry()
     concepts = df_concept[df_concept["symbol"] == symbol][["concept_symbol", "concept_name"]].drop_duplicates().values
@@ -71,7 +71,7 @@ async def get_similar_stocks(symbol, date_str):
         concept_name = concept[1]
         related_symbols = df_concept[df_concept["concept_symbol"]==concept_symbol]["symbol"].values
         related_symbols = list(filter(lambda x: x != symbol, related_symbols))
-        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
+        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str, corr_min)
         print(concept_name)
         print("symbol,corr,drift")
         for item in high_corr_stocks:
@@ -83,13 +83,13 @@ async def get_similar_stocks(symbol, date_str):
         industry_name = industry[1]
         related_symbols = df_industry[df_industry["industry_symbol"]==industry_symbol]["symbol"].values
         related_symbols = list(filter(lambda x: x != symbol, related_symbols))
-        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
+        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str, corr_min)
         print(industry_name)
         print("symbol,corr,drift")
         for item in high_corr_stocks:
             print("{},{:.2f},{:.3f}".format(item["symbol"], item["corr"], item["drift"]))
 
-async def get_high_corr_concept_pairs(concept_name, date_str):
+async def get_high_corr_concept_pairs(concept_name, date_str, corr_min):
     df_concept = stock.utils.symbol_util.load_concept()
     stock_items = df_concept[df_concept["concept_name"] == concept_name][["symbol", "name"]].values
     if len(stock_items) == 0:
@@ -99,11 +99,11 @@ async def get_high_corr_concept_pairs(concept_name, date_str):
         stock_item = stock_items[i]
         symbol = stock_item[0]
         related_symbols = list(map(lambda x: x[0], stock_items[i+1:]))
-        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
+        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str, corr_min)
         for item in high_corr_stocks:
             print("{},{},{:.2f},{:.3f}".format(symbol, item["symbol"], item["corr"], item["drift"]))
 
-async def get_high_corr_industry_pairs(industry_name, date_str):
+async def get_high_corr_industry_pairs(industry_name, date_str, corr_min):
     df_industry = stock.utils.symbol_util.load_industry()
     stock_items = df_industry[df_industry["industry_name"] == industry_name][["symbol", "name"]].values
     if len(stock_items) == 0:
@@ -113,7 +113,7 @@ async def get_high_corr_industry_pairs(industry_name, date_str):
         stock_item = stock_items[i]
         symbol = stock_item[0]
         related_symbols = list(map(lambda x: x[0], stock_items[i+1:]))
-        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str)
+        high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, date_str, corr_min)
         for item in high_corr_stocks:
             print("{},{},{:.2f},{:.3f}".format(symbol, item["symbol"], item["corr"], item["drift"]))
 
@@ -136,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("--symbol", type=str, default=None, help="e.g. 600001")
     parser.add_argument("--concept", type=str, default=None, help="元宇宙")
     parser.add_argument("--industry", type=str, default=None, help="煤炭行业")
+    parser.add_argument("--corr-min", type=float, default=0.9, help="煤炭行业")
 
     args = parser.parse_args()
     pd.set_option('display.max_rows', None)
@@ -149,11 +150,11 @@ if __name__ == "__main__":
         get_zhangting_stocks(date_str)
         sys.exit(0)
     if args.symbol:
-        asyncio.run(get_similar_stocks(args.symbol, date_str))
+        asyncio.run(get_similar_stocks(args.symbol, date_str, args.corr_min))
         sys.exit(0)
     if args.concept:
-        asyncio.run(get_high_corr_concept_pairs(args.concept, date_str))
+        asyncio.run(get_high_corr_concept_pairs(args.concept, date_str, args.corr_min))
         sys.exit(0)
     if args.industry:
-        asyncio.run(get_high_corr_industry_pairs(args.industry, date_str))
+        asyncio.run(get_high_corr_industry_pairs(args.industry, date_str, args.corr_min))
         sys.exit(0)

@@ -2,7 +2,6 @@ import datetime
 import os
 import os.path
 import re
-import json
 from stock.utils import request
 from stock.globalvar import *
 from stock.marketdata.utils import load_csv
