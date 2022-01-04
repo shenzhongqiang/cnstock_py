@@ -125,7 +125,7 @@ def get_zhangting_stocks(date_str):
     df_date.loc[:, "is_zhangting"] = np.absolute(df_date["zt_price"]-df_date["close"])<1e-8
     df_zt = df_date[(df_date.is_zhangting==True) & (df_date.volume>0)].copy()
     df_zt.loc[:, "fengdan"] = df_zt["b1_v"]*df_zt["b1_p"]/1e6
-    wbond_symbols = pd.read_csv(SYM['wbond'], dtype={"正股代码": np.str_}).values
+    wbond_symbols = pd.read_csv(SYM['wbond'], dtype={"正股代码": np.str_})["正股代码"].values
     df_zt["wbond"] = df_zt.index.isin(wbond_symbols)
     columns = ["name", "fengdan", "wbond"]
     print(df_zt[columns].sort_values("fengdan", ascending=False))
