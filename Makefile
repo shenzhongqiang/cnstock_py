@@ -11,13 +11,17 @@ symbol:
 	$(info get symbol)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --symbol
 
-realtime: symbol
+realtime:
 	$(info get realtime)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --realtime
 
 history: symbol
 	$(info get history)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --hist
+
+zhangting: realtime
+	$(info get zhangting)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/related.py --zhangting
 
 tick: realtime
 	$(info get tick)
