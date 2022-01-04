@@ -9,6 +9,7 @@ from multiprocessing import Pool
 from tqdm import trange
 import requests
 import pandas as pd
+import akshare as ak
 
 from stock.globalvar import HIST_DIR, SYM, BASIC_DIR, REAL_DIR
 
@@ -55,6 +56,10 @@ def download_index_symbols():
         dfs.append(df)
     df = pd.concat(dfs)
     df.to_csv(SYM["id"], index=False)
+
+def download_wbond_symbols():
+    df = ak.bond_zh_cov()
+    df.to_csv(SYM['wbond'], index=False)
 
 def get_hist_from_data(data):
     klines = data["data"]["klines"]
@@ -293,6 +298,8 @@ def download_realtime():
     filepath = os.path.join(REAL_DIR["daily"], filename)
     df.to_csv(filepath)
 
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--symbol", action="store_true", default=False)
@@ -304,6 +311,7 @@ if __name__ == "__main__":
     if args.symbol:
         download_stock_symbols()
         download_index_symbols()
+        download_wbond_symbols()
         sys.exit(0)
     if args.hist:
         download_hist()
