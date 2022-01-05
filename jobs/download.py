@@ -58,7 +58,12 @@ def download_index_symbols():
     df.to_csv(SYM["id"], index=False)
 
 def download_wbond_symbols():
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
     df = ak.bond_zh_cov()
+    today = datetime.datetime.today().strftime("%Y-%m-%d")
+    df["上市时间"] = pd.to_datetime(df["上市时间"])
+    df = df[df["上市时间"]<today]
     df.to_csv(SYM['wbond'], index=False)
 
 def get_hist_from_data(data):
