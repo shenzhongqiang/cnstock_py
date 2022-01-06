@@ -259,7 +259,7 @@ def download_stock_realtime(symbol):
         date_range = json.loads(date_range_str)
         date_str = str(date_range[0]["b"])[:8]
         return {"date": date_str, "name": data["f58"], "symbol": symbol, "b1_p": data["f19"], "b1_v": data["f20"],
-                "close": data["f43"], "yest_close": data["f60"], "volume": data["f47"]}
+                "open": data["f46"], "close": data["f43"], "yest_close": data["f60"], "volume": data["f47"]}
     except Exception as e:
         print("error getting history due to %s" % str(e))
 
@@ -280,9 +280,10 @@ def download_realtime():
     names = []
     b1_p = []
     b1_v = []
-    close = []
-    yest_close = []
-    volume = []
+    opens = []
+    closes = []
+    yest_closes = []
+    volumes = []
     date_str = None
     for i in trange(len(results)):
         res = results[i]
@@ -291,12 +292,13 @@ def download_realtime():
         symbols.append(data["symbol"])
         b1_p.append(data["b1_p"])
         b1_v.append(data["b1_v"])
-        close.append(data["close"])
-        yest_close.append(data["yest_close"])
-        volume.append(data["volume"])
+        opens.append(data["open"])
+        closes.append(data["close"])
+        yest_closes.append(data["yest_close"])
+        volumes.append(data["volume"])
         date_str = data["date"]
-    df = pd.DataFrame({"name": names, "symbol": symbols, "close": close, "yest_close": yest_close, "b1_p": b1_p, "b1_v": b1_v,
-                       "volume": volume})
+    df = pd.DataFrame({"name": names, "symbol": symbols, "open": opens, "close": closes, "yest_close": yest_closes,
+                       "b1_p": b1_p, "b1_v": b1_v, "volume": volumes})
     df.set_index("symbol", inplace=True)
     dt = datetime.datetime.strptime(date_str, "%Y%m%d")
     filename = "{}.csv".format(dt.strftime("%Y-%m-%d"))
