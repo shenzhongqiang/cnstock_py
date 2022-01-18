@@ -42,20 +42,23 @@ def get_stock_hist(symbol, start_date, end_date):
 
 async def get_corr(df_x, symbol_y, start_date, end_date):
     df_related = get_stock_hist(symbol_y, start_date, end_date)
-    if df_related is None or len(df_related) < 200:
+    if df_related is None:
         return {"symbol": symbol_y, "corr": np.nan}
     df = pd.merge(df_x, df_related, how="outer", left_index=True, right_index=True, suffixes=("_x", "_y"))
     corr = df["close_x"].corr(df["close_y"])
-    drift = df_x.iloc[-1]["close"] / df_x.iloc[-2]["close"] - df_related.iloc[-1]["close"] / df_related.iloc[-2][
-        "close"]
+    if len(df_x) < 2 or len(df_related) < 2:
+        drift = np.nan
+    else:
+        drift = df_x.iloc[-1]["close"] / df_x.iloc[-2]["close"] - df_related.iloc[-1]["close"] / df_related.iloc[-2][
+            "close"]
     return {"symbol": symbol_y, "corr": corr, "drift": drift}
 
 
 async def get_high_corr_stocks(symbol, related_symbols, start_date, end_date, corr_min):
     df_symbol = get_stock_hist(symbol, start_date, end_date)
-    if df_symbol is None or len(df_symbol) < 200:
+    if df_symbol is None:
         return []
-    tasks = [get_corr(df_symbol, related_symbol, end_date) for related_symbol in related_symbols]
+    tasks = [get_corr(df_symbol, related_symbol, start_date, end_date) for related_symbol in related_symbols]
     result = await asyncio.gather(*tasks)
     result = list(filter(lambda x: x is not None and x["corr"] >= corr_min, result))
     result.sort(key=lambda x: x["corr"], reverse=True)
