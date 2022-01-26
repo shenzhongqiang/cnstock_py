@@ -62,6 +62,7 @@ def download_wbond_symbols():
     pd.set_option('display.max_columns', None)
     df = ak.bond_zh_cov()
     today = datetime.datetime.today().strftime("%Y-%m-%d")
+    df = df[df["上市时间"]!="-"]
     df["上市时间"] = pd.to_datetime(df["上市时间"])
     df = df[df["上市时间"]<today]
     df.to_csv(SYM['wbond'], index=False)
