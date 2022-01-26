@@ -46,17 +46,19 @@ def get_stock_hist(symbol, start_date, end_date):
     return df
 
 
-async def get_corr(df_x, symbol_y, start_date, end_date):
-    df_related = get_stock_hist(symbol_y, start_date, end_date)
-    if df_related is None:
+async def get_corr(symbol_x, symbol_y, start_date, end_date):
+    df_x = get_stock_hist(symbol_x, start_date, end_date)
+    df_y = get_stock_hist(symbol_y, start_date, end_date)
+    if df_x is None or df_y is None:
         return {"symbol": symbol_y, "corr": np.nan}
-    df = pd.merge(df_x, df_related, how="outer", left_index=True, right_index=True, suffixes=("_x", "_y"))
+    df = pd.merge(df_x, df_y, how="outer", left_index=True, right_index=True, suffixes=("_x", "_y"))
     corr = df["close_x"].corr(df["close_y"])
-    if len(df_x) < 2 or len(df_related) < 2:
+    if len(df_x) < 2 or len(df_y) < 2:
         drift = np.nan
     else:
-        drift = df_x.iloc[-1]["close"] / df_x.iloc[-2]["close"] - df_related.iloc[-1]["close"] / df_related.iloc[-2][
-            "close"]
+        chg_x = df_x.iloc[-1]["close"]/df_x.iloc[-2]["close"]
+        chg_y = df_y.iloc[-1]["close"]/df_y.iloc[-2]["close"]
+        drift = chg_x - chg_y
     return {"symbol": symbol_y, "corr": corr, "drift": drift}
 
 
@@ -69,10 +71,7 @@ async def get_chg(symbol, start_date, end_date):
 
 
 async def get_high_corr_stocks(symbol, related_symbols, start_date, end_date, corr_min):
-    df_symbol = get_stock_hist(symbol, start_date, end_date)
-    if df_symbol is None:
-        return []
-    tasks = [get_corr(df_symbol, related_symbol, start_date, end_date) for related_symbol in related_symbols]
+    tasks = [get_corr(symbol, related_symbol, start_date, end_date) for related_symbol in related_symbols]
     result = await asyncio.gather(*tasks)
     result = list(filter(lambda x: x is not None and x["corr"] >= corr_min, result))
     result.sort(key=lambda x: x["corr"], reverse=True)
@@ -209,20 +208,17 @@ def get_zhangting_stocks(date_str):
     print(df_zt[columns].sort_values("fengdan", ascending=False))
 
 
-async def get_all_pairs():
-    format = "%Y-%m-%d"
-    end_dt = datetime.datetime.today()
-    start_dt = end_dt - datetime.timedelta(days=240)
-    start_date = start_dt.strftime(format)
-    end_date = end_dt.strftime(format)
+async def get_all_pairs(start_date, end_date):
     df_concept = stock.utils.symbol_util.load_concept()
+    df_concept = df_concept[~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)]
     grouped = df_concept.groupby("concept_name")
+    print("===== concept =====")
     for concept_name, group in grouped:
         if len(group) <= 20:
             print(concept_name, len(group))
             await get_high_corr_concept_pairs(concept_name, start_date, end_date, corr_min=0.9)
 
-    print("==========")
+    print("===== industry =====")
     df_industry = stock.utils.symbol_util.load_industry()
     grouped = df_industry.groupby("industry_name")
     for industry_name, group in grouped:
@@ -273,5 +269,5 @@ if __name__ == "__main__":
         asyncio.run(get_high_corr_industry_pairs(args.industry, start_date, end_date, args.corr_min))
         sys.exit(0)
     if args.pairs:
-        asyncio.run(get_all_pairs())
+        asyncio.run(get_all_pairs(start_date, end_date))
         sys.exit(0)
