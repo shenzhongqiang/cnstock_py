@@ -21,11 +21,11 @@ class NoTickData(Exception):
 
 def get_stock_symbols():
     df = pd.read_csv(SYM["all"], dtype=str)
-    return df.code.tolist()
+    return df.symbol.tolist()
 
 def get_index_symbols():
     df = pd.read_csv(SYM["id"], dtype=str)
-    return df.code.tolist()
+    return df.symbol.tolist()
 
 def get_index_symbol(type):
     return INDEX[type]

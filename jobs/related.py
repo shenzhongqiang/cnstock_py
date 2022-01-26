@@ -11,12 +11,11 @@ import pandas as pd
 import stock.utils.symbol_util
 from stock.globalvar import HIST_DIR, SYM
 
-
 EXCLUDE_CONCEPTS = ["融资融券", "机构重仓", "富时罗素", "MSCI中国", "标准普尔", "沪股通", "HS300_", "上证180_", "上证50_",
-                     "证金持股", "央视50_", "深证100R", "中证500", "ST股", "深成500", "上证380", "深股通", "创业成份",
-                     "QFII重仓", "转债标的", "基金重仓", "创业板综", "昨日连板_含一字", "AH股", "GDR", "中字头", "茅指数",
-                     "B股", "IPO受益", "举牌", "低价股", "养老金", "昨日涨停", "昨日涨停_含一字", "昨日触板", "昨日连板",
-                     "贬值受益", "预亏预减", "高送转"]
+                    "证金持股", "央视50_", "深证100R", "中证500", "ST股", "深成500", "上证380", "深股通", "创业成份",
+                    "QFII重仓", "转债标的", "基金重仓", "创业板综", "昨日连板_含一字", "AH股", "GDR", "中字头", "茅指数",
+                    "B股", "IPO受益", "举牌", "低价股", "养老金", "昨日涨停", "昨日涨停_含一字", "昨日触板", "昨日连板",
+                    "贬值受益", "预亏预减", "高送转"]
 
 
 def get_zt_price(yest_close, percent):
@@ -83,7 +82,8 @@ async def get_high_corr_stocks(symbol, related_symbols, start_date, end_date, co
 async def get_similar_stocks_between_dates(symbol, start_date, end_date, corr_min):
     df_concept = stock.utils.symbol_util.load_concept()
     df_industry = stock.utils.symbol_util.load_industry()
-    concepts = df_concept[(df_concept["symbol"] == symbol)][~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)][["concept_symbol", "concept_name"]].drop_duplicates().values
+    concepts = df_concept[(df_concept["symbol"] == symbol)][~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)][
+        ["concept_symbol", "concept_name"]].drop_duplicates().values
     industries = df_industry[df_industry["symbol"] == symbol][
         ["industry_symbol", "industry_name"]].drop_duplicates().values
     if len(concepts) == 0 and len(industries) == 0:
@@ -132,7 +132,8 @@ async def get_high_chg_stocks(symbol, related_symbols, date, chg_min):
 async def get_similar_stocks_on_date(symbol, date, chg_min):
     df_concept = stock.utils.symbol_util.load_concept()
     df_industry = stock.utils.symbol_util.load_industry()
-    concepts = df_concept[(df_concept["symbol"] == symbol)][~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)][["concept_symbol", "concept_name"]].drop_duplicates().values
+    concepts = df_concept[(df_concept["symbol"] == symbol)][~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)][
+        ["concept_symbol", "concept_name"]].drop_duplicates().values
     industries = df_industry[df_industry["symbol"] == symbol][
         ["industry_symbol", "industry_name"]].drop_duplicates().values
     if len(concepts) == 0 and len(industries) == 0:
@@ -208,6 +209,27 @@ def get_zhangting_stocks(date_str):
     print(df_zt[columns].sort_values("fengdan", ascending=False))
 
 
+async def get_all_pairs():
+    format = "%Y-%m-%d"
+    end_dt = datetime.datetime.today()
+    start_dt = end_dt - datetime.timedelta(days=240)
+    start_date = start_dt.strftime(format)
+    end_date = end_dt.strftime(format)
+    df_concept = stock.utils.symbol_util.load_concept()
+    grouped = df_concept.groupby("concept_name")
+    for concept_name, group in grouped:
+        if len(group) <= 20:
+            print(concept_name, len(group))
+            await get_high_corr_concept_pairs(concept_name, start_date, end_date, corr_min=0.9)
+
+    print("==========")
+    df_industry = stock.utils.symbol_util.load_industry()
+    grouped = df_industry.groupby("industry_name")
+    for industry_name, group in grouped:
+        if len(group) <= 30:
+            print(industry_name, len(group))
+            await get_high_corr_industry_pairs(industry_name, start_date, end_date, corr_min=0.9)
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--start", type=str, default=None, help="e.g. 2021-01-04")
@@ -219,6 +241,7 @@ if __name__ == "__main__":
     parser.add_argument("--industry", type=str, default=None, help="e.g. 煤炭行业")
     parser.add_argument("--corr-min", type=float, default=0.9, help="e.g. 0.9")
     parser.add_argument("--chg-min", type=float, default=0.09, help="e.g. 0.09")
+    parser.add_argument("--pairs", action="store_true", default=False, help="get all highly related stock pairs")
 
     args = parser.parse_args()
     pd.set_option('display.max_rows', None)
@@ -248,4 +271,7 @@ if __name__ == "__main__":
         sys.exit(0)
     if args.industry:
         asyncio.run(get_high_corr_industry_pairs(args.industry, start_date, end_date, args.corr_min))
+        sys.exit(0)
+    if args.pairs:
+        asyncio.run(get_all_pairs())
         sys.exit(0)
