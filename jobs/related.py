@@ -145,7 +145,7 @@ class GroupDrift(object):
         for corr_result in self.group_corr_result.corr_results:
             drift_result = self.drift_calculator.get_drift(corr_result.symbol_x, corr_result.symbol_y)
             drift1 = drift_result.get_drift(1)
-            print("{},{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f}".format(
+            print("{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.3f}".format(
                 corr_result.symbol_x, corr_result.symbol_y, corr_result.corr,
                 drift1.chg_x, drift1.chg_y, drift1.drift, drift1.std))
 
