@@ -19,6 +19,14 @@ history: symbol
 	$(info get history)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/download.py --hist
 
+pairs: history
+	$(info get pairs)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/related.py --pairs
+
+drift: pairs
+	$(info get drift)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/related.py --pairs-drift
+
 zhangting: realtime
 	$(info get zhangting)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/related.py --zhangting

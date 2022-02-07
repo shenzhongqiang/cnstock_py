@@ -18,9 +18,9 @@ EXCLUDE_CONCEPTS = ["融资融券", "机构重仓", "富时罗素", "MSCI中国"
                     "贬值受益", "预盈预增", "预亏预减", "高送转", "百元股", "社保重仓", "参股新三板", "内贸流通", "股权激励",
                     "AB股", "独角兽", "壳资源", "分拆预期", "债转股", "送转预期", ]
 
-
 GROUP_TYPE_CONCEPT = "concept"
 GROUP_TYPE_INDUSTRY = "industry"
+
 
 class CorrResult(object):
     def __init__(self, symbol_x, symbol_y, corr):
@@ -39,7 +39,7 @@ class GroupCorrResult(object):
         self.group_type = group_type
 
     def print(self):
-        print("{}: {}", self.group_type, self.group_name)
+        print("{}: {}".format(self.group_type, self.group_name))
         for corr_result in self.corr_results:
             print("{},{},{:.3f}".format(corr_result.symbol_x, corr_result.symbol_y, corr_result.corr))
 
@@ -70,6 +70,84 @@ class HistoryStore(object):
             if df is not None:
                 return df.loc[start_date:end_date]
         return None
+
+
+class LevelDriftResult(object):
+    def __init__(self, level, chg_x, chg_y, mean, std, drift):
+        self.level = level
+        self.chg_x = chg_x
+        self.chg_y = chg_y
+        self.mean = mean
+        self.std = std
+        self.drift = drift
+
+
+class DriftResult(object):
+    def __init__(self, symbol_x, symbol_y):
+        self.symbol_x = symbol_x
+        self.symbol_y = symbol_y
+        self.drifts = []
+
+    def add_drift(self, level_drift):
+        self.drifts.append(level_drift)
+
+    def get_drift(self, level):
+        drifts = list(filter(lambda x: x.level == level, self.drifts))
+        if len(drifts) == 0:
+            return None
+        return drifts[0]
+
+
+class DriftCalculator(object):
+    level_max = 5
+
+    def __init__(self, store, start_date, end_date):
+        self.store = store
+        self.start_date = start_date
+        self.end_date = end_date
+
+    def get_drift(self, symbol_x, symbol_y):
+        df_x = self.store.get_history(symbol_x, self.start_date, self.end_date)
+        df_y = self.store.get_history(symbol_y, self.start_date, self.end_date)
+        if self.end_date not in df_x.index or self.end_date not in df_y.index:
+            return None
+        drift_result = DriftResult(symbol_x, symbol_y)
+        result = pd.merge(df_x, df_y, how="outer", left_index=True, right_index=True, suffixes=("_x", "_y"))
+        result["close_x"].fillna(method="ffill", inplace=True)
+        result["close_y"].fillna(method="ffill", inplace=True)
+        for i in range(1, DriftCalculator.level_max + 1, 1):
+            result["chg_x"] = result["close_x"] / result["close_x"].shift(i) - 1
+            result["chg_y"] = result["close_y"] / result["close_y"].shift(i) - 1
+            result["x-y"] = result["chg_x"] - result["chg_y"]
+            mean = result["x-y"].mean()
+            std = result["x-y"].std()
+            s = result.loc[self.end_date]
+            chg_x = s["chg_x"]
+            chg_y = s["chg_y"]
+            drift = chg_x - chg_y
+            level_drift = LevelDriftResult(i, chg_x, chg_y, mean, std, drift)
+            drift_result.add_drift(level_drift)
+        return drift_result
+
+
+class GroupDrift(object):
+    def __init__(self, group_corr_result, start_date, end_date):
+        self.group_corr_result = group_corr_result
+        symbol_xs = list(map(lambda x: x.symbol_x, group_corr_result.corr_results))
+        symbol_ys = list(map(lambda x: x.symbol_y, group_corr_result.corr_results))
+        symbols = list(set(symbol_xs + symbol_ys))
+        store = HistoryStore(symbols)
+        self.drift_calculator = DriftCalculator(store, start_date, end_date)
+
+    def calc_and_print_result(self):
+        print("{}: {}".format(self.group_corr_result.group_type, self.group_corr_result.group_name))
+        print("symbol_x,symbol_y,corr,chg_x,chg_y,x-y,std")
+        for corr_result in self.group_corr_result.corr_results:
+            drift_result = self.drift_calculator.get_drift(corr_result.symbol_x, corr_result.symbol_y)
+            drift1 = drift_result.get_drift(1)
+            print("{},{},{:.3f},{:.3f},{:.3f},{:.3f},{:.3f}".format(
+                corr_result.symbol_x, corr_result.symbol_y, corr_result.corr,
+                drift1.chg_x, drift1.chg_y, drift1.drift, drift1.std))
 
 
 def remove_b(symbols):
@@ -146,7 +224,7 @@ async def get_similar_stocks_between_dates(symbol, start_date, end_date, corr_mi
         concept_symbol = concept[0]
         concept_name = concept[1]
         concept_symbols = df_concept[df_concept["concept_symbol"] == concept_symbol]["symbol"].values
-        store = HistoryStore(concept_symbols, start_date, end_date)
+        store = HistoryStore(concept_symbols)
         related_symbols = list(filter(lambda x: x != symbol, concept_symbols))
         high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, start_date, end_date, corr_min, store)
         group_result = GroupCorrResult(concept_name, high_corr_stocks, GROUP_TYPE_CONCEPT)
@@ -156,7 +234,7 @@ async def get_similar_stocks_between_dates(symbol, start_date, end_date, corr_mi
         industry_symbol = industry[0]
         industry_name = industry[1]
         industry_symbols = df_industry[df_industry["industry_symbol"] == industry_symbol]["symbol"].values
-        store = HistoryStore(industry_symbols, start_date, end_date)
+        store = HistoryStore(industry_symbols)
         related_symbols = list(filter(lambda x: x != symbol, industry_symbols))
         high_corr_stocks = await get_high_corr_stocks(symbol, related_symbols, start_date, end_date, corr_min, store)
         group_result = GroupCorrResult(industry_name, high_corr_stocks, GROUP_TYPE_INDUSTRY)
@@ -308,16 +386,6 @@ async def get_pairs(start_date, end_date, corr_min):
                 "symbol_y": corr_res.symbol_y,
                 "corr": corr_res.corr}, index=[len(df)])])
 
-    # symbols = list(set(df["symbol_x"].tolist() + df["symbol_y"].tolist()))
-    # store = HistoryStore(symbols)
-    # format = "%Y-%m-%d"
-    # end_dt = datetime.datetime.strptime(end_date, format)
-    # start_dt = end_dt - datetime.timedelta(days=22)
-    # start_date = start_dt.strftime(format)
-    # tasks = [get_corr(row["symbol_x"], row["symbol_y"], start_date, end_date, store) for index, row in df.iterrows()]
-    # concept_results = await asyncio.gather(*tasks)
-    # df["corr_22"] = list(map(lambda x: x.corr, concept_results))
-    # df = df[df["corr_22"] > corr_min]
     filepath = os.path.join(BASIC_DIR, "pairs")
     df.to_csv(filepath, index=False)
 
@@ -331,38 +399,23 @@ async def get_pairs_drift(end_date):
     end_dt = datetime.datetime.strptime(end_date, format)
     start_dt = end_dt - datetime.timedelta(days=240)
     start_date = start_dt.strftime(format)
-    print("group,symbol_x,symbol_y,corr,x-y,x-y2,x-y3,x-y mean,x-y std")
+    print("group,symbol_x,symbol_y,corr,x-y,x-y2,x-y3,mean,std,std2,std3")
     for index, row in df_pair.iterrows():
         group = row["group"]
         symbol_x = row["symbol_x"]
         symbol_y = row["symbol_y"]
         corr = row["corr"]
-        df_x = store.get_history(symbol_x, start_date, end_date)
-        df_y = store.get_history(symbol_y, start_date, end_date)
-        if end_date not in df_x.index or end_date not in df_y.index:
+        calc = DriftCalculator(store, start_date, end_date)
+        drift_result = calc.get_drift(symbol_x, symbol_y)
+        if drift_result is None:
             continue
-        result = pd.merge(df_x, df_y, how="outer", left_index=True, right_index=True, suffixes=("_x", "_y"))
-        result["close_x"].fillna(method="ffill", inplace=True)
-        result["close_y"].fillna(method="ffill", inplace=True)
-        result["chg_x"] = result["close_x"]/result["close_x"].shift(1) - 1
-        result["chg_x2"] = result["close_x"]/result["close_x"].shift(2) - 1
-        result["chg_x3"] = result["close_x"]/result["close_x"].shift(3) - 1
-        result["chg_y"] = result["close_y"]/result["close_y"].shift(1) - 1
-        result["chg_y2"] = result["close_y"]/result["close_y"].shift(2) - 1
-        result["chg_y3"] = result["close_y"]/result["close_y"].shift(3) - 1
-        result["x-y"] = result["chg_x"] - result["chg_y"]
-        result["x-y2"] = result["chg_x2"] - result["chg_y2"]
-        result["x-y3"] = result["chg_x3"] - result["chg_y3"]
-        mean = result["x-y"].mean()
-        std = result["x-y"].std()
-        std2 = result["x-y2"].std()
-        std3 = result["x-y3"].std()
-        s = result.loc[end_date]
-        if (s["chg_x"] > 0.05 and (s["x-y"] > 3*std or s["x-y2"] > 3*std2 or s["x-y3"] > 3*std3)) or \
-                (s["chg_y"] > 0.05 and (s["x-y"] < -3*std or s["x-y2"] < -3*std2 or s["x-y3"] < -3*std3)):
-            print("{},{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.5f},{:.3f}".format(
-                group, symbol_x, symbol_y, corr, s["x-y"], s["x-y2"], s["x-y3"], mean, std))
-
+        drift1 = drift_result.get_drift(1)
+        drift2 = drift_result.get_drift(2)
+        drift3 = drift_result.get_drift(3)
+        if (drift1.chg_x > 0.05 and (drift1.drift > 2*drift1.std or drift2.drift > 2*drift2.std or drift3.drift > 2*drift3.std)) or \
+           (drift1.chg_y > 0.05 and (drift1.drift < -2*drift1.std or drift2.drift < -2*drift2.std or drift3.drift < -2*drift3.std)):
+            print("{},{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.5f},{:.3f},{:.3f},{:.3f}".format(
+                group, symbol_x, symbol_y, corr, drift1.drift, drift2.drift, drift3.drift, drift1.mean, drift1.std, drift2.std, drift3.std))
 
 
 async def main():
@@ -390,7 +443,7 @@ async def main():
     start_date = args.start
     if start_date is None:
         end_dt = datetime.datetime.strptime(end_date, format)
-        start_dt = end_dt - datetime.timedelta(days=240)
+        start_dt = end_dt - datetime.timedelta(days=365)
         start_date = start_dt.strftime(format)
 
     if args.zhangting:
@@ -402,21 +455,23 @@ async def main():
     if args.symbol:
         result = await get_similar_stocks_between_dates(args.symbol, start_date, end_date, args.corr_min)
         for group_result in result:
-            group_result.print()
+            group_drift = GroupDrift(group_result, start_date, end_date)
+            group_drift.calc_and_print_result()
         sys.exit(0)
     if args.concept:
         group_result = await get_high_corr_concept_pairs(args.concept, start_date, end_date, args.corr_min)
-        group_result.print()
+        group_drift = GroupDrift(group_result, start_date, end_date)
+        group_drift.calc_and_print_result()
         sys.exit(0)
     if args.industry:
         group_result = await get_high_corr_industry_pairs(args.industry, start_date, end_date, args.corr_min)
-        group_result.print()
+        group_drift = GroupDrift(group_result, start_date, end_date)
+        group_drift.calc_and_print_result()
         sys.exit(0)
     if args.pairs:
         await get_pairs(start_date, end_date, args.corr_min)
         sys.exit(0)
     if args.pairs_drift:
-        await get_pairs(start_date, end_date, args.corr_min)
         await get_pairs_drift(end_date)
         sys.exit(0)
 
