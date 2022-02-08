@@ -144,6 +144,8 @@ class GroupDrift(object):
         print("symbol_x,symbol_y,corr,chg_x,chg_y,x-y,std")
         for corr_result in self.group_corr_result.corr_results:
             drift_result = self.drift_calculator.get_drift(corr_result.symbol_x, corr_result.symbol_y)
+            if drift_result is None:
+                continue
             drift1 = drift_result.get_drift(1)
             print("{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.3f}".format(
                 corr_result.symbol_x, corr_result.symbol_y, corr_result.corr,
@@ -245,7 +247,7 @@ async def get_similar_stocks_between_dates(symbol, start_date, end_date, corr_mi
 async def get_high_chg_stocks(symbol, related_symbols, date, chg_min, store):
     format = "%Y-%m-%d"
     end_dt = datetime.datetime.strptime(date, format)
-    start_dt = end_dt - datetime.timedelta(days=1)
+    start_dt = end_dt - datetime.timedelta(days=10)
     start_date = start_dt.strftime(format)
     df_symbol = store.get_history(symbol, start_date, date)
     if df_symbol is None or date not in df_symbol.index:
