@@ -401,7 +401,7 @@ async def get_pairs_drift(end_date):
     end_dt = datetime.datetime.strptime(end_date, format)
     start_dt = end_dt - datetime.timedelta(days=240)
     start_date = start_dt.strftime(format)
-    print("group,symbol_x,symbol_y,corr,x-y,x-y2,x-y3,mean,std,std2,std3")
+    print("group,symbol_x,symbol_y,corr,x-y,x-y2,x-y3,x-y4,x-y5")
     for index, row in df_pair.iterrows():
         group = row["group"]
         symbol_x = row["symbol_x"]
@@ -414,10 +414,12 @@ async def get_pairs_drift(end_date):
         drift1 = drift_result.get_drift(1)
         drift2 = drift_result.get_drift(2)
         drift3 = drift_result.get_drift(3)
-        if (drift1.chg_x > 0.05 and (drift1.drift > 2*drift1.std or drift2.drift > 2*drift2.std or drift3.drift > 2*drift3.std)) or \
-           (drift1.chg_y > 0.05 and (drift1.drift < -2*drift1.std or drift2.drift < -2*drift2.std or drift3.drift < -2*drift3.std)):
-            print("{},{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.5f},{:.3f},{:.3f},{:.3f}".format(
-                group, symbol_x, symbol_y, corr, drift1.drift, drift2.drift, drift3.drift, drift1.mean, drift1.std, drift2.std, drift3.std))
+        drift4 = drift_result.get_drift(4)
+        drift5 = drift_result.get_drift(5)
+        if (drift1.chg_x > 0.05 and (drift1.drift > 2*drift1.std or drift2.drift > 2*drift2.std or drift3.drift > 2*drift3.std or drift4.drift > 2*drift4.std or drift5.drift > 2*drift5.std)) or \
+           (drift1.chg_y > 0.05 and (drift1.drift < -2*drift1.std or drift2.drift < -2*drift2.std or drift3.drift < -2*drift3.std or drift4.drift < -2*drift4.std or drift5.drift < -2*drift5.std)):
+            print("{},{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(
+                group, symbol_x, symbol_y, corr, drift1.drift, drift2.drift, drift3.drift, drift4.drift, drift5.drift))
 
 
 async def main():
