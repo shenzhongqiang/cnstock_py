@@ -429,7 +429,7 @@ async def main():
     parser.add_argument("--symbol", type=str, default=None, help="e.g. 600001")
     parser.add_argument("--concept", type=str, default=None, help="e.g. 元宇宙")
     parser.add_argument("--industry", type=str, default=None, help="e.g. 煤炭行业")
-    parser.add_argument("--corr-min", type=float, default=0.9, help="e.g. 0.9")
+    parser.add_argument("--corr-min", type=float, default=0.88, help="e.g. 0.9")
     parser.add_argument("--chg-min", type=float, default=0.09, help="e.g. 0.09")
     parser.add_argument("--pairs", action="store_true", default=False, help="get all highly related stock pairs")
     parser.add_argument("--pairs-drift", action="store_true", default=False, help="get pairs with drift")
