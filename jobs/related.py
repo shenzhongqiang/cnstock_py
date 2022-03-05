@@ -401,7 +401,7 @@ async def get_pairs_drift(end_date):
     end_dt = datetime.datetime.strptime(end_date, format)
     start_dt = end_dt - datetime.timedelta(days=240)
     start_date = start_dt.strftime(format)
-    print("group,symbol_x,symbol_y,corr,x-y,x-y2,x-y3,x-y4,x-y5")
+    print("group,symbol_x,symbol_y,corr")
     for index, row in df_pair.iterrows():
         group = row["group"]
         symbol_x = row["symbol_x"]
@@ -411,11 +411,6 @@ async def get_pairs_drift(end_date):
         drift_result = calc.get_drift(symbol_x, symbol_y)
         if drift_result is None:
             continue
-        drift1 = drift_result.get_drift(1)
-        drift2 = drift_result.get_drift(2)
-        drift3 = drift_result.get_drift(3)
-        drift4 = drift_result.get_drift(4)
-        drift5 = drift_result.get_drift(5)
         cond1 = False
         cond2 = False
         cond3 = False
@@ -423,15 +418,11 @@ async def get_pairs_drift(end_date):
         for level in range(1, DriftCalculator.level_max+1, 1):
             drift = drift_result.get_drift(level)
             if level == 1:
-                chg_a = drift.chg_a
-                chg_h = drift.chg_h
-            else:
-                last_drift = drift_result.get_drift(level - 1)
-                chg_a = (drift.chg_a + 1) / (last_drift.chg_a + 1) - 1
-                chg_h = (drift.chg_h + 1) / (last_drift.chg_h + 1) - 1
-            cond1 = cond1 or chg_a > 0.05
+                chg_x = drift.chg_x
+                chg_y = drift.chg_y
+                cond1 = chg_x > 0.08
+                cond3 = chg_y > 0.08
             cond2 = cond2 or drift.drift > 2 * drift.std
-            cond3 = cond3 or chg_h > 0.05
             cond4 = cond4 or drift.drift < -2 * drift.std
 
         if (cond1 and cond2) or (cond3 and cond4):
