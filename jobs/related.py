@@ -416,10 +416,27 @@ async def get_pairs_drift(end_date):
         drift3 = drift_result.get_drift(3)
         drift4 = drift_result.get_drift(4)
         drift5 = drift_result.get_drift(5)
-        if (drift1.chg_x > 0.05 and (drift1.drift > 2*drift1.std or drift2.drift > 2*drift2.std or drift3.drift > 2*drift3.std or drift4.drift > 2*drift4.std or drift5.drift > 2*drift5.std)) or \
-           (drift1.chg_y > 0.05 and (drift1.drift < -2*drift1.std or drift2.drift < -2*drift2.std or drift3.drift < -2*drift3.std or drift4.drift < -2*drift4.std or drift5.drift < -2*drift5.std)):
-            print("{},{},{},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f},{:.2f}".format(
-                group, symbol_x, symbol_y, corr, drift1.drift, drift2.drift, drift3.drift, drift4.drift, drift5.drift))
+        cond1 = False
+        cond2 = False
+        cond3 = False
+        cond4 = False
+        for level in range(1, DriftCalculator.level_max+1, 1):
+            drift = drift_result.get_drift(level)
+            if level == 1:
+                chg_a = drift.chg_a
+                chg_h = drift.chg_h
+            else:
+                last_drift = drift_result.get_drift(level - 1)
+                chg_a = (drift.chg_a + 1) / (last_drift.chg_a + 1) - 1
+                chg_h = (drift.chg_h + 1) / (last_drift.chg_h + 1) - 1
+            cond1 = cond1 or chg_a > 0.05
+            cond2 = cond2 or drift.drift > 2 * drift.std
+            cond3 = cond3 or chg_h > 0.05
+            cond4 = cond4 or drift.drift < -2 * drift.std
+
+        if (cond1 and cond2) or (cond3 and cond4):
+            print("{},{},{},{:.2f}".format(
+                group, symbol_x, symbol_y, corr))
 
 
 async def main():
