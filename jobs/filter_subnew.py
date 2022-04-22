@@ -24,12 +24,11 @@ if __name__ == "__main__":
     df = pd.DataFrame(columns=["days"])
     symbols = stock.utils.symbol_util.get_stock_symbols()
     for symbol in symbols:
-        exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol)
-        if not store.has(exsymbol):
+        if not store.has(symbol):
             continue
-        df_stock = store.get(exsymbol)
-        df_past = df_stock.loc[:today].copy()
-        if len(df_past) >100:
+        df_stock = store.get(symbol)
+        df_past = df_stock.loc[:today]
+        if len(df_past) >10 or len(df_past) == 0:
             continue
-        df.loc[exsymbol] = [len(df_past)]
+        df.loc[symbol] = [len(df_past)]
     print(df.sort_values(["days"]))
