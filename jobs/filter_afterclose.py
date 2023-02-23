@@ -1,3 +1,4 @@
+import datetime
 import sys
 import numpy as np
 import pandas as pd
@@ -9,30 +10,34 @@ from pandas.tseries.offsets import BDay
 import tushare as ts
 from stock.utils.calc_price import get_zt_price
 
+
 def get_last_trading_date(today):
-    yest = today - BDay(1)
-    folder = TICK_DIR["daily"]
-    while True:
-        yest_str = yest.strftime("%Y-%m-%d")
-        filepath = os.path.join(folder, yest_str + ".csv")
-        if os.path.isfile(filepath):
-            break
-        yest = yest - BDay(1)
-    return yest
+    start = today - datetime.timedelta(days=365)
+    start_str = start.strftime("%Y-%m-%d")
+    today_str = today.strftime("%Y-%m-%d")
+    trading_dates = stock.utils.symbol_util.get_archived_trading_dates(start_str, today_str)
+    for i in range(len(trading_dates), 0, -1):
+        date_str = trading_dates[i-1]
+        dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        if dt.date() < today.date():
+            return dt
+    raise Exception("cannot find last trading date before ", today.strftime("%Y-%m-%d"))
+
 
 def get_industry():
     df_industry = stock.utils.symbol_util.load_industry()
     df_res = df_industry.groupby("exsymbol")["industry"].agg(industry=lambda x: ",".join(x))
     return df_res
 
+
 def get_concept():
     df = stock.utils.symbol_util.load_concept()
     df_res = df.groupby("exsymbol")["concept"].agg(concept=lambda x: ",".join(x))
     return df_res
 
+
 def filter_by_history(date, exsymbols):
     store = get_store(store_type)
-    result = []
     df = pd.DataFrame(columns=["increase60", "increase5", "future"])
     for exsymbol in exsymbols:
         if not store.has(exsymbol):
@@ -48,6 +53,30 @@ def filter_by_history(date, exsymbols):
         future = df_stock.iloc[-1].close/df_past.iloc[-1].close-1
         df.loc[exsymbol] = [increase60, increase5, future]
     return df
+
+
+def get_snapshot_from_history(date):
+    store = get_store(store_type)
+    df = pd.DataFrame(columns=["open", "close", "high", "low", "volume", "amount", "yest_close"])
+    symbols = stock.utils.symbol_util.get_stock_symbols()
+    for symbol in symbols:
+        if not store.has(symbol):
+            continue
+
+        df_stock = store.get(symbol)
+        df_past = df_stock.loc[:date].copy()
+        if len(df_past) < 2:
+            continue
+        exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol)
+        df.loc[exsymbol, "open"] = df_past.iloc[-1]["open"]
+        df.loc[exsymbol, "close"] = df_past.iloc[-1]["close"]
+        df.loc[exsymbol, "high"] = df_past.iloc[-1]["high"]
+        df.loc[exsymbol, "low"] = df_past.iloc[-1]["low"]
+        df.loc[exsymbol, "volume"] = df_past.iloc[-1]["volume"]
+        df.loc[exsymbol, "amount"] = df_past.iloc[-1]["amount"]
+        df.loc[exsymbol, "yest_close"] = df_past.iloc[-2]["close"]
+    return df
+
 
 def get_lianban(exsymbol, date):
     store = get_store(store_type)
@@ -130,6 +159,17 @@ def get_duanban(today):
     print("========================== duanban ==========================")
     print(df_res[columns].sort_values(["lianban"], ascending=False))
 
+
+def get_chuban(today):
+    today_str = today.strftime("%Y-%m-%d")
+    df = get_snapshot_from_history(today_str)
+    df["zt_price"] = df.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
+    df.loc[:, "is_chuban"] = np.absolute(df["zt_price"]-df["high"])<1e-8
+    df_res = df[(df.is_chuban==True) & (df.close < df.high)]
+    columns = ["close", "yest_close", "zt_price"]
+    print(df_res[columns])
+
+
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -139,5 +179,6 @@ if __name__ == "__main__":
     else:
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
-    get_zhangting(today)
-    get_duanban(today)
+    get_chuban(today)
+    #get_zhangting(today)
+    #get_duanban(today)

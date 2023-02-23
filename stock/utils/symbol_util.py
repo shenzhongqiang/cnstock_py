@@ -33,7 +33,7 @@ def get_index_symbol(type):
 def get_archived_trading_dates(start, end):
     index_path = os.path.join(HIST_DIR["index"], "000001")
     df = load_csv(index_path)
-    dates = df.date.tolist()
+    dates = df.index.tolist()
     dts = map(lambda x: datetime.datetime.strptime(x, "%Y-%m-%d"), dates)
     result = []
     start_dt = datetime.datetime.strptime(start, "%Y-%m-%d")
@@ -42,7 +42,7 @@ def get_archived_trading_dates(start, end):
         if dt >= start_dt and dt <= end_dt:
             result.append(dt)
 
-    return map(lambda x: datetime.datetime.strftime(x, "%Y-%m-%d"), result)
+    return list(map(lambda x: datetime.datetime.strftime(x, "%Y-%m-%d"), result))
 
 def get_st(exsymbols):
     exsymbol_str = ",".join(exsymbols)

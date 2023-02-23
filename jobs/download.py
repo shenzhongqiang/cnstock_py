@@ -20,6 +20,14 @@ def is_sh(a_symbol):
         return True
     return False
 
+
+def is_index_sh(a_symbol):
+    m = re.match(r"0", a_symbol)
+    if m:
+        return True
+    return False
+
+
 def get_symbols_df(url_pattern):
     pz = 5000
     i = 1
@@ -39,10 +47,12 @@ def get_symbols_df(url_pattern):
     df = pd.DataFrame({"symbol": symbols, "name": names})
     return df
 
+
 def download_stock_symbols():
     url_pattern = "https://48.push2.eastmoney.com/api/qt/clist/get?pn={}&pz={}&po=1&np=1&fltt=2&invt=2&fid=f3&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048&fields=f12,f14"
     df = get_symbols_df(url_pattern)
     df.to_csv(SYM["all"], index=False)
+
 
 def download_index_symbols():
     url_patterns = [
@@ -57,6 +67,7 @@ def download_index_symbols():
     df = pd.concat(dfs)
     df.to_csv(SYM["id"], index=False)
 
+
 def download_wbond_symbols():
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -66,6 +77,7 @@ def download_wbond_symbols():
     df["上市时间"] = pd.to_datetime(df["上市时间"])
     df = df[df["上市时间"]<today]
     df.to_csv(SYM['wbond'], index=False)
+
 
 def get_hist_from_data(data):
     klines = data["data"]["klines"]
@@ -95,6 +107,7 @@ def get_hist_from_data(data):
     df = pd.DataFrame({"date": dates, "open": opens, "close": closes, "high": highs, "low": lows, "volume": vols, "amount": amounts})
     return df
 
+
 def download_stock_hist(symbol):
     if is_sh(symbol):
         url = "https://25.push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=0&end=20500101&lmt=500".format(symbol)
@@ -121,6 +134,38 @@ def download_hist():
     results = []
     for symbol in symbols:
         res = pool.apply_async(download_stock_hist, (symbol,))
+        results.append(res)
+    for i in trange(len(results)):
+        res = results[i]
+        res.wait()
+
+
+def download_index_hist(symbol):
+    if is_index_sh(symbol):
+        url = "http://99.push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=1&end=20500101&lmt=500".format(symbol)
+    else:
+        url = "http://99.push2his.eastmoney.com/api/qt/stock/kline/get?secid=0.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=1&end=20500101&lmt=500".format(symbol)
+    try:
+        r = requests.get(url, verify=False)
+        data = r.json()
+        df = get_hist_from_data(data)
+        filepath = os.path.join(HIST_DIR["index"], symbol)
+        df.to_csv(filepath, index=False)
+    except Exception as e:
+        print("error getting history due to %s" % str(e))
+
+
+def download_index():
+    stock_dir = HIST_DIR['index']
+    if not os.path.isdir(stock_dir):
+        os.makedirs(stock_dir)
+
+    df = pd.read_csv(SYM["id"], dtype={"symbol": str})
+    symbols = df["symbol"].values
+    pool = Pool(10)
+    results = []
+    for symbol in symbols:
+        res = pool.apply_async(download_index_hist, (symbol,))
         results.append(res)
     for i in trange(len(results)):
         res = results[i]
@@ -322,6 +367,7 @@ if __name__ == "__main__":
         download_wbond_symbols()
         sys.exit(0)
     if args.hist:
+        download_index()
         download_hist()
         sys.exit(0)
     if args.realtime:
