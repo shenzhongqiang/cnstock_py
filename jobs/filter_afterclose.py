@@ -165,7 +165,7 @@ def get_chuban(today):
     df = get_snapshot_from_history(today_str)
     df["zt_price"] = df.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df.loc[:, "is_chuban"] = np.absolute(df["zt_price"]-df["high"])<1e-8
-    df_res = df[(df.is_chuban==True) & (df.close < df.high)]
+    df_res = df[(df.is_chuban==True) & (df.close < df.high) & (df.close > 2)]
     columns = ["close", "yest_close", "zt_price"]
     print(df_res[columns])
 
