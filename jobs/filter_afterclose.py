@@ -67,14 +67,15 @@ def get_snapshot_from_history(date):
         df_past = df_stock.loc[:date].copy()
         if len(df_past) < 2:
             continue
-        exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol)
-        df.loc[exsymbol, "open"] = df_past.iloc[-1]["open"]
-        df.loc[exsymbol, "close"] = df_past.iloc[-1]["close"]
-        df.loc[exsymbol, "high"] = df_past.iloc[-1]["high"]
-        df.loc[exsymbol, "low"] = df_past.iloc[-1]["low"]
-        df.loc[exsymbol, "volume"] = df_past.iloc[-1]["volume"]
-        df.loc[exsymbol, "amount"] = df_past.iloc[-1]["amount"]
-        df.loc[exsymbol, "yest_close"] = df_past.iloc[-2]["close"]
+        if df_past.iloc[-1].date != date:
+            continue
+        df.loc[symbol, "open"] = df_past.iloc[-1]["open"]
+        df.loc[symbol, "close"] = df_past.iloc[-1]["close"]
+        df.loc[symbol, "high"] = df_past.iloc[-1]["high"]
+        df.loc[symbol, "low"] = df_past.iloc[-1]["low"]
+        df.loc[symbol, "volume"] = df_past.iloc[-1]["volume"]
+        df.loc[symbol, "amount"] = df_past.iloc[-1]["amount"]
+        df.loc[symbol, "yest_close"] = df_past.iloc[-2]["close"]
     return df
 
 
