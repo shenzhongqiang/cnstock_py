@@ -107,6 +107,10 @@ def symbol_to_exsymbol(symbol, index=False):
             exsymbol = 'sz' + symbol
         elif re.search(r'^0', symbol):
             exsymbol = 'sz' + symbol
+        elif re.search(r'^4', symbol):
+            exsymbol = 'bj' + symbol
+        elif re.search(r'^8', symbol):
+            exsymbol = 'bj' + symbol
     else:
         exsymbol = 'id' + symbol
     return exsymbol
