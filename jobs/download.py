@@ -12,20 +12,7 @@ import pandas as pd
 import akshare as ak
 
 from stock.globalvar import HIST_DIR, SYM, BASIC_DIR, REAL_DIR
-
-
-def is_sh(a_symbol):
-    m = re.match(r"6", a_symbol)
-    if m:
-        return True
-    return False
-
-
-def is_index_sh(a_symbol):
-    m = re.match(r"0", a_symbol)
-    if m:
-        return True
-    return False
+from stock.utils.symbol_util import is_index_sh, is_sh
 
 
 def get_symbols_df(url_pattern):

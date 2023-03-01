@@ -291,3 +291,19 @@ def get_stock_basics():
     df.loc[:, "exsymbol"] = list(map(lambda x: symbol_to_exsymbol(x), df.index))
     df = df.set_index("exsymbol")
     return df
+
+
+def is_sh(a_symbol):
+    m = re.match(r"6", a_symbol)
+    if m:
+        return True
+    return False
+
+
+def is_index_sh(a_symbol):
+    m = re.match(r"0", a_symbol)
+    if m:
+        return True
+    return False
+
+

@@ -162,14 +162,14 @@ def report_dates(date):
     return dates
 
 
-if __name__ == "__main__":
+def download_earnings(today):
     pool = Pool(10)
 
     # get stock symbols
     symbols = stock.utils.symbol_util.get_stock_symbols()
 
     results = []
-    dates = report_dates("2023-01-01")
+    dates = report_dates(today)
     for symbol in symbols:
         res = pool.apply_async(download_stock_finance, (symbol, dates))
         results.append(res)
@@ -178,3 +178,59 @@ if __name__ == "__main__":
         res = results[i]
         res.wait()
 
+
+def download_stock_basic(symbol):
+    common_url = "https://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=1&fields=" + \
+          "f58%2Cf734%2Cf107%2Cf57%2Cf43%2Cf59%2Cf169%2Cf170%2Cf152%2Cf177%2Cf111%2Cf46%2Cf60%2Cf44%2Cf45%2Cf47" + \
+          "%2Cf260%2Cf48%2Cf261%2Cf279%2Cf277%2Cf278%2Cf288%2Cf19%2Cf17%2Cf531%2Cf15%2Cf13%2Cf11%2Cf20%2Cf18%2Cf16" + \
+          "%2Cf14%2Cf12%2Cf39%2Cf37%2Cf35%2Cf33%2Cf31%2Cf40%2Cf38%2Cf36%2Cf34%2Cf32%2Cf211%2Cf212%2Cf213%2Cf214" + \
+          "%2Cf215%2Cf210%2Cf209%2Cf208%2Cf207%2Cf206%2Cf161%2Cf49%2Cf171%2Cf50%2Cf86%2Cf84%2Cf85%2Cf168%2Cf108" + \
+          "%2Cf116%2Cf167%2Cf164%2Cf162%2Cf163%2Cf92%2Cf71%2Cf117%2Cf292%2Cf51%2Cf52%2Cf191%2Cf192%2Cf262%2Cf294" + \
+          "%2Cf295%2Cf269%2Cf270%2Cf256%2Cf257%2Cf285%2Cf286&secid="
+    if stock.utils.symbol_util.is_sh(symbol):
+        url = common_url + "1." + symbol
+    else:
+        url = common_url + "0." + symbol
+
+    try:
+        r = requests.get(url, verify=False)
+        data = r.json()["data"]
+        name = data["f58"]
+        close = data["f43"] / 100
+        mcap = data["f116"]
+        liquid_mcap = data["f117"]
+        total_share_num = data["f84"]
+        liquid_share_num = data["f85"]
+
+        return {"symbol": symbol, "name": name, "close": close, "mcap": mcap, "liquid_mcap": liquid_mcap,
+                "total_share": total_share_num, "liquid_share": liquid_share_num}
+    except Exception as e:
+        print("error getting history due to %s" % str(e))
+
+def download_basics():
+    pool = Pool(10)
+
+    # get stock symbols
+    symbols = stock.utils.symbol_util.get_stock_symbols()
+
+    results = []
+    for symbol in symbols:
+        res = pool.apply_async(download_stock_basic, (symbol,))
+        results.append(res)
+
+    basics = []
+    for i in trange(len(results)):
+        res = results[i]
+        data = res.get()
+        if data:
+            basics.append(data)
+
+    df = pd.DataFrame(basics)
+    df.set_index("symbol", inplace=True)
+    path = os.path.join(BASIC_DIR, "basics")
+    df.to_csv(path)
+
+
+if __name__ == "__main__":
+    download_basics()
+    #download_earnings("2023-01-01")
