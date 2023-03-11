@@ -166,9 +166,17 @@ def get_chuban(today):
     df = get_snapshot_from_history(today_str)
     df["zt_price"] = df.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)
     df.loc[:, "is_chuban"] = np.absolute(df["zt_price"]-df["high"])<1e-8
+    df.loc[:, "chg"] = df["close"]/df["yest_close"] - 1
     df_res = df[(df.is_chuban==True) & (df.close < df.high) & (df.close > 2)]
     columns = ["close", "yest_close", "zt_price"]
+    print("========================== chuban ==========================")
     print(df_res[columns])
+
+    df.loc[:, "hi_chg"] = df["high"]/df["yest_close"] - 1
+    df_rise = df[(df.hi_chg > 0.05) & (df.close > df.open) & (df.close < df.zt_price)]
+    columns = ["close", "yest_close", "hi_chg"]
+    print("========================== rise ==========================")
+    print(df_rise[columns])
 
 
 if __name__ == "__main__":
