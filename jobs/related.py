@@ -197,9 +197,9 @@ async def get_corr(symbol_x, symbol_y, start_date, end_date, store):
 
 async def get_chg(symbol, start_date, end_date, store):
     df = store.get_history(symbol, start_date, end_date)
-    if df is None or len(df) < 2 or end_date not in df.index:
+    if df is None or start_date not in df.index or end_date not in df.index:
         return {"symbol": symbol, "chg": np.nan}
-    chg = df.iloc[-1]["close"] / df.iloc[-2]["close"] - 1
+    chg = df.iloc[-1]["close"] / df.iloc[0]["close"] - 1
     return {"symbol": symbol, "chg": chg}
 
 
@@ -244,22 +244,18 @@ async def get_similar_stocks_between_dates(symbol, start_date, end_date, corr_mi
     return result
 
 
-async def get_high_chg_stocks(symbol, related_symbols, date, chg_min, store):
-    format = "%Y-%m-%d"
-    end_dt = datetime.datetime.strptime(date, format)
-    start_dt = end_dt - datetime.timedelta(days=10)
-    start_date = start_dt.strftime(format)
-    df_symbol = store.get_history(symbol, start_date, date)
-    if df_symbol is None or date not in df_symbol.index:
+async def get_high_chg_stocks(symbol, related_symbols, start_date, end_date, chg_min, store):
+    df_symbol = store.get_history(symbol, start_date, end_date)
+    if df_symbol is None or start_date not in df_symbol.index or end_date not in df_symbol.index:
         return []
-    tasks = [get_chg(related_symbol, start_date, date, store) for related_symbol in related_symbols]
+    tasks = [get_chg(related_symbol, start_date, end_date, store) for related_symbol in related_symbols]
     result = await asyncio.gather(*tasks)
     result = list(filter(lambda x: x is not None and x["chg"] >= chg_min, result))
     result.sort(key=lambda x: x["chg"], reverse=True)
     return result
 
 
-async def get_similar_stocks_on_date(symbol, date, chg_min):
+async def get_sector_stocks_between_dates(symbol, start_date, end_date, chg_min):
     df_concept = stock.utils.symbol_util.load_concept()
     df_industry = stock.utils.symbol_util.load_industry()
     concepts = df_concept[(df_concept["symbol"] == symbol)][~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)][
@@ -276,7 +272,7 @@ async def get_similar_stocks_on_date(symbol, date, chg_min):
         concept_symbols = df_concept[df_concept["concept_symbol"] == concept_symbol]["symbol"].values
         store = HistoryStore(concept_symbols)
         related_symbols = list(filter(lambda x: x != symbol, concept_symbols))
-        high_chg_stocks = await get_high_chg_stocks(symbol, related_symbols, date, chg_min, store)
+        high_chg_stocks = await get_high_chg_stocks(symbol, related_symbols, start_date, end_date, chg_min, store)
         print(concept_name)
         print("symbol,chg")
         for item in high_chg_stocks:
@@ -289,7 +285,7 @@ async def get_similar_stocks_on_date(symbol, date, chg_min):
         industry_symbols = df_industry[df_industry["industry_symbol"] == industry_symbol]["symbol"].values
         store = HistoryStore(industry_symbols)
         related_symbols = list(filter(lambda x: x != symbol, industry_symbols))
-        high_chg_stocks = await get_high_chg_stocks(symbol, related_symbols, date, chg_min, store)
+        high_chg_stocks = await get_high_chg_stocks(symbol, related_symbols, start_date, end_date, chg_min, store)
         print(industry_name)
         print("symbol,chg")
         for item in high_chg_stocks:
@@ -436,6 +432,8 @@ async def main():
     parser.add_argument("--end", type=str, default=None, help="e.g. 2022-01-04")
     parser.add_argument("--date", type=str, default=None, help="e.g. 2022-01-04")
     parser.add_argument("--zhangting", action="store_true", default=False)
+    parser.add_argument("--similar", action="store_true", default=False, help="get high correlation stocks")
+    parser.add_argument("--top", action="store_true", default=True, help="get top performing stocks")
     parser.add_argument("--symbol", type=str, default=None, help="e.g. 600001")
     parser.add_argument("--concept", type=str, default=None, help="e.g. 元宇宙")
     parser.add_argument("--industry", type=str, default=None, help="e.g. 煤炭行业")
@@ -461,31 +459,41 @@ async def main():
     if args.zhangting:
         get_zhangting_stocks(end_date)
         sys.exit(0)
-    if args.symbol and args.date is not None:
-        await get_similar_stocks_on_date(args.symbol, args.date, args.chg_min)
-        sys.exit(0)
-    if args.symbol:
-        result = await get_similar_stocks_between_dates(args.symbol, start_date, end_date, args.corr_min)
-        for group_result in result:
+
+    if args.top:
+        if args.symbol and args.start is None and args.end is not None:
+            end_dt = datetime.datetime.strptime(args.end, format)
+            start_dt = stock.utils.symbol_util.get_last_trading_date(end_dt)
+            start_date = start_dt.strftime(format)
+            await get_sector_stocks_between_dates(args.symbol, start_date, args.end, args.chg_min)
+            sys.exit(0)
+        if args.symbol and args.start is not None and args.end is not None:
+            await get_sector_stocks_between_dates(args.symbol, args.start, args.end, args.chg_min)
+            sys.exit(0)
+
+    if args.simliar:
+        if args.symbol:
+            result = await get_similar_stocks_between_dates(args.symbol, start_date, end_date, args.corr_min)
+            for group_result in result:
+                group_drift = GroupDrift(group_result, start_date, end_date)
+                group_drift.calc_and_print_result()
+            sys.exit(0)
+        if args.concept:
+            group_result = await get_high_corr_concept_pairs(args.concept, start_date, end_date, args.corr_min)
             group_drift = GroupDrift(group_result, start_date, end_date)
             group_drift.calc_and_print_result()
-        sys.exit(0)
-    if args.concept:
-        group_result = await get_high_corr_concept_pairs(args.concept, start_date, end_date, args.corr_min)
-        group_drift = GroupDrift(group_result, start_date, end_date)
-        group_drift.calc_and_print_result()
-        sys.exit(0)
-    if args.industry:
-        group_result = await get_high_corr_industry_pairs(args.industry, start_date, end_date, args.corr_min)
-        group_drift = GroupDrift(group_result, start_date, end_date)
-        group_drift.calc_and_print_result()
-        sys.exit(0)
-    if args.pairs:
-        await get_pairs(start_date, end_date, args.corr_min)
-        sys.exit(0)
-    if args.pairs_drift:
-        await get_pairs_drift(end_date)
-        sys.exit(0)
+            sys.exit(0)
+        if args.industry:
+            group_result = await get_high_corr_industry_pairs(args.industry, start_date, end_date, args.corr_min)
+            group_drift = GroupDrift(group_result, start_date, end_date)
+            group_drift.calc_and_print_result()
+            sys.exit(0)
+        if args.pairs:
+            await get_pairs(start_date, end_date, args.corr_min)
+            sys.exit(0)
+        if args.pairs_drift:
+            await get_pairs_drift(end_date)
+            sys.exit(0)
 
 
 if __name__ == "__main__":
