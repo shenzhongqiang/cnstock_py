@@ -11,19 +11,6 @@ import tushare as ts
 from stock.utils.calc_price import get_zt_price
 
 
-def get_last_trading_date(today):
-    start = today - datetime.timedelta(days=365)
-    start_str = start.strftime("%Y-%m-%d")
-    today_str = today.strftime("%Y-%m-%d")
-    trading_dates = stock.utils.symbol_util.get_archived_trading_dates(start_str, today_str)
-    for i in range(len(trading_dates), 0, -1):
-        date_str = trading_dates[i-1]
-        dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-        if dt.date() < today.date():
-            return dt
-    raise Exception("cannot find last trading date before ", today.strftime("%Y-%m-%d"))
-
-
 def get_industry():
     df_industry = stock.utils.symbol_util.load_industry()
     df_res = df_industry.groupby("exsymbol")["industry"].agg(industry=lambda x: ",".join(x))
@@ -132,7 +119,7 @@ def get_zhangting(today):
 
 def get_duanban(today):
     today_str = today.strftime("%Y-%m-%d")
-    yest = get_last_trading_date(today)
+    yest = stock.utils.symbol_util.get_last_trading_date(today)
     yest_str = yest.strftime("%Y-%m-%d")
     df_yest = stock.utils.symbol_util.get_realtime_by_date(yest_str)
     df_yest["zt_price"] = df_yest.apply(lambda x: get_zt_price(x.name[2:], x["yest_close"]), axis=1)

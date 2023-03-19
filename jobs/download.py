@@ -135,6 +135,8 @@ def download_index_hist(symbol):
     try:
         r = requests.get(url, verify=False)
         data = r.json()
+        if data["data"] is None:
+            return
         df = get_hist_from_data(data)
         filepath = os.path.join(HIST_DIR["index"], symbol)
         df.to_csv(filepath, index=False)

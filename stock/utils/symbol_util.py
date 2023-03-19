@@ -44,6 +44,20 @@ def get_archived_trading_dates(start, end):
 
     return list(map(lambda x: datetime.datetime.strftime(x, "%Y-%m-%d"), result))
 
+
+def get_last_trading_date(today):
+    start = today - datetime.timedelta(days=365)
+    start_str = start.strftime("%Y-%m-%d")
+    today_str = today.strftime("%Y-%m-%d")
+    trading_dates = get_archived_trading_dates(start_str, today_str)
+    for i in range(len(trading_dates), 0, -1):
+        date_str = trading_dates[i-1]
+        dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        if dt.date() < today.date():
+            return dt
+    raise Exception("cannot find last trading date before ", today.strftime("%Y-%m-%d"))
+
+
 def get_st(exsymbols):
     exsymbol_str = ",".join(exsymbols)
     url = "http://push2.gtimg.cn/q=%s" % (exsymbol_str)
