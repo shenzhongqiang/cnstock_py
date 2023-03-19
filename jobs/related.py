@@ -430,7 +430,6 @@ async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--start", type=str, default=None, help="e.g. 2021-01-04")
     parser.add_argument("--end", type=str, default=None, help="e.g. 2022-01-04")
-    parser.add_argument("--date", type=str, default=None, help="e.g. 2022-01-04")
     parser.add_argument("--zhangting", action="store_true", default=False)
     parser.add_argument("--similar", action="store_true", default=False, help="get high correlation stocks")
     parser.add_argument("--top", action="store_true", default=True, help="get top performing stocks")
