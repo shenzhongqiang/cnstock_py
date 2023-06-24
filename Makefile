@@ -43,3 +43,7 @@ conceptindustry:
 kaipan:
 	$(info get kaipan)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_kaipan.py
+
+afterclose:
+	$(info filter afterclose)
+	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_afterclose.py

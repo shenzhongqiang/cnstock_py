@@ -166,6 +166,61 @@ def get_chuban(today):
     print(df_rise[columns])
 
 
+def get_group_snapshot_from_history(date):
+    EXCLUDE_CONCEPTS = ["融资融券", "机构重仓", "富时罗素", "MSCI中国", "标准普尔", "沪股通", "HS300_", "上证180_", "上证50_",
+                    "证金持股", "央视50_", "深证100R", "中证500", "ST股", "深成500", "上证380", "深股通", "创业成份",
+                    "QFII重仓", "转债标的", "基金重仓", "创业板综", "昨日连板_含一字", "AH股", "GDR", "中字头", "茅指数",
+                    "B股", "IPO受益", "举牌", "低价股", "养老金", "昨日涨停", "昨日涨停_含一字", "昨日触板", "昨日连板",
+                    "贬值受益", "预盈预增", "预亏预减", "高送转", "百元股", "社保重仓", "参股新三板", "内贸流通", "股权激励",
+                    "AB股", "独角兽", "壳资源", "分拆预期", "债转股", "送转预期", "科创板做市股"]
+
+    df = pd.DataFrame(columns=["day1_vol", "day2_vol", "day3_vol", "day4_vol", "day5_vol", "5day_low", "open", "close"])
+    df_concept = stock.utils.symbol_util.load_concept()
+    df_concept = df_concept[~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)]
+    df_industry = stock.utils.symbol_util.load_industry()
+    symbols = df_concept["concept_symbol"].unique().tolist() + \
+        df_industry["industry_symbol"].unique().tolist()
+    symbols = list(set(symbols))
+
+    for symbol in symbols:
+        filepath = os.path.join(HIST_DIR["group"], symbol)
+        df_group = pd.read_csv(filepath)
+        index = pd.to_datetime(df_group.date, format="%Y-%m-%d")
+        df_group.set_index(index, inplace=True)
+        df_past = df_group.loc[:date].copy()
+        if len(df_past) < 5:
+            continue
+        df.loc[symbol, "day1_vol"] = df_past.iloc[-5].volume.mean()
+        df.loc[symbol, "day2_vol"] = df_past.iloc[-4].volume
+        df.loc[symbol, "day3_vol"] = df_past.iloc[-3].volume
+        df.loc[symbol, "day4_vol"] = df_past.iloc[-2].volume
+        df.loc[symbol, "day5_vol"] = df_past.iloc[-1].volume
+        df.loc[symbol, "5day_low"] = df_past.iloc[-5:].low.min()
+        df.loc[symbol, "open"] = df_past.iloc[-1].open
+        df.loc[symbol, "close"] = df_past.iloc[-1].close
+    return df
+
+
+def get_group(today):
+    today_str = today.strftime("%Y-%m-%d")
+    df = get_group_snapshot_from_history(today_str)
+    df["avg_vol"] = (df["day1_vol"]+df["day2_vol"]+df["day3_vol"]+df["day4_vol"]) / 4
+    df["vol_incr"] = df["day5_vol"]/df["avg_vol"] - 1
+    df["dvol"] = df["day5_vol"]/df["day4_vol"] - 1
+    df["yest_dvol"] = df["day4_vol"]/df["day3_vol"] - 1
+    df["price_incr"] = df["close"]/df["5day_low"] - 1
+    df_res = df[(df["vol_incr"] > 0.4) & (df["dvol"] > df["yest_dvol"] + 0.3) & (df["price_incr"] < 0.10) & (df["close"] > df["open"])]
+
+    df_concept = stock.utils.symbol_util.load_concept()[["concept_symbol", "concept_name"]].drop_duplicates()
+    df_concept.rename(columns={"concept_symbol": "symbol", "concept_name": "name"}, inplace=True)
+    df_industry = stock.utils.symbol_util.load_industry()[["industry_symbol", "industry_name"]].drop_duplicates()
+    df_industry.rename(columns={"industry_symbol": "symbol", "industry_name": "name"}, inplace=True)
+    df_group = pd.concat([df_concept, df_industry]).set_index("symbol")
+    df_res = df_res.merge(df_group, left_index=True, right_index=True)
+    columns = ["dvol", "yest_dvol", "price_incr", "name"]
+    print(df_res[columns].sort_values("dvol", ascending=False))
+
+
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -175,6 +230,8 @@ if __name__ == "__main__":
     else:
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
-    get_chuban(today)
+    get_group(today)
+    #get_chuban(today)
     #get_zhangting(today)
     #get_duanban(today)
+

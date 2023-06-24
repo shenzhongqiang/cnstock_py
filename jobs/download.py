@@ -162,7 +162,7 @@ def download_index():
 
 
 def download_group_hist(symbol):
-    url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=90.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=1&beg=0&end=20500101&smplmt=1406&lmt=1000000".format(symbol)
+    url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=90.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=1&end=20500101&lmt=120".format(symbol)
     try:
         r = requests.get(url, verify=False)
         data = r.json()
