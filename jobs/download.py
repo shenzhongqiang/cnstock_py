@@ -12,7 +12,7 @@ import pandas as pd
 import akshare as ak
 
 from stock.globalvar import HIST_DIR, SYM, BASIC_DIR, REAL_DIR
-from stock.utils.symbol_util import is_index_sh, is_sh
+from stock.utils.symbol_util import is_index_sh, is_sh, load_concept, load_industry
 
 
 def get_symbols_df(url_pattern):
@@ -110,7 +110,7 @@ def download_stock_hist(symbol):
         print("error getting history due to %s" % str(e))
 
 
-def download_hist():
+def download_stock():
     stock_dir = HIST_DIR['stock']
     if not os.path.isdir(stock_dir):
         os.makedirs(stock_dir)
@@ -155,6 +155,39 @@ def download_index():
     results = []
     for symbol in symbols:
         res = pool.apply_async(download_index_hist, (symbol,))
+        results.append(res)
+    for i in trange(len(results)):
+        res = results[i]
+        res.wait()
+
+
+def download_group_hist(symbol):
+    url = "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=90.{}&fields1=f1%2Cf2%2Cf3%2Cf4%2Cf5%2Cf6&fields2=f51%2Cf52%2Cf53%2Cf54%2Cf55%2Cf56%2Cf57%2Cf58%2Cf59%2Cf60%2Cf61&klt=101&fqt=1&beg=0&end=20500101&smplmt=1406&lmt=1000000".format(symbol)
+    try:
+        r = requests.get(url, verify=False)
+        data = r.json()
+        if data["data"] is None:
+            return
+        df = get_hist_from_data(data)
+        filepath = os.path.join(HIST_DIR["group"], symbol)
+        df.to_csv(filepath, index=False)
+    except Exception as e:
+        print("error getting history due to %s" % str(e))
+
+
+def download_group():
+    group_dir = HIST_DIR['group']
+    if not os.path.isdir(group_dir):
+        os.makedirs(group_dir)
+
+    df_concept = load_concept()
+    df_industry = load_industry()
+    concept_symbols = df_concept["concept_symbol"].unique().tolist()
+    industry_symbols = df_industry["industry_symbol"].unique().tolist()
+    pool = Pool(10)
+    results = []
+    for symbol in concept_symbols + industry_symbols:
+        res = pool.apply_async(download_group_hist, (symbol, ))
         results.append(res)
     for i in trange(len(results)):
         res = results[i]
@@ -357,7 +390,8 @@ if __name__ == "__main__":
         sys.exit(0)
     if args.hist:
         download_index()
-        download_hist()
+        download_stock()
+        download_group()
         sys.exit(0)
     if args.realtime:
         download_realtime()

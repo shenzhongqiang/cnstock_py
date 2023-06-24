@@ -11,6 +11,7 @@ SYMDIR = os.path.join(ROOTDIR, 'data/symbol')
 HIST_DIR = {
     'stock': os.path.join(ROOTDIR, 'data/history/stock'),
     'index': os.path.join(ROOTDIR, 'data/history/index'),
+    'group': os.path.join(ROOTDIR, 'data/history/group'),
 }
 FINANCE_DIR = {
     'stock': os.path.join(ROOTDIR, 'data/finance/stock')

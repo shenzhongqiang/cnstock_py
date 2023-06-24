@@ -467,7 +467,10 @@ async def main():
             await get_sector_stocks_between_dates(args.symbol, start_date, args.end, args.chg_min)
             sys.exit(0)
         if args.symbol and args.start is not None and args.end is not None:
-            await get_sector_stocks_between_dates(args.symbol, args.start, args.end, args.chg_min)
+            start_dt = datetime.datetime.strptime(args.start, format)
+            start_dt = stock.utils.symbol_util.get_last_trading_date(start_dt)
+            start_date = start_dt.strftime(format)
+            await get_sector_stocks_between_dates(args.symbol, start_date, args.end, args.chg_min)
             sys.exit(0)
 
     if args.simliar:
