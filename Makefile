@@ -44,6 +44,6 @@ kaipan:
 	$(info get kaipan)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/get_kaipan.py
 
-afterclose:
+afterclose: history
 	$(info filter afterclose)
 	PYTHONPATH=$(PYTHONPATH) .venv/bin/python jobs/filter_afterclose.py

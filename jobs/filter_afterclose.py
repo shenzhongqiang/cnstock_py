@@ -11,6 +11,14 @@ import tushare as ts
 from stock.utils.calc_price import get_zt_price
 
 
+EXCLUDE_CONCEPTS = ["融资融券", "机构重仓", "富时罗素", "MSCI中国", "标准普尔", "沪股通", "HS300_", "上证180_", "上证50_",
+                "证金持股", "央视50_", "深证100R", "中证500", "ST股", "深成500", "上证380", "深股通", "创业成份",
+                "QFII重仓", "转债标的", "基金重仓", "创业板综", "昨日连板_含一字", "AH股", "GDR", "中字头", "茅指数",
+                "B股", "IPO受益", "举牌", "低价股", "养老金", "昨日涨停", "昨日涨停_含一字", "昨日触板", "昨日连板",
+                "贬值受益", "预盈预增", "预亏预减", "高送转", "百元股", "社保重仓", "参股新三板", "内贸流通", "股权激励",
+                "AB股", "独角兽", "壳资源", "分拆预期", "债转股", "送转预期", "科创板做市股"]
+
+
 def get_industry():
     df_industry = stock.utils.symbol_util.load_industry()
     df_res = df_industry.groupby("exsymbol")["industry"].agg(industry=lambda x: ",".join(x))
@@ -44,7 +52,7 @@ def filter_by_history(date, exsymbols):
 
 def get_snapshot_from_history(date):
     store = get_store(store_type)
-    df = pd.DataFrame(columns=["open", "close", "high", "low", "volume", "amount", "yest_close"])
+    rows = []
     symbols = stock.utils.symbol_util.get_stock_symbols()
     for symbol in symbols:
         if not store.has(symbol):
@@ -56,13 +64,17 @@ def get_snapshot_from_history(date):
             continue
         if df_past.iloc[-1].date != date:
             continue
-        df.loc[symbol, "open"] = df_past.iloc[-1]["open"]
-        df.loc[symbol, "close"] = df_past.iloc[-1]["close"]
-        df.loc[symbol, "high"] = df_past.iloc[-1]["high"]
-        df.loc[symbol, "low"] = df_past.iloc[-1]["low"]
-        df.loc[symbol, "volume"] = df_past.iloc[-1]["volume"]
-        df.loc[symbol, "amount"] = df_past.iloc[-1]["amount"]
-        df.loc[symbol, "yest_close"] = df_past.iloc[-2]["close"]
+        row = {"symbol": symbol,
+            "open": df_past.iloc[-1]["open"],
+            "close": df_past.iloc[-1]["close"],
+            "high": df_past.iloc[-1]["high"],
+            "low": df_past.iloc[-1]["low"],
+            "volume": df_past.iloc[-1]["volume"],
+            "yest_close": df_past.iloc[-2]["close"],
+        }
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    df.set_index("symbol", inplace=True)
     return df
 
 
@@ -167,14 +179,6 @@ def get_chuban(today):
 
 
 def get_group_snapshot_from_history(date):
-    EXCLUDE_CONCEPTS = ["融资融券", "机构重仓", "富时罗素", "MSCI中国", "标准普尔", "沪股通", "HS300_", "上证180_", "上证50_",
-                    "证金持股", "央视50_", "深证100R", "中证500", "ST股", "深成500", "上证380", "深股通", "创业成份",
-                    "QFII重仓", "转债标的", "基金重仓", "创业板综", "昨日连板_含一字", "AH股", "GDR", "中字头", "茅指数",
-                    "B股", "IPO受益", "举牌", "低价股", "养老金", "昨日涨停", "昨日涨停_含一字", "昨日触板", "昨日连板",
-                    "贬值受益", "预盈预增", "预亏预减", "高送转", "百元股", "社保重仓", "参股新三板", "内贸流通", "股权激励",
-                    "AB股", "独角兽", "壳资源", "分拆预期", "债转股", "送转预期", "科创板做市股"]
-
-    df = pd.DataFrame(columns=["day1_vol", "day2_vol", "day3_vol", "day4_vol", "day5_vol", "5day_low", "open", "close"])
     df_concept = stock.utils.symbol_util.load_concept()
     df_concept = df_concept[~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)]
     df_industry = stock.utils.symbol_util.load_industry()
@@ -182,6 +186,7 @@ def get_group_snapshot_from_history(date):
         df_industry["industry_symbol"].unique().tolist()
     symbols = list(set(symbols))
 
+    rows = []
     for symbol in symbols:
         filepath = os.path.join(HIST_DIR["group"], symbol)
         df_group = pd.read_csv(filepath)
@@ -190,14 +195,20 @@ def get_group_snapshot_from_history(date):
         df_past = df_group.loc[:date].copy()
         if len(df_past) < 5:
             continue
-        df.loc[symbol, "day1_vol"] = df_past.iloc[-5].volume.mean()
-        df.loc[symbol, "day2_vol"] = df_past.iloc[-4].volume
-        df.loc[symbol, "day3_vol"] = df_past.iloc[-3].volume
-        df.loc[symbol, "day4_vol"] = df_past.iloc[-2].volume
-        df.loc[symbol, "day5_vol"] = df_past.iloc[-1].volume
-        df.loc[symbol, "5day_low"] = df_past.iloc[-5:].low.min()
-        df.loc[symbol, "open"] = df_past.iloc[-1].open
-        df.loc[symbol, "close"] = df_past.iloc[-1].close
+        row = {"symbol": symbol,
+            "day1_vol": df_past.iloc[-5].volume,
+            "day2_vol": df_past.iloc[-4].volume,
+            "day3_vol": df_past.iloc[-3].volume,
+            "day4_vol": df_past.iloc[-2].volume,
+            "day5_vol": df_past.iloc[-1].volume,
+            "5day_low": df_past.iloc[-5:].low.min(),
+            "open": df_past.iloc[-1].open,
+            "close": df_past.iloc[-1].close,
+        }
+
+        rows.append(row)
+    df = pd.DataFrame(rows)
+    df.set_index("symbol", inplace=True)
     return df
 
 
@@ -221,6 +232,30 @@ def get_group(today):
     print(df_res[columns].sort_values("dvol", ascending=False))
 
 
+def get_top_bottom_stocks_group(today):
+    today_str = today.strftime("%Y-%m-%d")
+    df = get_snapshot_from_history(today_str)
+    df["chg"] = df["close"]/df["yest_close"] - 1
+    df_top = df[df["chg"] > 0.08]
+    df_bottom = df[df["chg"] < -0.08]
+    df_concept = stock.utils.symbol_util.load_concept()
+    df_concept = df_concept[~df_concept["concept_name"].isin(EXCLUDE_CONCEPTS)]
+    df_industry = stock.utils.symbol_util.load_industry()
+    df_top_concept = df_top.merge(df_concept, left_index=True, right_on="symbol")[["concept_name", "symbol"]].groupby("concept_name").count().sort_values("symbol", ascending=False)
+    df_top_industry = df_top.merge(df_industry, left_index=True, right_on="symbol")[["industry_name", "symbol"]].groupby("industry_name").count().sort_values("symbol", ascending=False)
+    df_bottom_concept = df_bottom.merge(df_concept, left_index=True, right_on="symbol")[["concept_name", "symbol"]].groupby("concept_name").count().sort_values("symbol", ascending=False)
+    df_bottom_industry = df_bottom.merge(df_industry, left_index=True, right_on="symbol")[["industry_name", "symbol"]].groupby("industry_name").count().sort_values("symbol", ascending=False)
+
+    print("========================== top concept ==========================")
+    print(df_top_concept[df_top_concept["symbol"]>1])
+    print("========================== top industry ==========================")
+    print(df_top_industry[df_top_industry["symbol"]>1])
+    print("========================== bottom concept ==========================")
+    print(df_bottom_concept[df_bottom_concept["symbol"]>1])
+    print("========================== bottom industry ==========================")
+    print(df_bottom_industry[df_bottom_industry["symbol"]>1])
+
+
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -230,6 +265,7 @@ if __name__ == "__main__":
     else:
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
 
+    get_top_bottom_stocks_group(today)
     get_group(today)
     #get_chuban(today)
     #get_zhangting(today)
