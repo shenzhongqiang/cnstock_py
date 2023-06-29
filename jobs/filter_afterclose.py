@@ -220,7 +220,8 @@ def get_group(today):
     df["dvol"] = df["day5_vol"]/df["day4_vol"] - 1
     df["yest_dvol"] = df["day4_vol"]/df["day3_vol"] - 1
     df["price_incr"] = df["close"]/df["5day_low"] - 1
-    df_res = df[(df["vol_incr"] > 0.3) & (df["dvol"] > df["yest_dvol"] + 0.2) & (df["price_incr"] < 0.10) & (df["close"] > df["open"])]
+    df["d2vol"] = df["dvol"] - df["yest_dvol"]
+    df_res = df[(df["vol_incr"] > 0.3) & (df["d2vol"] > 0.2) & (df["price_incr"] < 0.07) & (df["close"] > df["open"])]
 
     df_concept = stock.utils.symbol_util.load_concept()[["concept_symbol", "concept_name"]].drop_duplicates()
     df_concept.rename(columns={"concept_symbol": "symbol", "concept_name": "name"}, inplace=True)
@@ -228,8 +229,8 @@ def get_group(today):
     df_industry.rename(columns={"industry_symbol": "symbol", "industry_name": "name"}, inplace=True)
     df_group = pd.concat([df_concept, df_industry]).set_index("symbol")
     df_res = df_res.merge(df_group, left_index=True, right_index=True)
-    columns = ["dvol", "yest_dvol", "price_incr", "name"]
-    print(df_res[columns].sort_values("dvol", ascending=False))
+    columns = ["vol_incr", "d2vol", "price_incr", "name"]
+    print(df_res[columns].sort_values("vol_incr", ascending=False))
 
 
 def get_top_bottom_stocks_group(today):
