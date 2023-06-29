@@ -220,7 +220,7 @@ def get_group(today):
     df["dvol"] = df["day5_vol"]/df["day4_vol"] - 1
     df["yest_dvol"] = df["day4_vol"]/df["day3_vol"] - 1
     df["price_incr"] = df["close"]/df["5day_low"] - 1
-    df_res = df[(df["vol_incr"] > 0.4) & (df["dvol"] > df["yest_dvol"] + 0.3) & (df["price_incr"] < 0.10) & (df["close"] > df["open"])]
+    df_res = df[(df["vol_incr"] > 0.3) & (df["dvol"] > df["yest_dvol"] + 0.2) & (df["price_incr"] < 0.10) & (df["close"] > df["open"])]
 
     df_concept = stock.utils.symbol_util.load_concept()[["concept_symbol", "concept_name"]].drop_duplicates()
     df_concept.rename(columns={"concept_symbol": "symbol", "concept_name": "name"}, inplace=True)
