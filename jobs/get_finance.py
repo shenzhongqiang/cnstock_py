@@ -46,7 +46,7 @@ def get_company_type(exsymbol):
 def parse(resp):
     dat = json.loads(resp)
     if "data" not in dat:
-        return None
+        return pd.DataFrame()
     data = dat["data"]
     df = pd.json_normalize(data)
     df.set_index("REPORT_DATE", inplace=True)
@@ -60,7 +60,7 @@ def download_zcfzb(symbol, dates, company_type):
         filename = "%s_zcfzb.csv" % exsymbol
         path = os.path.join(stock_dir, filename)
         group = split_dates(dates)
-        df_res = None
+        dfs = []
         for i in range(len(group)):
             group_dates = group[i]
             date_str = ",".join(group_dates)
@@ -68,12 +68,8 @@ def download_zcfzb(symbol, dates, company_type):
             r = requests.get(url)
             content = r.content.decode("utf-8")
             df = parse(content)
-            if df is None:
-                return
-            if i == 0:
-                df_res = df
-            else:
-                df_res = pd.concat([df_res, df])
+            dfs.append(df)
+        df_res = pd.concat(dfs)
         df_res.to_csv(path)
     except Exception as e:
         print("error getting %s ZCFZB data due to %s" % (symbol, str(e)))
@@ -84,7 +80,7 @@ def download_lrb(symbol, dates, company_type):
         filename = "%s_lrb.csv" % exsymbol
         path = os.path.join(stock_dir, filename)
         group = split_dates(dates)
-        df_res = None
+        dfs = []
         for i in range(len(group)):
             group_dates = group[i]
             date_str = ",".join(group_dates)
@@ -92,12 +88,8 @@ def download_lrb(symbol, dates, company_type):
             r = requests.get(url)
             content = r.content.decode("utf-8")
             df = parse(content)
-            if df is None:
-                return
-            if i == 0:
-                df_res = df
-            else:
-                df_res = pd.concat([df_res, df])
+            dfs.append(df)
+        df_res = pd.concat(dfs)
         df_res.to_csv(path)
     except Exception as e:
         print("error getting %s LRB data due to %s" % (symbol, str(e)))
@@ -108,7 +100,7 @@ def download_xjllb(symbol, dates, company_type):
         filename = "%s_xjllb.csv" % exsymbol
         path = os.path.join(stock_dir, filename)
         group = split_dates(dates)
-        df_res = None
+        dfs = []
         for i in range(len(group)):
             group_dates = group[i]
             date_str = ",".join(group_dates)
@@ -116,22 +108,22 @@ def download_xjllb(symbol, dates, company_type):
             r = requests.get(url)
             content = r.content.decode("utf-8")
             df = parse(content)
-            if df is None:
-                return
-            if i == 0:
-                df_res = df
-            else:
-                df_res = pd.concat([df_res, df])
+            dfs.append(df)
+        df_res = pd.concat(dfs)
         df_res.to_csv(path)
     except Exception as e:
         print("error getting %s XJLLB data due to %s" % (symbol, str(e)))
 
+
 def download_stock_finance(symbol, dates):
-    exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol)
-    company_type = get_company_type(exsymbol)
-    download_zcfzb(symbol, dates, company_type)
-    download_lrb(symbol, dates, company_type)
-    download_xjllb(symbol, dates, company_type)
+    try:
+        exsymbol = stock.utils.symbol_util.symbol_to_exsymbol(symbol)
+        company_type = get_company_type(exsymbol)
+        download_zcfzb(symbol, dates, company_type)
+        download_lrb(symbol, dates, company_type)
+        download_xjllb(symbol, dates, company_type)
+    except Exception as e:
+        print("error downloading stock finance for {} due to {}".format(symbol, e))
 
 
 def report_dates(date):

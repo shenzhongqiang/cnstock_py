@@ -1,6 +1,7 @@
 import re
 import os
 import sys
+import asyncio
 import pandas as pd
 from stock.globalvar import FINANCE_DIR
 
@@ -17,21 +18,26 @@ def get_exsymbol(filename):
         return m.group(1)
     raise Exception("cannot get symbol from filename ", filename)
 
-def get_high_netprofit(today):
+
+async def get_growth(filename, qnum):
+    stock_dir = FINANCE_DIR['stock']
+    path = os.path.join(stock_dir, filename)
+    df = pd.read_csv(path, index_col="REPORT_DATE", parse_dates=True)
+
+    chgs = df.iloc[:qnum]["DEDUCT_PARENT_NETPROFIT_YOY"]
+
+    exsymbol = get_exsymbol(filename)
+    return [exsymbol, chgs.tolist()]
+
+
+async def get_high_netprofit(today):
     stock_dir = FINANCE_DIR['stock']
     filenames = os.listdir(stock_dir)
     filenames = filter(lambda x: re.search(r'_lrb', x), filenames)
-    for filename in filenames:
-        exsymbol = get_exsymbol(filename)
-        path = os.path.join(stock_dir, filename)
-        df = pd.read_csv(path, index_col="REPORT_DATE", parse_dates=True)
-        df["report_q"] = df.index.quarter
-        if len(df) < 4:
-            continue
-        is_growing = df.iloc[3]["DEDUCT_PARENT_NETPROFIT_YOY"] > 20 and df.iloc[2]["DEDUCT_PARENT_NETPROFIT_YOY"] > 20 and \
-            df.iloc[1]["DEDUCT_PARENT_NETPROFIT_YOY"] > 20 and df.iloc[0]["DEDUCT_PARENT_NETPROFIT_YOY"] > 20
-        if is_growing:
-            print(exsymbol)
+    tasks = [get_growth(filename, 4) for filename in filenames]
+    result = await asyncio.gather(*tasks)
+    print(result)
+
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
@@ -41,4 +47,4 @@ if __name__ == "__main__":
         today = pd.datetime.today()
     else:
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
-    get_high_netprofit(today)
+    asyncio.run(get_high_netprofit(today))
