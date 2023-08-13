@@ -196,6 +196,8 @@ def download_stock_basic(symbol):
         r = requests.get(url, verify=False)
         data = r.json()["data"]
         name = data["f58"]
+        if data["f43"] == "-":
+            return None
         close = data["f43"] / 100
         mcap = data["f116"]
         liquid_mcap = data["f117"]
@@ -206,6 +208,7 @@ def download_stock_basic(symbol):
                 "total_share": total_share_num, "liquid_share": liquid_share_num}
     except Exception as e:
         print("error getting history due to %s" % str(e))
+
 
 def download_basics():
     pool = Pool(10)
@@ -233,4 +236,4 @@ def download_basics():
 
 if __name__ == "__main__":
     download_basics()
-    #download_earnings("2023-01-01")
+    download_earnings("2023-08-13")
