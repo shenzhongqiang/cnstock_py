@@ -128,7 +128,16 @@ def get_xjllb_data(exsymbol):
 
 def load_stock_basics():
     filepath = os.path.join(BASIC_DIR, "basics")
-    df = pd.read_csv(filepath, encoding="utf-8", dtype={"code": str, "pe": np.float64})
-    df["exsymbol"] = list(map(lambda x: symbol_to_exsymbol(x), df["code"]))
+    df = pd.read_csv(filepath, encoding="utf-8", dtype={
+        "symbol": str,
+        "name": str,
+        "close": np.float64,
+        "mcap": np.float64,
+        "liquid_mcap": np.float64,
+        "pe": np.float64,
+        "total_share": np.float64,
+        "liquid_share": np.float64,
+    })
+    df["exsymbol"] = list(map(lambda x: symbol_to_exsymbol(x), df["symbol"]))
     df.set_index("exsymbol", inplace=True)
     return df

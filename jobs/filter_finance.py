@@ -1,9 +1,11 @@
 import re
 import os
 import sys
-import asyncio
+from multiprocessing import Pool
+import numpy as np
 import pandas as pd
 from stock.globalvar import FINANCE_DIR
+from stock.lib.finance import load_stock_basics
 
 
 def get_exsymbol(filename):
@@ -19,24 +21,62 @@ def get_exsymbol(filename):
     raise Exception("cannot get symbol from filename ", filename)
 
 
-async def get_growth(filename, qnum):
+def get_growth(filename, qnum):
     stock_dir = FINANCE_DIR['stock']
     path = os.path.join(stock_dir, filename)
-    df = pd.read_csv(path, index_col="REPORT_DATE", parse_dates=True)
-
-    chgs = df.iloc[:qnum]["DEDUCT_PARENT_NETPROFIT_YOY"]
-
     exsymbol = get_exsymbol(filename)
-    return [exsymbol, chgs.tolist()]
+    try:
+        df = pd.read_csv(path, index_col="REPORT_DATE", parse_dates=True)
+        netprofits = df.iloc[:qnum]["DEDUCT_PARENT_NETPROFIT_YOY"]
+        incomes = df.iloc[:qnum]["TOTAL_OPERATE_INCOME_YOY"]
+        return {
+            "exsymbol": exsymbol,
+            "netprofits": netprofits.tolist(),
+            "incomes": incomes.tolist()
+        }
+    except Exception as e:
+        return {"exsymbol": exsymbol,
+            "netprofits": [],
+            "incomes": []
+        }
 
 
-async def get_high_netprofit(today):
+def gather_result(tasks):
+    result = []
+    for task in tasks:
+        res = task.get()
+        result.append(res)
+    return result
+
+
+def get_high_netprofit(today):
     stock_dir = FINANCE_DIR['stock']
     filenames = os.listdir(stock_dir)
     filenames = filter(lambda x: re.search(r'_lrb', x), filenames)
-    tasks = [get_growth(filename, 4) for filename in filenames]
-    result = await asyncio.gather(*tasks)
-    print(result)
+    p = Pool(10)
+    tasks = []
+    for filename in filenames:
+        task = p.apply_async(get_growth, (filename, 4))
+        tasks.append(task)
+    result = gather_result(tasks)
+
+    df_basics = load_stock_basics()
+    for item in result:
+        exsymbol = item["exsymbol"]
+        netprofits = item["netprofits"]
+        incomes = item["incomes"]
+        if re.match(r'bj', exsymbol) or \
+            len(netprofits) < 4 or \
+            exsymbol not in df_basics.index:
+            continue
+        avg_netprofit = np.mean(netprofits)
+        pe = df_basics.loc[exsymbol, "pe"]
+        name = df_basics.loc[exsymbol, "name"]
+        high_growth = all([netprofit > 20 for netprofit in netprofits]) and \
+            all([income > 20 for income in incomes]) and \
+            pe > 0 and pe < 30
+        if high_growth:
+            print(exsymbol, name, pe)
 
 
 if __name__ == "__main__":
@@ -47,4 +87,4 @@ if __name__ == "__main__":
         today = pd.datetime.today()
     else:
         today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
-    asyncio.run(get_high_netprofit(today))
+    get_high_netprofit(today)

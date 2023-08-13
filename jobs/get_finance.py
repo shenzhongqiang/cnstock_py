@@ -193,11 +193,12 @@ def download_stock_basic(symbol):
         close = data["f43"] / 100
         mcap = data["f116"]
         liquid_mcap = data["f117"]
+        pe = data["f164"] / 100
         total_share_num = data["f84"]
         liquid_share_num = data["f85"]
 
         return {"symbol": symbol, "name": name, "close": close, "mcap": mcap, "liquid_mcap": liquid_mcap,
-                "total_share": total_share_num, "liquid_share": liquid_share_num}
+                "pe": pe, "total_share": total_share_num, "liquid_share": liquid_share_num}
     except Exception as e:
         print("error getting history due to %s" % str(e))
 
