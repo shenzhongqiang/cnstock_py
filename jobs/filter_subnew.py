@@ -1,4 +1,4 @@
-import sys
+import argparse
 import numpy as np
 import pandas as pd
 import stock.utils.symbol_util
@@ -11,13 +11,19 @@ from stock.utils.calc_price import get_zt_price
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--recent", type=int, default=10, help="30")
+    parser.add_argument("--end", type=str, default=None, help="e.g. 2022-01-04")
+    args = parser.parse_args()
+
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
+
     today = None
-    if len(sys.argv) == 1:
+    if args.end is None:
         today = pd.datetime.today()
     else:
-        today = pd.datetime.strptime(sys.argv[1], "%Y-%m-%d")
+        today = pd.datetime.strptime(args.end, "%Y-%m-%d")
 
     store = get_store(store_type)
     result = []
@@ -28,7 +34,7 @@ if __name__ == "__main__":
             continue
         df_stock = store.get(symbol)
         df_past = df_stock.loc[:today]
-        if len(df_past) >10 or len(df_past) == 0:
+        if len(df_past) > args.recent or len(df_past) == 0:
             continue
         df.loc[symbol] = [len(df_past)]
     print(df.sort_values(["days"]))
