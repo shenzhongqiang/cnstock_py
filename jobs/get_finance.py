@@ -229,4 +229,4 @@ def download_basics():
 
 if __name__ == "__main__":
     download_basics()
-    download_earnings("2023-09-12")
+    download_earnings("2023-12-25")
