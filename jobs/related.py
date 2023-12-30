@@ -473,7 +473,7 @@ async def main():
             await get_sector_stocks_between_dates(args.symbol, start_date, args.end, args.chg_min)
             sys.exit(0)
 
-    if args.simliar:
+    if args.similar:
         if args.symbol:
             result = await get_similar_stocks_between_dates(args.symbol, start_date, end_date, args.corr_min)
             for group_result in result:
