@@ -83,7 +83,7 @@ def get_high_netprofit(today):
     tasks = []
     store = get_store(store_type)
     for filename in filenames:
-        exsymbol = filename[:-8]
+        exsymbol = get_exsymbol(filename)
         task = p.apply_async(get_strong, (exsymbol, store))
         tasks.append(task)
     strong_result = gather_result(tasks)
