@@ -386,7 +386,7 @@ if __name__ == "__main__":
     if args.symbol:
         download_stock_symbols()
         download_index_symbols()
-        download_wbond_symbols()
+        #download_wbond_symbols()
         sys.exit(0)
     if args.hist:
         download_index()

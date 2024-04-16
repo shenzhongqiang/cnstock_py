@@ -103,7 +103,7 @@ def get_high_netprofit(today):
         pe = df_basics.loc[exsymbol, "pe"]
         name = df_basics.loc[exsymbol, "name"]
         high_growth = all([netprofit > 20 for netprofit in netprofits]) and \
-            all([income > 0 for income in incomes]) and \
+            all([income > 20 for income in incomes]) and \
             exsymbol in strong_stocks and \
             pe > 0 and pe < 20
         if high_growth:
