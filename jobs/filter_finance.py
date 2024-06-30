@@ -48,7 +48,7 @@ def get_strong(exsymbol, store):
     symbol = exsymbol_to_symbol(exsymbol)
     df = store.get(symbol)
     try:
-        chg = df.iloc[-1].close/df.loc["2023-08-28"].high - 1
+        chg = df.iloc[-1].close/df.loc["2024-05-20"].high - 1
         is_strong = chg >= -0.1
         return {
             "exsymbol": exsymbol,
