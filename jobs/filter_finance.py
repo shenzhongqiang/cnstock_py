@@ -21,7 +21,7 @@ def get_exsymbol(filename):
     m = re.search(r'(.*)_zcfzb', filename)
     if m:
         return m.group(1)
-    raise Exception("cannot get symbol from filename ", filename)
+    return ""
 
 
 def get_growth(filename, qnum):
@@ -84,6 +84,8 @@ def get_high_netprofit(today):
     store = get_store(store_type)
     for filename in filenames:
         exsymbol = get_exsymbol(filename)
+        if not exsymbol:
+            continue
         task = p.apply_async(get_strong, (exsymbol, store))
         tasks.append(task)
     strong_result = gather_result(tasks)
